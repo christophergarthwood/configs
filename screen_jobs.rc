@@ -1,0 +1,8 @@
+screen watch -n .5 "qstat -u some_user | head"
+split
+focus down
+screen watch -n 1 "qpeek $(qstat | grep something | cut -d. -f1) | tail"
+split
+focus down
+screen watch -n .5 "ps -ef | grep some_user | grep -v watch"
+focus bottom

@@ -1,0 +1,437 @@
+#----------------------------
+
+SONY PICTUREBOOK::
+#----------------------------
+X:
+
+From: Michael Heiming (Michael@Heiming.de)
+Subject: Sony Picturebook PCG-C1VN & Xfree86 4.0.2 working,....:-) 
+Newsgroups: comp.os.linux.portable, comp.os.linux.x
+View complete thread 
+Date: 2001-01-05 12:10:04 PST 
+ 
+
+
+Hello everyone,
+
+nice day today, 2.4.0 released (with an option for the crusoe CPU) and I
+got my new Sony Picturebook working,
+after compiling X 4.0.2 it still didn't work.
+
+I searched the net, got some help on these newsgroups, but it didn't
+worked something with my modeline was wrong...:-(
+
+At least I wrote a mail to Linus, he answered, I wrote his modeline in
+my XF86config and what would you asume, it just works...:-))
+
+Here the reply from Linus (I promised him to post it to these
+newsgroups, to avoid more mails on this, for him):
+
+  On Fri, 5 Jan 2001, Michael Heiming wrote:
+  >
+  > I searched the net for some tips to get X running, downloaded the source
+  > for X (4.0.2)
+  >
+  > Made this changes to
+  > xc/programs/Xserver/hw/xfree86/drivers/ati/atipreinit.c :
+
+  You should not need any changes any more in 4.0.2 sources.
+
+  > (WW) ATI(0): Mode "1024x480" deleted (no mode of this name) <----- looks
+  > like my problem...:-(
+  > (--) ATI(0): Virtual size is 1024x768 (pitch 1024)
+
+  This is the xconfig I use with 4.0.2 (well, my X server is really from
+the
+  CVS tree, but it's close enough to 4.0.2 that it shouldn't matter).
+
+  I think it's only the modeline that should matter for you.
+
+                  Linus
+
+  -----
+  #
+  #       copyright 1999-2001 Lincoln D. Durey <www.EmperorLinux.com>
+GNU-GPL
+  #       kiwi-VN UWXGA  XF86Config  ati3Drage  X-4.0.1g
+1024x480x[16,24]bpp LCD
+  #       usb mouse enabled in the kernel.  won't fail if usb is not
+present.
+  #
+
+  Section "ServerLayout"
+          Identifier      "Kiwi-VN X-401g"
+          Screen 0        "Screen0" 0 0
+          InputDevice     "Keyboard0" "CoreKeyboard"
+          InputDevice     "Mouse0"    "CorePointer"
+          InputDevice     "USBMouse0"
+  EndSection
+
+  Section "ServerFlags"
+          Option          "AllowMouseOpenFail"
+          Option          "BlankTime"     "5"
+          Option          "StandbyTime"   "7"
+          Option          "SuspendTime"   "0"
+          Option          "OffTime"       "0"
+          Option          "NoTrapSignals"
+          # Option        DontZap
+          # Option        DontZoom
+  EndSection
+
+  Section "Files"
+          FontPath        "/usr/X11R6/lib/X11/fonts/misc:unscaled"
+          FontPath        "/usr/X11R6/lib/X11/fonts/100dpi:unscaled"
+          FontPath        "/usr/X11R6/lib/X11/fonts/75dpi:unscaled"
+          FontPath        "/usr/X11R6/lib/X11/fonts/Type1"
+          FontPath        "/usr/X11R6/lib/X11/fonts/Speedo"
+          FontPath        "/usr/X11R6/lib/X11/fonts/misc"
+          FontPath        "/usr/X11R6/lib/X11/fonts/100dpi"
+          FontPath        "/usr/X11R6/lib/X11/fonts/75dpi"
+          # FontPath      "/usr/X11R6/lib/X11/fonts/URW"
+          # FontPath      "/usr/X11R6/lib/X11/fonts/truetype"
+          RgbPath         "/usr/X11R6/lib/X11/rgb"
+          ModulePath      "/usr/X11R6/lib/modules"
+  EndSection
+
+  Section "Module"
+          Load  "GLcore"
+          Load  "dbe"
+          Load  "dri"
+          Load  "extmod"
+          Load  "glx"
+          Load  "pex5"
+          Load  "record"
+          Load  "xie"
+          Load  "v4l"
+          Load  "freetype"
+          Load  "speedo"
+          Load  "type1"
+          Load  "render"
+  EndSection
+
+  Section "InputDevice"
+          Identifier      "Keyboard0"
+          Driver          "keyboard"
+          Option          "AutoRepeat"    "250 30"
+          # Option        "XkbLayout"     "us"
+          # Option        "XkbModel"      "pc105"
+          # Option        "XkbRules"      "xfree86"
+          # Option        "XkbVariant"    "nodeadkeys"
+  EndSection
+
+  Section "InputDevice"
+          Identifier      "Mouse0"
+          Driver          "mouse"
+          Option          "Protocol" "PS/2"
+          Option          "Device" "/dev/psaux"
+          Option          "Emulate3Buttons"
+          Option          "Emulate3Timeout" "50"
+          Option          "AlwaysCore"
+  EndSection
+
+  Section "InputDevice"
+          Identifier      "USBMouse0"
+          Driver          "mouse"
+          Option          "Protocol" "PS/2"
+          Option          "Device" "/dev/usb/mouse"
+          Option          "AlwaysCore"
+  EndSection
+
+  Section "Monitor"
+          Identifier      "LCD Panel int 1024x480"
+          VendorName      "Sony"
+          ModelName       "Vaio C1VN series"
+          # HorizSync     30-100
+          # VertRefresh   50-120
+          Gamma           1.0 1.0 1.0
+          Option  "DPMS"
+          # Modeline      "1024x480" 65    1024 1032 1176 1344 480 491
+493 525 -hsync -vsync
+          # ModeLine      "1024x480" 65.00 1024 1032 1176 1344 480 483
+487 518 -hsync -vsync
+          ModeLine        "1024x480" 65.00 1024 1032 1176 1344 480 488
+494 560 -hsync -vsync
+  EndSection
+
+  Section "Device"
+          Identifier      "ATI 3D Rage"
+          Driver          "ati"
+          VendorName      "ATI"
+          BoardName       "ATI 3D Rage Mobility P/M"
+          BusID           "PCI:0:13:0"
+          ClockChip       "Internal"
+          VideoRam        8192
+          ### Available Driver options are:-
+          # Option     "NoAccel"
+          # Option                "HWcursor"
+          # Option     "SWcursor"
+          # Option     "Dac6Bit"
+          # Option     "Dac8Bit"
+          # Option     "ForcePCIMode"
+          # Option     "CCEPIOMode"
+          # Option     "CCENoSecurity"
+          # Option     "CCEusecTimeout"
+          # Option     "AGPMode"
+          # Option     "AGPSize"
+          # Option     "RingSize"
+          # Option     "VBListSize"
+          # Option     "VBSize"
+          # Option     "UseCCEfor2D"
+          # Option     "PanelWidth"
+          # Option     "PanelHeight"
+          # Option     "UseFBDev"
+  EndSection
+
+  Section "Screen"
+          Identifier "Screen0"
+          Device     "ATI 3D Rage"
+          Monitor    "LCD Panel int 1024x480"
+          DefaultDepth 16
+          SubSection "Display"
+                  Depth           8
+                  Modes           "1024x480"
+          EndSubSection
+          SubSection "Display"
+                  Depth           16
+                  Modes           "1024x480"
+                  # comment out these two lines if you don't want a
+"virtual X"
+                  Virtual         1024 768
+                  ViewPort        1024 480
+          EndSubSection
+          SubSection "Display"
+                  Depth           24
+                  Modes           "1024x480"
+                  # comment out these two lines if you don't want a
+"virtual X"
+                  Virtual         1024 768
+                  ViewPort        1024 480
+          EndSubSection
+  EndSection
+
+  Section "DRI"
+          # Mode 0666
+  EndSection
+
+Have a nice weekend everyone...:-)
+
+Michael Heiming
+Sysadmin
+
+#----------------------------------------------------------------------------------
+
+Sony PCG-V1XS Picturebook Camera Capture Program
+http://samba.org/picturebook/
+
+make
+su
+./capture -o test.jpg
+ee test.jpg
+
+#----------------------------------------------------------------------------------
+
+I have also written a couple of other utilities that
+can set the brightness on a VAIO and check the battery
+status. See http://us1.samba.org/ftp/unpacked/picturebook/
+
+#----------------------------------------------------------------------------------
+
+USB cameras --- any V4L device..
+
+http://gspy.sourceforge.net/
+./autogen.sh
+make
+make install
+gspy
+
+will use mpeg encoder if avail:
+http://bmrc.berkeley.edu/research/mpeg/mpeg_encode.html
+ftp://mm-ftp.cs.berkeley.edu/pub/multimedia/mpeg/encode/mpeg_encode-1.5b-src.tar.gz
+
+tar xzvf mpeg_encode-1.5b-src.tar.gz 
+cd mpeg_encode
+cd jpeg
+make
+cd ..
+errors abound
+
+#-----
+
+camE
+
+camserv
+
+motion
+and motionview
+
+QuickCam VC
+
+w3cam
+http://www.hdk-berlin.de/~rasca/w3cam/
+
+
+#----------------------------------------------------------------------------------
+
+audio
+
+CONFIG_SOUND=y
+CONFIG_SOUND_OSS=m
+CONFIG_SOUND_TRACEINIT=y
+CONFIG_SOUND_DMAP=y
+CONFIG_SOUND_YMFPCI=m
+CONFIG_SOUND_YMFPCI_LEGACY=y
+
+include YMFPCI in /etc/modules.conf
+alias char-major-116 snd
+alias snd-card-0 ymfpci
+alias sound-slot-0 snd-card-0
+
+#----------------------------------------------------------------------------------
+http://www.stevebarr.com/cgi-bin/cgiwrap/barrst/goto.pl?c1vn
+
+#----------------------------------------------------------------------------------
+
+special keys:
+http://www.kuro5hin.org/?op=displaystory;sid=2001/7/5/17358/68181
+http://www.mars.dti.ne.jp/~jun1m/Linux/spic/
+http://spop.free.fr/sonypi/
+
+#--
+http://www.mars.dti.ne.jp/~jun1m/Linux/spic/fnkeyd-0.1.tar.gz
+
+cp ../sonypid-1.6/sonypi.h .
+
+
+vi fnkeyd.c
+#include "sonypi.h"
+
+#--
+
+#--
+http://spop.free.fr/sonypi/sonypid-1.6.tar.bz2
+http://spop.free.fr/sonypi/spicctrl-1.5.tar.bz2
+
+
+tar xjvf sonypid-*.tar.bz2 && cd sonypid-*/
+make
+mknod /dev/sonypi c 10 250
+vi /etc/modules.conf
+#-
+alias char-major-10-250 sonypi
+options sonypi minor=250
+#-
+cp ./sonypid /usr/local/bin
+sonypid
+
+tar xjvf spicctrl-1.5.tar.bz2 && cd spicctrl-1.5
+make
+./spicctrl
+
+#--
+
+#--
+http://www.kuro5hin.org/images/rusty/picturebook-stuff.tar.gz
+tar xzvf picturebook-stuff.tar.gz && cd picturebook-stuff
+
+* tar -zxvf motioneye-rusty-1.0.tar.gz
+* tar -zxvf sonypid-rusty.tar.gz
+* make; make install; in each of the resulting directories
+* tar -zxvf piwatch.tar.gz
+* cp piwatch/sonypi.conf /etc/
+* cp piwatch/piwatch /usr/local/bin/
+* cp piwatch/snapshot /usr/local/bin
+* Edit 'snapshot' to point to a useful snapshot directory
+* Edit sonypi.conf to call commands you want to run
+* Run piwatch -h for a list of options.
+* Normally, just put 'piwatch' in rc.local. It runs as a 
+  daemon. killall -HUP piwatch will make it reload its
+  config file.  
+
+
+#--
+#----------------------------------------------------------------------------------
+
+SONY PCG-R505JL:
+CPU Intel Pentium III 750MHz 
+RAM 128M (384M max) 
+Hard disk Toshiba MK1517GAP 15G, UDMA(100) (PIIX4) 
+Display 12.1" XGA TFT (4M) 
+Display Chipset Intel 82815 CGC 
+Audio Chipset Intel 82820 (Camino 2) 
+Ethernet Chipset Intel 82820 (ICH2) 
+Modem Chipset Intel 82820 (Camino 2) 
+USB Chipset Intel 82820 (Camino 2) 
+IEEE 1394 Texas Instruments 
+Cardbus Bridge Ricoh Co Ltd RL5c475 
+IrDA N/A
+
+Ethernet Yes eepro100 (becker), e100 (intel)
+Sound Yes kernel i8xx driver
+USB Yes UHCI
+IEEE 1394 Yes OHCI1394, RAW1394, SBP2
+Modem Yes HSF modem
+
+ALPS Touchpad
+External Monitor Port
+Just start the machine with a monitor plugged in.
+I haven't found any other way to turn the external port on under linux.
+I've been alerted of a utility to switch monitor modes within linux. It can be found here.
+http://vorlon.cwru.edu/~ames/i810switch/
+
+
+linux sony mailing list:
+http://returntonature.com/pipermail/linux-sony/
+
+modem driver (crippled free, uncrippled pay):
+http://www.linuxant.com/drivers/
+http://www.darkridge.com/~jpr5/r505jl/hsflinmodem-4.06.06.02.tar.gz
+
+intel i810 video framebuffer page:
+http://i810fb.sourceforge.net/
+
+basic hardware docs:
+Intel® 82815 Graphics Controller 
+http://support.intel.com/support/graphics/intel815/sb/CS-004045-prd797.htm
+
+linux driver downloads:
+ftp://aiedownload.intel.com/df-support/2702/ENG/release_linux.pdf
+Linux* Graphics Driver - RPM [XFCOM_I810-1.2-3.I386.RPM]
+Linux* graphics driver - RPM containing XCF-I810 binary
+Linux* Graphics Driver - RPM [I810GTT-0.2-4.SRC.RPM]
+Linux* graphics driver - RPM containing agpgart.o source
+http://downloadfinder.intel.com/scripts-df/Support_Intel.asp
+
+
+acpi issues:
+boot with:
+acpi=off
+pci=noacpi
+
+use http://spop.free.fr/sonypi/sonypid-1.9.tar.bz2
+to get mouse wheel and middle mouse button
+
+#----------------------------------------------------------------------------------
+
+Sony original drivers:
+
+However, the models did not match up exactly correct (PCG-GRV516G and PCG-GRV550), so you can go to the Vaio support site and pick the make and model of your laptop (or have it autodetect). Then go to downloads and select the modem and it will find it for you.
+
+http://ciscdb.sel.sony.com/cgi-bin/select-p-n.pl
+
+ftp://ftp.ita.sel.sony.com/ccpg/pc/CO-C08260802KN.EXE
+
+
+#----------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------
+
+long battery life notebooks
+An IBM T20 would probably fit the bill very nicely. Around 800MHz but with modern comforts like DVD+CD-R and support for that all important full GB of RAM; they support dual batteries and I believe there's an appropriate UltraBase station + battery. I'm not sure how long a loaded-with-batteries T20 lasts on a one charge. It's longer than an 8 hour workday, at least.
+
+For what it's worth, I use a Panasonic CF-R3 with a 1.1Ghz Pentium M. Battery life in practical use (writing and surfing using the wireless card) is about 6 hours. If I don't use a network connection I can easily reach 7 hours of actual use on a charge - great for conferences where I can leave the power adapter at the hotel. And the machine is good enough that I use it as my main computer.
+
+cpu-saving software
+free programs like 8rdavcore (or cpufreq modules for Linux) will do a far, far better job.
+
+#----------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------
+

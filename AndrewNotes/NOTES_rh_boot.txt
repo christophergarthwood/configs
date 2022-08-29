@@ -1,0 +1,16 @@
+
+/etc/inittab
+
+if runlevel 5 then /etc/X11/prefdm
+
+prefdm selects preferred X display manager (gdm,kdm,xdm)
+
+runs /usr/X11R6/bin/xdm (binary)(for xdm)
+
+xdm looks in /etc/X11/xdm for some config info
+
+when a user logs in xdm looks in .xsession 
+  or if startx is run then .xinit
+
+
+

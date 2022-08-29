@@ -1,0 +1,137 @@
+
+find / -type f \( -perm -04000 -o -perm -02000 \) -exec ls -l {} \;
+
+ORIGINAL RH7.2 (custom install - alot minus printing)
+[root@vogon ate]# find / -type f \( -perm -04000 -o -perm -02000 \) -exec ls -l {} \;
+-rws--x--x    2 root     root       785372 Aug  9 21:52 /usr/bin/suidperl
+-rws--x--x    2 root     root       785372 Aug  9 21:52 /usr/bin/sperl5.6.0
+-rwsr-xr-x    1 root     root        34476 Aug 27 20:19 /usr/bin/chage
+-rwsr-xr-x    1 root     root        36208 Aug 27 20:19 /usr/bin/gpasswd
+-rwsr-xr-x    1 root     root        37580 Aug  2 15:58 /usr/bin/at
+-rwxr-sr-x    1 root     mail        12500 Jun 30 08:01 /usr/bin/lockfile
+-rwxr-sr-x    1 root     slocate     25020 Jun 25 01:54 /usr/bin/slocate
+-r-s--x--x    1 root     root        13476 Aug  6 23:03 /usr/bin/passwd
+-r-xr-sr-x    1 root     tty          6444 Aug 28 21:30 /usr/bin/wall
+-rws--x--x    1 root     root        13136 Oct 11 16:08 /usr/bin/chfn
+-rws--x--x    1 root     root        12484 Oct 11 16:08 /usr/bin/chsh
+-rws--x--x    1 root     root         5456 Oct 11 16:08 /usr/bin/newgrp
+-rwxr-sr-x    1 root     tty          8744 Oct 11 16:08 /usr/bin/write
+-rwsr-xr-x    1 root     root        21280 Jun 24 22:39 /usr/bin/crontab
+-rwsr-xr-x    1 root     root         7180 Sep  8 07:00 /usr/bin/kcheckpass
+-rwxr-sr-x    1 root     root        54752 Sep  8 07:00 /usr/bin/kdesud
+-rwsr-xr-x    1 root     root       209948 Sep 27 09:03 /usr/bin/ssh
+-rwsr-xr-x    1 root     root        14588 Jul 24 06:55 /usr/bin/rcp
+-rwsr-xr-x    1 root     root        10940 Jul 24 06:55 /usr/bin/rlogin
+-rwsr-xr-x    1 root     root         7932 Jul 24 06:55 /usr/bin/rsh
+-r-sr-x---    1 root     news        29116 Jul 24 19:26 /usr/bin/inndstart
+-r-sr-x---    1 uucp     news        53817 Jul 24 19:25 /usr/bin/rnews
+-r-sr-x---    1 root     news        25436 Jul 24 19:26 /usr/bin/startinnfeed
+---s--x--x    1 root     root        80764 Jul 23 11:08 /usr/bin/sudo
+-r-xr-s--x    1 root     games       52024 Aug 14 17:29 /usr/bin/gnome-stones
+-r-xr-s--x    1 root     games       40076 Aug 14 17:29 /usr/bin/gataxx
+-r-xr-s--x    1 root     games       26636 Aug 14 17:29 /usr/bin/glines
+-r-xr-s--x    1 root     games       68812 Aug 14 17:29 /usr/bin/gnibbles
+-r-xr-s--x    1 root     games       75100 Aug 14 17:29 /usr/bin/gnobots2
+-r-xr-s--x    1 root     games       25772 Aug 14 17:29 /usr/bin/gnotravex
+-r-xr-s--x    1 root     games       72160 Aug 14 17:29 /usr/bin/gnomine
+-r-xr-s--x    1 root     games       45260 Aug 14 17:29 /usr/bin/mahjongg
+-r-xr-s--x    1 root     games       23128 Aug 14 17:29 /usr/bin/gnotski
+-r-xr-s--x    1 root     games      234684 Aug 14 17:29 /usr/bin/gtali
+-r-xr-s--x    1 root     games       47612 Aug 14 17:29 /usr/bin/iagno
+-r-xr-s--x    1 root     games       21020 Aug 14 17:29 /usr/bin/same-gnome
+-rwsr-xr-x    1 root     root        18444 Aug 27 11:10 /usr/sbin/ping6
+-rwsr-xr-x    1 root     root         9804 Aug 27 11:10 /usr/sbin/traceroute6
+-rwxr-sr-x    1 root     utmp         6604 Jun 24 22:43 /usr/sbin/utempter
+-r-sr-xr-x    1 root     root       451076 Aug 31 07:29 /usr/sbin/sendmail
+-rwsr-xr-x    1 root     root         6340 Sep  9 02:10 /usr/sbin/usernetctl
+-rwxr-sr-x    1 root     utmp         9164 Aug 27 19:37 /usr/sbin/gnome-pty-helper
+-rws--x--x    1 root     root        20732 Aug 27 23:51 /usr/sbin/userhelper
+-rwsr-xr-x    1 root     root        20120 Jun 25 11:47 /usr/sbin/traceroute
+-rwxr-sr-x    1 root     lock         8332 Sep  4 12:59 /usr/sbin/lockdev
+-r-s--x---    1 root     apache      11244 Sep  5 22:12 /usr/sbin/suexec
+-rws--x--x    1 root     root         5168 Sep  5 23:27 /usr/X11R6/bin/Xwrapper
+-rwxr-sr-x    1 root     games       30300 Jun 24 22:36 /usr/X11R6/bin/xbill
+-rwsr-xr-x    1 root     root        23436 Aug 27 11:10 /bin/ping
+-rwsr-xr-x    1 root     root        57628 Jul 24 15:36 /bin/mount
+-rwsr-xr-x    1 root     root        28380 Jul 24 15:36 /bin/umount
+-rwsr-xr-x    1 root     root        18452 Jul 23 11:23 /bin/su
+-r-sr-xr-x    1 root     root        15088 Oct 24 15:11 /sbin/pwdb_chkpwd
+-r-sr-xr-x    1 root     root        16824 Oct 24 15:11 /sbin/unix_chkpwd
+-rwxr-sr-x    1 root     root         4120 Sep  9 02:10 /sbin/netreport
+[root@vogon ate]# 
+
+necessary suid
+UN  /usr/bin/suidperl
+UN  /usr/bin/sperl5.6.0
+UID /usr/bin/chage - -rwsr-xr-x    1 root     root
+UN  /usr/bin/gpasswd
+UID /usr/bin/at - -rwsr-xr-x    1 root     root
+UN  /usr/bin/lockfile - part of procmail, what breaks if this is not "-rwxr-sr-x    1 root     mail"
+GID  /usr/bin/slocate - locate is symlinked here - I guess I'l leave this "-rwxr-sr-x    1 root     slocate"
+UID /usr/bin/passwd
+GID  /usr/bin/wall - needs to be "-r-xr-sr-x    1 root     tty" to work
+UID /usr/bin/chfn
+UID /usr/bin/chsh
+UID /usr/bin/newgrp
+GID  /usr/bin/write - needs to be "-r-xr-sr-x    1 root     tty" to work
+UID /usr/bin/crontab
+UID /usr/bin/ssh
+UID /usr/bin/sudo
+UID /usr/sbin/ping6
+UID /usr/sbin/traceroute6
+UN  /usr/sbin/utempter UN, was "-rwxr-sr-x    1 root     utmp"
+UN  /usr/sbin/sendmail
+UN  /usr/sbin/usernetctl
+UN  /usr/sbin/gnome-pty-helper UN, was "-rwxr-sr-x    1 root     utmp"
+UN  /usr/bin/kdesud UN, was "-rwxr-sr-x    1 root     root"
+UN  /usr/sbin/userhelper
+UID /usr/sbin/traceroute
+GID  /usr/sbin/lockdev - ok, "-rwxr-sr-x    1 root     lock"
+UID  /usr/sbin/suexec -ok "-r-s--x---    1 root     apache" #this program is only used internally by the Apache HTTP
+UID /usr/X11R6/bin/Xwrapper
+UID /bin/ping
+UN  /bin/mount
+UN  /bin/umount
+UID /bin/su
+UN  /sbin/pwdb_chkpwd
+UN  /sbin/unix_chkpwd
+UN  /sbin/netreport - UN, I think only root needs to run this - request notification of network interface changes
+
+
+JUST FIND SGID
+find / -type f -perm -02000 -exec ls -l {} \;
+JUST FIND SUID
+find / -type f -perm -04000 -exec ls -l {} \;
+
+un sgid games:
+find /usr/bin -type f -group games -perm -02000 -exec chmod g-s {} \;
+
+un suid a bunch of crap:
+chmod u-s /usr/bin/kcheckpass # dont know how much this breaks KDE
+chmod u-s /usr/bin/rcp
+chmod u-s /usr/bin/rlogin
+chmod u-s /usr/bin/rsh
+chmod u-s /usr/bin/inndstart # dont know how much this breaks INN
+chmod u-s /usr/bin/rnews # dont know how much this breaks INN
+chmod u-s /usr/bin/startinnfeed # dont know how much this breaks INN
+chmod u-s /usr/sbin/usernetctl #allow a user to manipulate a network interface if permitted
+chmod u-s /usr/sbin/userhelper #A helper interface to pam
+chmod u-s /bin/mount # probably only breaks automounter, etc.
+chmod u-s /bin/umount # probably only breaks automounter, etc.
+
+un suid a bunch of stuff I'm not sure about:
+chmod u-s /usr/bin/suidperl #-rws--x--x    2 root     root
+chmod u-s /usr/bin/sperl5.6.0 #-rws--x--x 2 root     root
+chmod u-s /usr/bin/gpasswd # -rwsr-xr-x    1 root     root
+chmod u-s /usr/sbin/sendmail #-r-sr-xr-x    1 root     root
+chmod u-s /sbin/pwdb_chkpwd #-r-sr-xr-x    1 root     root
+chmod u-s /sbin/unix_chkpwd #-r-sr-xr-x    1 root     root
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,480 @@
+
+
+#----------------------------------------------------------------------------
+
+Hard drives:
+
+http://www.www.coker.com.au/bonnie++/
+bonnie++ results
+Bonnie++ is a hard drive benchmark that tests the writing and reading
+from both a single large file (such as that of a database) and many
+small files (like a proxy, or mail program). It is useful for simulating
+the performance of such applications.
+
+hdparm:
+Uncached is the buffered speed of the disk, without the use
+of the operating system cache. Cached results test the perform
+of the RAM and CPU more than they test the drive itself.
+
+write cache:
+Get hdparm v4.6 or newer, run hdparm -I (as root) and look if the write
+cache is on. Use hdparm -W0 to turn it off.
+
+(Probably ships with write cache
+enabled as all ATA drives do to cheat in benchmarks and Winbloze Defrag.)
+
+DMA:
+hdparm -d 0 /dev/hdb  (DMA off)
+
+bonnie++ http://www.coker.com.au/bonnie++/
+postmark http://www.netapp.com/tech_library/3022.html
+mongo http://www.namesys.com/benchmarks/mongo/mongo_readme.html
+
+papers:
+http://www.newsforge.com/article.pl?sid=02/02/18/1036243
+
+http://www.iozone.org/
+#really nice, has linux rpm and windows version
+http://www.iozone.org/src/current/iozone-3-217.i386.rpm
+#read and write performance for various size files
+
+#how  fast  the  drive  can  sustain sequential data reads
+hdparm -t /dev/hda
+#cache reads->essentially an indication of the throughput of
+#  the processor, cache, and memory
+hdparm -T /dev/hda
+
+notes:
+#using hdparm -t /dev/hda
+OLD SYSTEMS:high-end IDE 15-20 MB/s 7200RPM
+OLD SYSTEMS:             5-10 MB/s 5400ROM
+OLD SYSTEMS:10K cheetah 26/30/28
+
+hdparm -t /dev/hda;hdparm -T /dev/hda
+2004 P4 cheap PATA 7200rpm 80GB drive: 55.81 MB/sec,566.00 MB/sec
+Celeron 400 7200rpm 30GB: 2.37 MB/sec; 25.05 MB/sec
+PentiumPro300 proliant 9GB 7200 ultrawide scsi (40MB/s): 14.56, 157.95
+PentiumPro300 proliant raid0 across 4 UWscsi: 32.76, 153.56
+
+
+
+#----------------------------------------------------------------------------
+
+Cache hits/misses:
+
+http://www.cs.wisc.edu/~larus/warts.html
+
+
+papers:
+http://suif.stanford.edu/papers/mowry92/subsection3_1_1.html
+http://www.uwsg.iu.edu/hypermail/linux/kernel/9709.2/0356.html
+
+http://gatekeeper.dec.com/pub/DEC/SRC/technical-notes/SRC-1997-016a-html/examples.html
+http://nscp.upenn.edu/parallel/groups/selhpc/crisis/discussion/41.html
+
+
+#----------------------------------------------------------------------------
+
+Database:
+
+http://osdb.sourceforge.net/index.php?page=make
+
+
+notes:
+http://www.ixora.com.au/tips/creation/block_size.htm
+http://www.ixora.com.au/tips/avoid_buffered_io.htm
+
+#----------------------------------------------------------------------------
+About: libSIMD is a mathematical library utilising SIMD features of common processors to accelerate many commonly-used
+  algorithms where compilers fear to tread. 
+
+VERY new
+#----------------------------------------------------------------------------
+
+kick ass place compactflash-IDE (CF-IDE) and POST boards
+
+http://www.pcengines.com/testordr.htm
+
+papers:
+http://www.sandisk.com/tech/oem_design/cf_dc.asp
+
+#----------------------------------------------------------------------------
+
+Network:
+Lcrzoex is a toolbox for network administrators and network hackers which contains over 200 utilities to test an
+  Ethernet/IP network.
+
+#--
+network monitoring/bandwidth monitoring
+#--
+ConnMon
+Connection Monitor is a connection and bandwidth monitoring program
+http://www.student.lu.se/~nbi98oli/connmon.html
+The transfer rates display requires a Linux 2.4 kernel with Netfilter
+connection tracking facilities, with a small (included) patch applied.
+
+#--
+IPTraf
+IP Network Monitoring Software
+http://iptraf.seul.org/
+tar xzvf iptraf*tar.gz && cd iptraf-*/
+./Setup  #as root to install in /usr/local/bin, as normal to leave in $PWD/src
+
+#--
+ipband
+pcap-based traffic monitor
+http://ipband.sourceforge.net/
+tar xzvf ipband-*tgz && cd ipband-*/
+make
+
+ipband is a pcap based IP traffic monitor. It listens to a
+network interface in promiscuous mode, tallies per-subnet
+traffic and bandwidth usage and starts detailed logging if
+specified threshold for the specific subnet is exceeded.
+#--
+nstats
+http://trash.net/~reeler/nstats/
+tar xzvf nstats-*.tar.gz && cd nstats-*/
+
+components:
+bmon,cmon,nstats/nmon,imon
+#--
+simple script + calculator :)
+date
+echo '#RECIEVE  TRANSMIT bytes on eth0'
+cat /proc/net/dev | grep eth0 | awk -F":" '{print $2}' | awk '{print $1 "    " $9}'
+date
+#--
+
+#packet/byte accounting:
+http://savannah.nongnu.org/projects/ulog-acctd/
+
+cd src
+make
+cp ulog-acctd /usr/local/bin/
+
+cd doc
+make
+cp ulog-acctd.8 /usr/local/man/man8/
+
+ulog-acctd only records packets routed - not useful for promiscuous mode accounting
+#--
+pmacct (Promiscuous mode IP Accounting package)
+http://www.ba.cnr.it/~paolo/pmacct/
+
+./configure && make
+make install
+
+pmacctd -h
+pmacct -h
+
+#client/server arch, pmacctd, pmacct - pmacctd uses in-mem tableby default
+
+less EXAMPLES
+
+Default: pmacctd aggregates on src IP, so pmacct -s just shows bytes per src IP,
+  zeros for all other data
+
+#variables available src_mac|dst_mac|src_host|dst_host|sum|src_port|dst_port|proto
+
+#only count packets with source address in local class C
+pmacctd -c dst_port src net 198.168.0.0/24
+
+
+#NETHOGS
+#http://nethogs.sourceforge.net/
+#groups bandwidth by process
+#shows realtime per process bandwidth usage
+
+#----------------------------------------------------------------------------
+
+for solaris...
+vmstat 5, iostat -xnP 30, and mpstat 5
+http://www.onlamp.com/pub/a/onlamp/2002/02/21/sysperf.html
+
+linux:
+vmstat 5,iostat -d 30,mpstat 5,netstat -i -c
+
+vmstat's BI column (and bo) in the IO section is typically kB/sec
+
+
+#----------------------------------------------------------------------------
+
+MIPS (Million Instructions Per Second) and FLOPS (FLoating point Operations Per Second)
+
+both inside cache and outside
+
+
+notes:
+http://www.linuxdoc.org/HOWTO/mini/BogoMips.html
+
+
+memory bandwidth:
+The benchmark used for memory bandwidth was "stream". This is probably the most commonly used memory benchmark on UNIX.
+
+EX.
+ Memory: 466 MB/s
+ The first parameter is the CPU clock speed (1008 MHz in this case)
+The second parameter is the number of iterations performed
+
+# stream 1008 100
+-------------------------------------------------------------
+This system uses 8 bytes per DOUBLE PRECISION word.
+-------------------------------------------------------------
+Array size = 999936, Offset = 0
+Total memory required = 24.9 MB.
+Each test is run 100 times, but only
+the *best* time for each is used.
+-------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Function Rate (MB/s) RMS time Min time Max time
+Copy: 412.9884 0.0397 0.0387 0.0415
+Scale: 412.3518 0.0397 0.0388 0.0413
+Add: 520.2452 0.0473 0.0461 0.0516
+Triad: 520.8368 0.0471 0.0461 0.0497
+
+
+One of the most common benchmark tests used to measure FLOPS is called Linpack.
+ SPEC is pay-shit
+ Many experts feel that FLOPS is not a relevant measurement because it fails
+to take into account factors such as the condition under which the microprocessor
+is running (e.g., heavy or light loads) and which exact operations are included as
+floating-point operations. For this reason, a consortium of vendors created the Standard
+Performance Evaluation Corporation (SPEC), which provides more meaningful benchmark values.
+SPEC95, results in two sets of measurements, one for integer operations (SPECint95) and one
+for floating-point operations (SPECfp95). The SPEC95 benchmark tests are also called CPU95 tests
+
+#----------
+The most recent program version (flops.c) and latest results (flops_1.tbl, flops_2.tbl,
+flops_3.tbl, and flops_4.tbl) are available via anonymous ftp from 'ftp.nosc.mil' in directory 'pub/aburto'.
+The ftp.nosc.mil IP address is: 128.49.192.51
+
+I'd appreciate any new results of any kind (new machines, compilers, compiler options).
+I will also periodically post results to 'comp.benchmarks'. Send results to: aburto@nosc.mil. Thank you very much ...
+
+*************************************************************************** FLOPS C Program (double precision) Version 2.0, 18 Dec 1992
+
+MFLOPS(2) Weightings: FADD 38.2%, FSUB 9.2%, FMUL 43.4%, FDIV 9.2%. - The code for MFLOPS(2) is fully vectorizable. The percentage - of FDIV's however is somewhat on the 'high' side. - - -
+
+Results as of 26 Sep 1997:
+#----------
+
+
+#----------------------------------------------------------------------------
+
+LINPACK
+
+http://www.top500.org/lists/linpack.html
+
+#----------------------------------------------------------------------------
+I also think this would be a more interesting set of metrics than just
+Parallel Linpack.  The NAS Parallel Benchmarks are a start, but
+they're mainly CFD applications.  We (the Beowulf community) need some
+codes from other disciplines as well.
+
+NPB test is O.K.
+
+> Here are a list of open source benchmarks which I can see being of
+> interest:
+>
+> Parallel Linpack (NCPUS, Rmax, Nmax)
+> NPB MG Class A (NCPUS, Total MFLOPS for ~5 values of NCPUS)
+> NPB FT Class A (NCPUS, Total MFLOPS for ~5 values of NCPUS)
+
+Of interest to you, or of interest to other people? I figure people's actual
+interests in benchmarks are broad enough that we might as well let people
+create new categories on the fly.
+
+Personally, I don't find the Class A NPB cases to be that interesting, and I
+can't live without mm5.
+
+> We're currently thinking maybe one
+> of the validation cases from MPQC (a GPLed parallel quantum chemistry
+> code) and a test case for QCDMPI (a GPLed parallel quantum
+> chromodynamics code).
+
+GPLed would be cool. If the codes are fairly easy to run, even better. mm5
+is kind of a pain to do the benchmark cases for.
+
+NPB class A *is* a bit small for the kinds of machines available now,
+maybe class B instead?  Class C is too big, IMHO.
+
+In my experience, something as parallel as pvmpov runs at an almost
+linear scale if properly tweaked.  Aggregate the number of clock cycles on
+the cluster, multiply by the otherwise idle % of CPU resources, and you
+should be able to predict the completion time within a few percent of
+perfect linear scaling.  Still, it's nice to see the numbers...
+
+The bottom line is that no one benchmark is representative of all
+aplications.  The NPBs are useful because they cover a few different
+types of algorithms and are small enough to understand.  There was a
+nice paper at Supercomputing '99 by Wong, et al, that analyzes the
+NPBs <www.sc99.org/sc99/proceedings/techpap.htm#per>
+
+I've seen some data to suggest that buffering in the network software
+and the NIC can also have a measurable effect.  For example,
+performance of the NPBs using MPI/CH_P4 on top of TCP is sensitive to
+the value of the P4_SOCKBUFSIZE environment variable.
+
+
+If you intend to have MPI level micro-benchmarks, then you should look
+at the code that the Argonne folks already have for producing useful
+MPI performance data. ("mpptest").
+
+They had a nice paper on this in the Euro PVM/MPI conference last
+year. ("Reproducible Measurements of MPI Performance Characteristics"
+William Gropp and Ewing Lusk in LNCS 1697 and probably on the web
+somewhere). 
+
+The code is available from 
+
+http://www.mcs.anl.gov/mpi/mpich/perftest
+or
+ftp://ftp.mcs.anl.gov/pub/mpi/misc/perftest.tar.gz
+
+
+
+#----------------------------------------------------------------------------
+lbs.sourceforge.net (linux benchmarking suite)
+
+
+#----------------------------------------------------------------------------
+
+whetstone:
+gcc -o whetstoneO0 -lm -DUNIX whets.c
+gcc -O3 -o whetstoneO3 -lm -DUNIX whets.c
+
+dhrystone:
+make
+Please give the number of runs through the benchmark: 10000000 (min runs on Celeron400)
+
+#----------------------------------------------------------------------------
+nbench
+http://www.tux.org/~mayer/linux/nbench-byte-2.1.tar.gz
+
+#----------------------------------------------------------------------------
+database overview:
+http://freshmeat.net/articles/view/305/sqldbms.html
+really this guys list
+ http://www.cbbrowne.com/info/rdbms.html
+#----------------------------------------------------------------------------
+Windows benchmarks (CPU,memory bandwidth, disk)
+
+http://clibench.daemonware.ch/index.php?seite=download
+	clibench mk III smp 0.7.15 (win32 i386)
+	glibench 0.2.5 (linux/gnome)
+	clibench mk II (win32 i386 and axp)
+	
+#----------------------------------------------------------------------------
+
+compilers:
+intel (icc)
+
+article on icc 6.0/ gcc 3.0.4
+http://www.coyotegulch.com/reviews/intel_comp/intel_gcc_bench2.html
+revised for 3.1 (has link to download his benchmark tools)
+
+ICC defaults to fast-math
+"fast-math" (shorthand for "not-quite-right-math")
+
+They missed the most important part: profile feedback optimizations.
+This is one part where Intel C really gets way and beyond the GCC compiler. Compile first with -prof_genx, run program, recompile with -prof_use.
+The speedups are _big_. Intel C will totally kick GCC's butt with this option enabled.
+GCC can also do profiling feedback optimizations, but it is not nearly as good.
+
+#----------------------------------------------------------------------------
+
+CPUBURN IN PROGS - just burns in cpu_s
+
+http://users.ev1.net/~redelm/
+http://users.bigpond.net.au/cpuburn/
+
+#----------------------------------------------------------------------------
+AIM benchmark (now GPL):
+http://caldera.com/developers/community/contrib/aim.html
+#----------------------------------------------------------------------------
+
+PASSWORDS:
+
+john the ripper:
+http://www.openwall.com/john/
+http://www.openwall.com/john/dl/john-1.6.tar.gz
+cd src/
+make
+make linux-x86-mmx-elf
+mkdir /usr/local/johntheripper
+chmod 0700 /usr/local/johntheripper
+cp ../run/* /usr/local/johntheripper/
+
+cd /usr/local/johntheripper
+#combine passwd and shadow files
+./unshadow /etc/passwd /etc/shadow > /usr/local/johntheripper/passwd.1
+./john passwd.1 
+
+#add wordlists
+ftp://ftp.ox.ac.uk/pub/wordlists/
+ftp://ftp.ox.ac.uk/pub/wordlists/dictionaries/words-english.gz
+ftp://ftp.ox.ac.uk/pub/wordlists/names/crl-names.gz
+zcat crl-names.gz >> password.lst 
+zcat words-english.gz >> password.lst 
+
+
+
+#----------------------------------------------------------------------------
+
+CPU loaders:
+
+#--
+for cpu in 1 2 3 4; do
+   ( while true; do true; done ) &
+done
+
+#If you want to exercise the disks a bit too, replace the middle line with:
+#( while true; do find / -type f -exec cp {} /dev/null \; ; done ) &
+#--
+#!/bin/sh
+for x in /sys/devices/system/cpu/*; do
+(while true ; do openssl speed; done) &
+done
+wait
+#--
+cat /dev/urandom | gzip > /dev/null
+#--
+Prime95:
+http://www.mersenne.org/freesoft.htm
+#--
+
+#----------------------------------------------------------------------------
+
+Temperatures:
+http://www.pcug.org.au/~boesen/temperature_software/temperature_software.htm
+#hddtemp listed here so grep will get this :) this has sample numbers
+
+Pentium 4 series for instance, Intel's stated maximum operating temperatures are between 66 and 78 C (depending on a number of attributes:  the CPU's core frequency, the front side bus frequency and the cache size). Maximum Case Temperature (oC) 69-73.
+
+I would be concerned if a CPU's temperature exceeded 60 C when the CPU is under heavy load and the ambient temperature is 27 C or less.
+
+Hard drive manufacturers provide information about the claimed minimum and maximum operating temperature for their hard drives.  These maxima vary depending on the brand and model of the drive.  Once again, if you really want to know what the maximum operating temperature is for a hard drive, you will need to do a Google search.  For example:
+
+    * for 7,200 rpm Maxtor Diamond Max 10 drives, the manufacturer's stated maximum operating temperature is 60 C. 
+    * for 7,200 rpm Maxtor Diamond Max 9 drives, the maximum is 55 C.
+    * for the Seagate ST340014A Barracuda drive the maximum is 69 C
+    * for the Seagate ST3200822A and ST3200021A (PLUS) models the maximum is 64 C.  
+
+I suspect that the setting of maxima may be a little arbitrary and that a manufacturer would be unable to provide a really scientific basis for the temperature stated.  However, what seems to be generally agreed is that the service life and reliability of a hard drive will be affected by the temperature of the drive, irrespective of whatever the claimed maximum operating temperature is.  My own rules of thumb are: 
+
+   1. keep the drive temperature as low as possible
+   2. in any case, be concerned if the drive temperature exceeds 50 C. 
+
+Sample numbers from this guys comp:
+    *  blue 39 = internal hard drive (this drive has a 120 mm front case fan ventilating it)
+    * blue 36 = hard drive that I have in a removable caddy (this is always the cooler of the two drives - a testament to the excellent design implemented in the Laser brand fan-ventilated caddy)
+    * red 45 = CPU (this is a 2.8 Ghz Pentium 4 (2.80c) with the CPU cooled with a Zalman CNPS 7000 Al-Cu CPU heatsink with its fan slowed to run at 2,200 rpm)
+    * black 39 = motherboard (Asus P4P800-E Deluxe)
+
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------

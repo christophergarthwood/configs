@@ -1,0 +1,140 @@
+
+#----------------------------------------------------------
+files that have to be changed:
+
+/etc/mtab  (or specifically allow writing to it)
+
+/etc/rc.local
+   add the seal command (lidsadm -I -- ) at end
+
+/etc/rc.sysinit
+   changed all mount to mount -n (since I made /etc/mount a link to /proc/mounts)
+   has hwclock in it
+   uses / to record some temp variables (rm -f /fastboot /fsckoptions /forcefsck /.autofsck /halt /poweroff)
+
+/etc/init.d/halt
+   has hwclock in it
+
+
+#----------------------------------------------------------
+MAJOR DIRS
+/lost+found		DENY OR READ
+/boot			DENY OR READ
+/dev			WRITE
+/proc			WRITE
+/var			WRITE
+/tmp			WRITE
+/etc			some WRITE
+/usr			READ (or break out to /usr/local ...)
+/bin			READ
+/home			WRITE
+/initrd	
+/lib			READ
+/mnt			(??) WRITE
+/opt			READ OR WRITE (depending on software installed)
+/root			WRITE (MAJOR hassle with read)
+/sbin			READ
+/misc
+/man			READ
+/xtra
+/
+
+SO
+# TRY 1
+/sbin/lidsconf -L  (lists all current)
+/sbin/lidsconf -Z  (flushes all current)
+/sbin/lidsconf -A -o /boot -j DENY   (nothing can see/alter /boot - DENYd PARTITIONS CANT UMOUNT CLEANLY)
+/sbin/lidsconf -A -o /lib -j READ    (r-o on /lib)
+/sbin/lidsconf -A -o /bin -j READ  
+/sbin/lidsconf -A -o /sbin -j READ 
+
+
+/sbin/lidsconf -L 
+
+# TRY 2
+#flush and allow write to / (boot scripts, ext3, quotas write .files to /)
+/sbin/lidsconf -Z 
+/sbin/lidsconf -A -o / -j WRITE  
+
+#r-o system dirs
+/sbin/lidsconf -A -o /boot -j READ  
+/sbin/lidsconf -A -o /bin -j READ  
+/sbin/lidsconf -A -o /sbin -j READ  
+/sbin/lidsconf -A -o /lib -j READ  
+/sbin/lidsconf -A -o /man -j READ  
+/sbin/lidsconf -A -o /usr -j READ  
+
+#rw on dirs that need it
+/sbin/lidsconf -A -o /dev -j WRITE  
+/sbin/lidsconf -A -o /proc -j WRITE  
+/sbin/lidsconf -A -o /tmp -j WRITE  
+/sbin/lidsconf -A -o /home -j WRITE  
+
+#allow root to actually use account, but protect login scripts
+/sbin/lidsconf -A -o /root -j WRITE  
+/sbin/lidsconf -A -o /root/.bashrc -j READ  
+/sbin/lidsconf -A -o /root/.bash_profile -j READ  
+/sbin/lidsconf -A -o /root/.bash_logout -j READ  
+/sbin/lidsconf -A -o /root/.cshrc -j READ  
+/sbin/lidsconf -A -o /root/.tcshrc -j READ  
+
+#protect /etc, but then allow write to necessary files
+/sbin/lidsconf -A -o /etc -j READ
+/sbin/lidsconf -A -o /etc/dhcpcd/ -j WRITE
+/sbin/lidsconf -A -o /etc/mtab -j WRITE
+/sbin/lidsconf -A -o /etc/passwd -j WRITE
+/sbin/lidsconf -A -o /etc/shadow -j WRITE
+/sbin/lidsconf -A -o /etc/resolv.conf -j WRITE
+/sbin/lidsconf -A -o /etc/resolv.conf.bak -j WRITE
+/sbin/lidsconf -A -o /etc/resolv.conf.save -j WRITE
+/sbin/lidsconf -A -o /etc/ioctl.save -j WRITE
+/sbin/lidsconf -A -o /etc/ppp/resolv.conf -j WRITE
+/sbin/lidsconf -A -s /bin/mount -o /etc -j WRITE
+/sbin/lidsconf -A -s /usr/sbin/adduser -o /etc -j WRITE
+/sbin/lidsconf -A -s /usr/sbin/userdel -o /etc -j WRITE
+/sbin/lidsconf -A -s /usr/bin/passwd -o /etc -j WRITE
+/sbin/lidsconf -A -o /etc/sysconfig/iptables -j WRITE
+/sbin/lidsconf -A -o /etc/adjtime -j WRITE
+
+#allow write on /var, but then protect necessary files/dirs
+/sbin/lidsconf -A -o /var -j WRITE  
+/sbin/lidsconf -A -o /var/www -j READ    #tux web files
+
+#protext odd stuff 
+/sbin/lidsconf -A -o /xtra/home/bob -j READ    #bob is the proto-user...
+
+#dont need since we allow write to /
+#/sbin/lidsconf -A -s /sbin/fsck.ext2 -o / -j WRITE  
+#/sbin/lidsconf -A -s /etc/rc.sysinit -o / -j WRITE  
+#/sbin/lidsconf -A -o /aquota.user -j WRITE  
+#/sbin/lidsconf -A -o /aquota.group -j WRITE  
+
+/sbin/lidsconf -L 
+
+/sbin/lidsconf -U 
+/sbin/lidsadm -S -- +RELOAD_CONF
+
+
+#----------------------------------------------------------
+BIG COMMANDS
+/sbin/lidsconf -h
+/sbin/lidsadm -h
+
+/sbin/lidsadm -S -- -LIDS_GLOBAL  LIDS OFF GLOBALLY
+/sbin/lidsadm -S -- -LIDS_LOCAL   LIDS OFF FOR THIS SHELL
+  (you can check it being off by /sbin/lidsconf -L
+      if you get "no such file" LIDS is still on)
+
+IF IN KERNEL CONFIG YOU DID RESTRICT SWITCHING:
+   Linux console means a virtual console
+   Serial means just that
+   PTY means (basically) xterm
+
+/sbin/lidsconf -U   (updates the inode list)
+/sbin/lidsadm -S -- +RELOAD_CONF  (reloads conf - not done automatically)
+
+
+#----------------------------------------------------------
+
+
+

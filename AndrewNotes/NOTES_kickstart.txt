@@ -1,0 +1,99 @@
+
+#-------------------------
+boot floppy must be for that version
+(it checks and reboots if not)
+
+use bootnet.img floppy image
+  delete syslinux.png to make space
+#export PATHTOFLOPPY=~n9n/nfs_magrathea_disk1/www/null/images/
+#dd if=$PATHTOFLOPPY/bootnet.img of=/dev/fd0 bs=1k
+#mount /mnt/floppy
+#rm /mnt/floppy/syslinux.png
+
+#if you don't have a card with bog standard drivers you need this:
+#dd if=$PATHTOFLOPPY/drvnet.img of=/dev/fd0 bs=1k
+#and ks will drop down into interactive
+
+ks.cfg MUST be unix file (dos cr/lf screws it up,
+and the errors are not obvious)
+
+TAKE OUT floppy after kernel boots and
+ dhcp client gets info (blue screen) -
+ it will continually reboot and install
+ otherwise
+
+#-------------------------
+vi /mnt/floppy/syslinux.cfg
+label linux
+  kernel vmlinuz
+  append ks=floppy initrd=initrd.img text lang= devfs=nomount ramdisk_size=9216
+
+#-------------------------
+vi /mnt/floppy/ks.cfg
+lang en_US
+langsupport zh_CN.GB2312 zh_TW.Big5 cs_CZ da_DK en_US fr_FR de_DE hu_HU is_IS it_IT ja_JP.eucJP ko_KR.eucKR no_NO pt_PT ro_RO ru_RU.k0I8r sr_YU sk_SK sl_SI es_ES sv_SE tr_TR uk_UA --default en_US
+keyboard us
+mouse genericps/2
+timezone --utc America/Chicago
+
+rootpw --iscrypted $1$MiihWyeahright...lol3FKvMWTo6BBc.
+
+reboot
+text
+bootloader
+install
+
+url --url http://192.168.0.99/null
+
+zerombr yes
+clearpart --all --initlabel
+part / --fstype ext3 --size 5000 --grow
+part swap --recommended
+
+network --bootproto dhcp
+
+auth  --useshadow  --enablemd5
+
+#firewall --high
+firewall --disabled
+
+xconfig  --depth 16 --resolution 1024x768 --defaultdesktop=GNOME --startxonboot
+
+%packages --resolvedeps
+@Base
+@Workstation Common
+@GNOME
+@KDE
+@Software Development
+@Kernel Development
+@Games and Entertainment
+@X Based Games and Entertainment
+@GNOME Games and Entertainment
+wine
+wine-devel
+
+#or
+#@Everything
+
+%post
+echo "Kickstart check" > /var/kickstart.1
+echo `date` > /var/kickstart.2
+mkdir /etc/skel/.ssh
+chmod 0700 /etc/skel/.ssh/
+useradd n9n
+chfn -f "N9N" n9n
+usermod -p '$1$my.real.password.is.password:)q/' n9n
+mkdir /home/n9n/nfs_magrathea
+chown n9n:n9n /home/n9n/nfs_magrathea
+echo "192.168.0.99:/home/n9n /home/n9n/nfs_magrathea nfs defaults,intr 0 0" >> /etc/fstab
+
+echo `date` > /var/kickstart.3
+
+#-------------------------
+#-------------------------
+#-------------------------
+#-------------------------
+#-------------------------
+#-------------------------
+#-------------------------
+

@@ -1,0 +1,227 @@
+
+#---------------------------------------------
+SEIGE: (webserver stress tester)
+
+http://www.joedog.org/siege/index.shtml
+ftp://ftp.armstrong.com/pub/siege/siege-latest.tar.gz
+tar xzvf siege-latest.tar.gz && cd ./siege-*/
+
+./configure    # --with-ssl
+make
+make install
+make clean
+
+man siege
+man siege.config
+man layingsiege
+man urls_txt
+man bombardment
+man siege2csv
+
+#---------------------------------------------
+
+#FILE OF URLs
+vi ./url.txt #or use scout to populate this
+#--
+http://www.dentarthurdent.com
+#--
+
+#CONFIG FILE
+siege.config   #creates $HOME/.siegerc
+vi $HOME/.siegerc
+#--
+logfile = ./siege.log
+file = ./url.txt
+#--
+
+#ACTUAL RUN
+siege -c 1 -i -t 1m -f ./url.txt
+#-c number of concurrent users
+#-i use url.txt in random order
+#-t lay siege for Xm (or Xs, Xh)
+
+#look for failures right after the word done. ,
+# before the actual statistics
+
+#---------------------------------------------
+
+If you mistype a url, you get a cryptic message
+ about not being able to open sockets
+
+Make sure to look how much log space you have -
+ ON YOUR WEBSERVER. seige fills up logs - quick.
+
+#---------------------------------------------
+
+SCOUT
+ (Scout surveys a webserver and prepares
+ the urls.txt file for a siege.)
+ftp://ftp.armstrong.com/pub/scout/scout-latest.tar.gz
+tar xzvf scout-latest.tar.gz && cd ./scout-*/
+./configure    # --with-ssl
+make
+make install
+make clean
+
+man scout
+
+#appends/creates ./url.txt 
+#  (may take a few minutes, spitting out RETURNED!! is ok)
+scout -f ./url.txt -p www.dentarthurdent.com
+
+#---------------------------------------------
+
+Relevant parts from siege docs:
+
+It is important to note that HUMAN internet users take time
+to digest the data which comes back to them. Siege users do not.
+In practice I've found that 400 simultaneous siege users
+translates to at least five times that amount in real internet sessions.
+#I assume he means with the default 1 second sleep per seige user
+
+Transactions is the number of server hits. In the example, 25
+simulated users [ -c25 ] each hit the server with 10 repetitions
+[ -r10 ], a total of 250 transactions.
+
+Elapsed time is the duration of the entire siege test. This is
+measured from the time the user invokes siege until the last simulated
+user completes its transactions. 
+
+Data transferred is the sum of data transferred to every siege
+simulated user. It includes the header information as well as
+content. Because it includes header information, the number
+reported by siege will be larger then the number reported by the
+server. In internet mode, which hits random URLs in a
+configuration file, this number is expected to vary from run to run.
+
+Response time is the average time it took to respond to each simulated user's requests.
+
+Transaction rate is the average number of transactions the server was
+able to handle per second, in a nutshell: transactions divided by elapsed time.
+
+Throughput is the average number of bytes transferred every second
+from the server to all the simulated users.
+
+Concurrency is average number of simultaneous connections, a number
+which rises as server performance decreases.
+
+Successful transactions is the number of times the server returned a code less
+then 400. Accordingly, redirects are considered successful transactions.
+
+If you are handling 100 hits every five seconds at peak hours, then use these
+parameters to invoke siege: -c100 -d5. For 50 hits a second you would run
+it like this: -c50 -d1
+
+Current anecdotal evidence for time based testing indicates that if your
+concurrency reaches half the number of hits, you've exhausted that
+server's usable resources. Here is an example of an exhausted server: 
+      Transactions:                     16 hits
+      Elapsed time:                  60.04 secs
+      Data transferred:              58928 bytes
+      Response time:                 34.82 secs
+      Transaction rate:               0.27 trans/sec
+      Throughput:                   981.48 bytes/sec
+      Concurrency:                    9.28
+      Status code 200:                  16 
+NOTE: The concurrency is greater then half of the number of transactions.
+
+#---------------------------------------------
+
+I *think* failed transactions come from bad urls in url.txt:
+Failed transactions:               0
+I also think failed transactions lead to client socket failure much,much faster...
+
+To see quickly what a client can handle:
+siege -c 35000 -i -t 1m -f ./url.txt | grep -i error -
+any number of user that it can handle will not have errors
+
+Using an Athlon 950 with ~400M ram as a siege machine on my site with files
+ from 300 bytes to 1.1MB: I can get 200 concurrent users before
+"Error: SIEGEsocket_write: ERROR: Connection refused"
+siege -c 200 -i -t 1m -f ./url.txt | grep -i error -
+
+
+#---------------------------------------------
+
+Making a static siege (for some reason I had trouble...):
+RH beta8.0:
+chmod go-rx /lib/i686/
+chmod go-rx /lib/libpthread-0.9.so
+
+CC="gcc -static -static-libgcc" ./configure --disable-nls
+make
+rm ./src/siege 
+cd src/
+
+gcc -static -static-libgcc -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -o siege \
+base64.o client.o cookie.o cfg.o getopt.o version.o getopt1.o handler.o \
+http.o init.o load.o log.o main.o sock.o ssl.o timer.o url.o \
+util.o  -lpthread ../lib/joedog/.libs/libjoedog.a
+
+./siege
+cp siege ~/siege-static
+ls -la ~/siege-static : 669674
+
+chmod go+rx /lib/libpthread-0.9.so
+chmod go+rx /lib/i686/
+
+#---------------------------------------------
+
+ALSO SEE:
+
+#--
+httperf:
+http://www.hpl.hp.com/personal/David_Mosberger/httperf.html
+ftp://ftp.hpl.hp.com/pub/httperf/httperf-0.8.tar.gz
+ftp://ftp.hpl.hp.com/pub/httperf/httperf-paper-html.tar.gz
+
+./configure && make && make install
+httperf --server 192.168.0.235 --uri /mysite/random_number.asp \
+ --num-conns 2000 --timeout 1
+
+#use --rate and keep uping the rate until the server cannot keep up
+httperf --server 192.168.0.235 --uri /mysite/random_number.asp \
+  --num-conns 200 --rate 5 --timeout 1
+Connection rate: 5.0 conn/s (200.3 ms/conn, <=7 concurrent connections)
+
+httperf --server 192.168.0.235 --uri /mysite/random_number.asp \
+  --num-conns 200 --rate 25 --timeout 1
+Connection rate: 22.3 conn/s (44.8 ms/conn, <=31 concurrent connections)
+
+#--
+ptester:
+ftp://ftp.lysator.liu.se/pub/unix/ptester/ptester-1.2.tar.gz
+
+make gcc-linux
+./ptester -t20 -h192.168.0.235 -r50 -k20 /mysite/random_numberMEM.asp
+#--
+hammerhead:
+http://hammerhead.sourceforge.net/
+
+#---------------------------------------------
+
+Very rough:
+It appears that with a 1Ghz intel machine with 300MB ram, you can
+simulate about 200 users/sec with the above tools.
+
+Some slashdot loads to gauge by:
+http://ssadler.phy.bnl.gov/adler/SDE/SlashDotEffect.html
+250 hits/minute for less than 8 hours (4/sec)
+http://www.forbes.com/asap/2000/0221/043.html
+10 hits/second for 7 hours
+http://slash.dotat.org/~newton/installpics/slashdot-effect.html
+2200 hits/hour for 6 hours (0.6/sec)
+http://www.lowendmac.com/musings/01/1220.html
+5000 hits/hour for 8 hour; 61,257 pages served in a single day;
+  5,355 pages served in a single hour (1.3/sec)
+http://www.hardwareanalysis.com/content/article/1540/
+3388 anonymous users currently online. Current bandwidth usage: 1158.40 kbit/s
+
+#---------------------------------------------
+also check out:
+
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+

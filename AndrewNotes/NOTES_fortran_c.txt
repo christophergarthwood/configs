@@ -1,0 +1,1466 @@
+
+#-----------------------------------------------------------------------
+
+http://www.starlink.rl.ac.uk/star/docs/sun209.htx/sun209.html
+
+#-----------------------------------------------------------------------
+
+FORTRAN Data Types in C
+Declarations for FORTRAN data types and the equivalent declarations in C are as follows:
+
+FORTRAN              C
+LOGICAL*1 l     unsigned char l;
+LOGICAL*2 m     unsigned short m;
+LOGICAL*4 n     unsigned long n;
+
+CHARACTER*n c   char c[n];
+
+INTEGER*1 i     char i;
+INTEGER*2 j     short j;
+INTEGER*4 k     int k; 	
+                long k;
+
+REAL*4 a        float a;
+REAL*8 d        double d;
+
+COMPLEX*8 c     struct complx {
+                     float x;
+                     float y;
+                };
+                struct complx c;
+
+COMPLEX*16 d    struct dcomp {
+                     double x;
+                     double y;
+                };
+                struct dcomp d;
+
+RECORD ...      struct ...
+
+When calling a C function from FORTRAN with a reference parameter, the C parameters are declared as pointers to the data type and the FORTRAN parameters are passed normally:
+
+PROGRAM convert_to_radians
+WRITE (*,*) 'Enter degrees:'
+READ (*,*) c
+CALL c_rad (c)
+WRITE (*,*) 'Equal to ',c,' radians'
+END
+
+
+void c_rad(c)
+float *c;
+{ 
+      float deg_to_rad = 3.14159/180.0; 
+      *c = *c * deg_to_rad;
+}
+
+Value Parameters
+Absoft FORTRAN 77 provides the intrinsic function [%]val for passing value parameters. Although there is generally no need to pass a value directly to a FORTRAN procedure, these functions may be used to pass a value to a C function:
+
+WRITE (*,*) 'Enter an integer:'
+READ (*,*) i
+CALL c_fun(VAL(i))
+END
+
+void c_fun(i)
+int i;
+{ 
+      printf ("%d is ", i); 
+      if (i % 2 == 0) 
+            printf ("even.\n"); 
+      else 
+            printf ("odd.\n");
+}
+
+
+The value of i will be passed directly to c_fun, and will be left unaltered upon return.
+
+ Value parameters can be passed from C to FORTRAN with use of the VALUE statement. The arguments which are passed by value are simply declared as VALUE.
+
+void c_fun()
+{
+void fortran_sub();
+int i;
+
+     fortran_sub(i);
+}
+
+
+
+SUBROUTINE fortran_sub(i)
+VALUE i
+...
+END
+
+
+Note that C will pass all floating point data as double precision by default.
+Indirection (the LOC Function)
+The [%]loc function is provided to give one level of indirection. The argument to [%]loc must be a scalar name, an array name or the name of an external procedure. The function returns the address of its argument as a 32-bit integer.
+
+This example illustrates the use of loc to pass an array. Note that this is a one-dimensional array. Due to the different ordering used by C and FORTRAN for arrays, multi-dimensional arrays cannot be freely passed and indexed between the languages:
+
+INTEGER*4 ia(10)
+
+CALL c_fun (LOC(ia))
+WRITE(*,*) ia
+END
+
+void c_fun(i)
+int *i[10];
+{
+int j; 
+
+      for(j=0; j<10; j++) 
+            (*i)[j] = j;
+}
+
+
+Function Results
+In order to obtain function results in FORTRAN from C language functions and vice versa, the functions must be typed equivalently in both languages: either INTEGER, REAL, DOUBLE PRECISION, RECORD, or POINTER. All other data types must be returned in reference parameters. The following are examples of the passing of function results between FORTRAN and C.
+
+A Call to C from FORTRAN
+
+PROGRAM callc
+INTEGER*4 Cmax, A, B
+
+WRITE (*,*) 'Enter two numbers:'
+READ (*,*) A, B
+WRITE (*,*) 'The largest of', A,' and', B,' is', Cmax(A,B)
+END
+int Cmax (x,y)
+int *x,*y;
+{
+       return( (*x >= *y) ? *x : *y );
+}
+
+
+A Call to FORTRAN from C
+
+main()
+{
+float qt_to_liters(), qt; 
+      printf ("Enter number of quarts:\n"); 
+      scanf ("%f",&qt); printf("%f quarts = %f liters.\n", qt, qt_to_liters(&qt));
+}
+
+REAL*4 FUNCTION qt_to_liters(q)
+REAL*4 q
+
+qt_to_liters = q * 0.9461
+END
+
+
+Passing Strings to C
+FORTRAN strings are a sequence of characters padded with blanks out to their full fixed length, while strings in C are a sequence or array of characters terminated by a null character. Therefore, when passing FORTRAN strings to C routines, eliminate the extra blanks and terminate them with a null character. The following FORTRAN expression will properly pass the FORTRAN string anystring to the C routine CPrint:
+
+PROGRAM cstringcall
+character*255 string
+string = 'Moscow on the Hudson'
+CALL CPrint(TRIM(string)//CHAR(0))
+END
+
+
+
+void CPrint (anystring)
+char *anystring[];
+{ 
+     printf ("%s\n",anystring);
+}
+
+
+This example will neatly output "Moscow on the Hudson". If the trim function was not used, the same string would be printed, but followed by 235 blanks. If the char(0) was omitted, C would print characters until a null character was encountered, whenever that might be.
+
+
+In Absoft FORTRAN, the -K option may be used to allow embedded escape sequences in strings. The sequence for a null "\0" may be used to pass string constants as argument:
+
+character*15 Fstring
+CALL CPrint("string constant\0") ! null terminated string
+
+Fstring = "string constant" ! blank padded string
+CALL CPrint(TRIM(Fstring)//"\0") ! append a null
+
+Calling FORTRAN Math Routines
+All of the FORTRAN intrinsic math functions which return values recognized by the C language can be called directly from C as long as the FORTRAN runtime library, NTF77.LIB, is linked to the application. All arguments are passed by value. The names of the functions which can be called are formed by taking the specific intrinsic function names in lower case and adding two underscores to the beginning. The following example calls the FORTRAN intrinsic function SIN directly from C:
+
+main()
+{
+float sin_of_a, a, __sin(); 
+
+      a = 3.1415926/6; 
+      sin_of_a = __sin(a);
+}
+
+
+Calling FORTRAN I/O Routines
+There are no restrictions on calling FORTRAN subroutines which perform I/O from C. The FORTRAN I/O library is completely re-entrant and requires no initialization. The only requirement is that all files opened in FORTRAN must be explicitly closed in FORTRAN before exiting to the system. FORTRAN unit numbers may not be used as C file descriptors and vice versa. Refer to Chapter 12, Input/Output and FORMAT Specification, for a description of I/O in Absoft FORTRAN 77.
+
+Naming Conventions
+Global names in FORTRAN include procedure names and COMMON block names, both of which are significant to 31 characters. All global names are case sensitive, meaning the compiler recognizes the difference between upper and lower case characters. Use of the -f option will fold global names to lower case, while the -N109 option will fold global names to upper case. All other symbols in FORTRAN are manipulated as addresses or offsets from local labels and are invisible to the linker.
+
+Procedure Names
+Names of functions and subroutines in FORTRAN programs will appear in the assembly language source output or object file records as they were typed in the source code with a period prefix character attached. Symbolic names in the C language are case sensitive, distinguishing between upper and lower case characters. To make FORTRAN code compatible with C, avoid using the -f or -N109 options when compiling the FORTRAN source code.
+
+Accessing COMMON Blocks from C
+COMMON block names are formed in Absoft FORTRAN 77 by adding the characters "_C" to the beginning of the name of the common block. COMMON block names are case sensitive unless either the -f or -N109 options are specified at compile-time. The elements of the COMMON block can be accessed from the C language by declaring an external structure using this name.
+
+For example:
+
+COMMON /comm/ a,b,c
+
+
+can be accessed in with the global declaration:
+
+extern struct {
+            float a;
+            float b;
+            float c;
+            } _Ccomm;
+
+
+Declaring C Structures In FORTRAN
+If there are equivalent data types in FORTRAN for all elements of a C structure, a RECORD can be declared in FORTRAN to match the structure in C:
+
+C                        FORTRAN
+
+struct str {              STRUCTURE /str/
+char c;                     CHARACTER c
+long l;                     INTEGER*4 l
+float f;                    REAL*4 f
+double d;                   REAL*8 d
+};                        END STRUCTURE
+struct str my_struct;     RECORD /str/ my_struct
+
+
+By default, the alignment of the C structure should be identical to the FORTRAN RECORD. Refer to the Specification and DATA Statements chapter of the FORTRAN 77 Language Reference Manual for more information on the FORTRAN RECORD type.
+
+#-----------------------------------------------------------------------
+
+Brief Notes on Mixed Language Programming - FORTRAN and C
+-----------------------------------------   -------------
+
+Glenn Geers (glenn@physics.su.oz.au)
+Last updated: Mon May  3 10:53:22 EST 1993
+
+This brief note describes some of my experiences with mixed language
+programming on UNIX machines. An attempt is made to indicate where
+difficulties in porting to different operating systems may occur.
+
+One deficiency, at present, is the absence of a discussion of the FORTRAN
+CHARACTER type. This will be rectified in a subsequent version.
+
+Subprogram Calling Conventions
+------------------------------
+Under UNIX, f77 uses the same calling convention as used by C. Specifically,
+for each subprogram call a stack frame is established when the procedure is
+entered and destroyed when the procedure is exited. This is really not of
+much concern unless you intend linking in home grown assembly language
+routines. Under some OS's the FORTRAN and C calling conventions are
+different. The only thing you can be sure of is that C must establish stack
+frames since C functions (even main()) may be recursive. If you have any
+doubt about the calling conventions use f2c. It should also be noted that
+under f77 on UNIX boxes ANY FORTRAN routine may also be recursive but watch
+out; your code may not be portable to other OS's.
+
+
+External Names
+--------------
+Under UNIX FORTRAN subroutine and function names have an underscore
+appended to them (but not under AIX) to avoid clashes with names 
+occurring in libraries and with language constructs - FORTRAN has no 
+reserved words. For example:
+
+	   subroutine foo()
+
+is visible from a C program as:
+
+	   foo_()
+
+In order to facilitate porting to AIX it is best to have defines such as:
+
+#if !defined(aix)
+#define FOO_ foo
+#else
+#define FOO_ foo_
+#endif
+
+You then put
+
+	FOO_()
+
+in your C in all cases. This also allows you to get around the FORTRAN 77 limit
+of 6 character function and subroutine names in the C code.
+
+On CRAYs FORTRAN external names are all upper case and don't have the underscore
+appended:
+
+#if defined(CRAY)
+#define FOO_ FOO
+#endif
+
+Note that you have to explicitly define aix since the C compiler under AIX
+conforms to the ANSI standard - no preprocessor defines are inherently
+available.
+
+Also note that the FORTRAN compiler under AIX (xlf) does provide an option,
+-qextname, that appends an underscore to user defined external names. When I
+initially wrote this document I was not aware of this facility.
+
+Subprogram Arguments
+--------------------
+FORTRAN always expects its arguments to be passed by reference. In short this
+means that a subprogram is free to change the value of any of its arguments.
+This requirement gives rise to the now infamous case of FORTRAN routines
+changing the value of constants. It should be pointed out that programs
+that attempt to change the value of subroutine (or function) arguments are
+not FORTRAN 77 standard conforming and so the compiler is free to do
+whatever it wants. The behaviour varies from CHANGING THE VALUE OF THE
+CONSTANT (seen in SunOS f77, f2c, Fujitsu frt, UNICOS cft77) to acting as
+if the constant had been PASSED BY VALUE (AIX xlf). To test your compiler try 
+running the following short program (NOT STANDARD CONFORMING).
+
+      program testit
+C PROGRAM TO TEST THE BEHAVIOUR OF A COMPILER WHEN A SUBROUTINE
+C CHANGES THE VALUE OF ITS ARGUMENTS.
+C
+C UNDER SYSTEMS THAT ALLOW CONSTANTS TO CHANGE VALUE THE OUTPUT
+C WILL BE:
+C
+C first arg 2
+C second arg 3
+C first arg 3
+C second arg 3
+C first arg 3
+C second arg 3
+C first arg 3
+C second arg 3
+C
+C Thanks to David Dawes (dawes@physics.su.oz.au) for pointing out this
+C behaviour under SunOS.
+
+
+      fred(2,3)
+      fred(2,3)
+
+      end
+
+      subroutine fred(i,j)
+      integer i,j
+
+      write(*,*) 'first arg', i
+      write(*,*) 'second arg', j
+
+C CHANGE ARGUMENTS
+
+      i=j
+
+      write(*,*) 'first arg', i
+      write(*,*) 'second arg', j
+
+      return
+      end
+
+The upshot of the passing by reference requirement is that all arguments that
+are passed from C to FORTRAN must be of pointer type. And any C function
+called from FORTRAN must be set up with arguments of pointer type.
+
+Some examples:
+
+	subroutine glitch(a,b,c)
+	integer a
+	double precision b
+	real c
+
+is called from C as:
+	
+	int x = 4;
+	double *y;
+	float z = 1.2e12;
+
+	*y = 3.2;
+
+	glitch_(&x,y,&z);
+
+and the C function
+
+	int frob_(a,b)
+	int *a;
+	double *b;
+
+may be called from FORTRAN by:
+
+	call frob(3, 2.7e2)
+
+Typing of FORTRAN Subroutines and Functions
+-------------------------------------------
+A subroutine is typed as a C function returning an int. The value returned
+is dependent on the value of the alternate returns (if any) from the
+subroutine.
+
+A FORTRAN function (character valued functions are not discussed) returns
+the same type it is defined to return in FORTRAN with the exception of
+functions returning type complex or double complex. In these cases an
+additional argument must be provided when calling the FORTRAN function from
+C in order to provide space for the returned value.
+
+Arrays
+------
+FORTRAN arrays start at element number 1. For example:
+	 real bar(100)
+declares an array bar with elements numbered 1 to 100. The C declaration
+	float bar[100]
+declares an array bar with elements numbered 0 to 99. Notice that the
+number of elements is the same - just the numbering has changed. The
+easiest way to get around this is to declare FORTRAN arrays to match C
+arrays. This is possible in FORTRAN 77 although not in the now deprecated
+FORTRAN 66. So the FORTRAN declaration becomes:
+	real bar(0:99)
+This may cause problems when using canned FORTRAN routines where the
+default range is used. The solution in this case is to relabel the C array
+noting that bar[0] == bar(1). Such relabeling may be frustrating - it is
+often better to modify the canned routine (if source is available). You can 
+also get around this by using pointer techniques.
+
+Note that FORTRAN arrays are stored in column major order and that C arrays
+are stored in row major idea. This means that the order of the indices must
+be switched. For example: a(2,3) == a[3][2].
+
+Perhaps the simplest way around the array passing dilemma is to allocate C 
+arrays (or dynamically allocated memory areas) with one more element than
+required, for example a 100 element real array in FORTRAN  would be declared 
+as a 101 element float array in C. You then use a #define to map element 1
+of the C array to element 1 of the FORTRAN array. The following C code is 
+provided as an example.
+
+#define PF(x) &x[1]
+
+float fred[101]; /* don't use fred[0] FORTRAN won't see it */
+
+....
+{
+	bar_(PF(fred));
+}
+
+Of course, this method only works for 1-dimensional arrays.
+
+Dynamic Allocation of 2-Dimensional Arrays
+------------------------------------------
+The following functions show how to create and free 2-dimensional arrays that 
+can be passed between FORTRAN and C. They can be generalized to arbitrary types
+(including complex and double complex);
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#ifndef CRAY
+#define FOWRITE_ fowrit_
+#else
+#define FOWRITE FOWRIT
+#endif
+
+double **
+d2d(int size)
+{
+	double *ptr;
+	double **ret;
+	int n = size*size;
+	REGISTER int i,j;
+
+/*
+** Allocate a block of memory of length size^2.
+** Each memory location is of type double.
+** In FORTRAN terms this is a one dimensional array 0:(size-1)*(size-1).
+** This will form the columns of the 2-d array.
+** Check for allocation failure.
+** Note that calloc zeros the memory area.
+*/
+	ptr = (double *)calloc(n,sizeof(double));
+
+	if (ptr == (double *)NULL)
+		error("First stage memory allocation failure in c2d", EMEM);
+
+/*
+** Allocate a block of memory of length size.
+** Each memory location is of type double *.
+** In FORTRAN terms this means that each location
+** can hold an entire one dimensional array (of arbitrary length)
+** of type double.
+** malloc does not zero the memory area, but this is ok because
+** these elements are assigned to below.
+*/
+	ret = (dcomplex **)malloc(size*sizeof(dcomplex *));
+
+	if (ret == (dcomplex **)NULL)
+		error("Second stage memory allocation failure in c2d", EMEM);
+
+/*
+** The body of the loop assigns the address of the
+** 0,size,2*size,...,size*size element of ptr to the 0,1,2,...,size
+** element of ret. Thus forming a valid 2-d array each of whose elements
+** is of type dcomplex.
+*/
+	for (i=0,j=0; j<=size; i+=size,j++)
+		ret[j] = &ptr[i];
+
+	return(ret);
+}
+
+
+void
+free_d2d(ptr, size)
+double **ptr;
+int size;
+{
+	REGISTER int i,j;
+
+	for (i=size,j=0; j<size; i-=size,j++)
+		if (ptr[j] != (double *)NULL)
+				free((void *)ptr[j]);
+
+	if (ptr != (double **)NULL)
+		free((void *)ptr);
+
+	return;
+}
+
+
+An example C driver and FORTRAN routine is provided below.
+
+#if defined(SHARED) && !defined(fujitsu)
+int
+MAIN__()
+{
+/* Dummy routine for SunOS and SysVr4 */
+	return(0);
+}
+#endif
+
+#if !defined(fujitsu)
+main()
+#else
+MAIN__()
+#endif
+{
+
+	int i,j;
+
+	double **fred;
+
+	fred = d2d(101);
+
+	for (i=1; i<=100; i++)
+		for (j=1; j<=100; j++)
+			fred[i][j] = i*i + j*j;
+
+	j = 100;
+	FOWRITE_(fred[0],&j);
+
+	free_d2d(fred, 101);
+}
+
+	   subroutine fowrit(arr, size)
+	   integer size
+	   double precision arr(0:size, 0:size)
+
+	   integer i,j
+
+	   do 10 i=1,size
+		  do 20 j=1,size
+			write(*,*) arr(i,j)
+20        continue
+10     continue
+
+
+Common Blocks
+-------------
+FORTRAN common blocks map to C structs.
+
+	real foo(10)
+	real x
+	real*8 y
+	common /bar/ foo, x, y
+
+maps to the C struct:
+
+struct {
+	float foo[10];
+	float x;
+	double y;
+} bar_;
+
+Note that dynamically allocated arrays cannot be part of a common block.
+The FORTRAN compiler must know the size of the common region at compile
+time.
+
+FORTRAN Functions Returning Scalar C Types
+------------------------------------------
+FORTRAN functions of type INTEGER, REAL or DOUBLE PRECISION are easy to use
+from C. I use the generic term TYPE to match any of the above. Notice that
+INTEGER -> int, REAL -> float and DOUBLE PRECISION -> double. On most UNIX
+(i.e. non-ANSI) C compilers REAL is promoted to DOUBLE PRECISION so some
+care is needed. Under ANSI C there is no problem.
+
+The FORTRAN function
+
+	TYPE function barfoo(a,b)
+
+corresponds to the C function
+
+	type barfoo_(a,b)
+	float *a, *b;
+
+where type is the C type corresponding to TYPE.
+
+FORTRAN Functions Returning Non-scalar C Types
+----------------------------------------------
+The FORTRAN type COMPLEX (and UNIX f77 DOUBLE COMPLEX) exactly maps to
+the C stuct:
+
+struct {float r, i} complex; /* for DOUBLE COMPLEX replace float by double */
+
+Consequently passing arrays of type COMPLEX between C and FORTRAN is as easy
+as for other types. Functions are another matter.
+
+The FORTRAN function
+
+	complex function foobar(a,b)
+
+maps to the function
+
+	int foobar_(ret, a, b)
+	complex *ret;
+	float *a,*b;
+
+where an appropriate typedef of the complex type has been made. The additional
+argument provides space for the function return value. UNIX f77 places return
+values as the first argument on the function call stack. The reason for
+this is probably that the function return type is known before the number
+and type of the functions' arguments are.
+
+The MIPS manual that I have (dated 15 February 1987) states that "You
+cannot return complex types between C and FORTRAN". In general, complex
+valued functions should be replaced by subroutines whose first argument is
+the value to be returned. This mechanism will work on all UNIX systems.
+
+Miscellaneous
+-------------
+On UNIX systems that support dynamic linking (e.g. SunOS, SysVr4) it is
+necessary to define the function MAIN__() as:
+
+int MAIN__{return(0);}
+
+in your C code if the main program is not written in FORTRAN. This will 
+not be a problem if the program is linked statically --- MAIN__() is purely 
+a dummy function.
+
+On at least one other UNIX variant (Ultrix) it is necessary to
+define:
+
+int MAIN_{return(0);}
+
+in you C code if the main program is not written in FORTRAN. Note that
+this is necessary even though Ultirx does not support dynamic linking.
+
+On Fujitsu VP's the main(argc, argv) routine in C cannot exist when linking C 
+and FORTRAN. When using these machines main(argc, argv) is replaced by 
+MAIN__(argc, argv).
+
+#-----------------------------------------------------------------------
+
+Fortran calling C function
+Fortran Main
+
+PROGRAM F2C
+C
+      CHARACTER*32 NAME
+      INTEGER AGE
+      REAL TEMP
+C
+      NAME = "KNUT"
+C add null character at end for portable & safe handling by C
+      NAME(LEN(NAME):LEN(NAME)) = CHAR(0)
+C note that LEN(NAME) = 32 in this case
+      AGE = 4
+      TEMP = 98.6
+      CALL NAMEAGE(NAME, AGE, TEMP)
+      END
+
+C Function
+
+#include <string.h>
+#ifdef _CRAY
+#  include <fortran.h>
+#  define nameage       NAMEAGE
+#else
+#  ifndef _AIX
+#    define nameage	nameage_
+#  endif
+#  define _fcd          char *
+#  define _fcdtocp(a)   (a)
+#  define _fcdlen(a)    strlen(a)
+#endif
+
+void nameage(_fcd name, int *age, float *temp) {
+        char *cp;
+        size_t len;
+
+        cp = _fcdtocp(name);    /* convert to C char* */
+        len = _fcdlen(name);
+
+        /* strip trailing blanks */
+        while (cp[len-1] == ' ' || cp[len-1] == '\0') --len;
+        printf("Hello %.*s, who is %d years old, "
+                "has a temperature of %4.1f\n", len, cp, *age, *temp);
+}
+
+Compilation Steps
+
+    * Cray - PVPs - UNICOS
+      f90 -c f2c.f
+      cc -c f2cfn.c
+      f90 -o f2c f2c.o f2cfn.o
+    * IBM - SP2 - AIX
+      xlf -c f2c.f
+      xlc -c f2cfn.c
+      xlf -o f2c f2c.o f2cfn.o
+
+#-----------------------------------------------------------------------
+c
+
+c*******************************************************************************
+c fstrings.for -- routines for converting between FORTRAN and C character
+c                 strings.
+c
+c Mark Showalter, PDS Rings Node, January 1994
+c*******************************************************************************
+
+c
+c*******************************************************************************
+c$ Component_name:
+c	FORT_CSTRING (fstrings.for)
+c$ Abstract:
+c	Converts a FORTRAN character string to a null-terminated byte array,
+c	for passage to a C function.
+c$ Keywords:
+c	UTILITY, FORTRAN_C
+c	FORTRAN, INTERNAL, SUBROUTINE
+c$ Declarations:
+c	subroutine	FORT_CSTRING(string, array, nbytes)
+c	character*(*)	string
+c	logical*1	array(*)
+c	integer*4	nbytes
+c$ Inputs:
+c	string		character string to convert.
+c	nbytes		dimensioned length of byte array.
+c$ Outputs:
+c	array(1...)	string of bytes with terminal null.
+c$ Returns:
+c	none
+c$ Detailed_description:
+c	This subroutine converts a FORTRAN character string to a null-terminated
+c	byte array, for passage to a C function.  Blank characters at the end of
+c	the character string are not considered significant.  The string is
+c	truncated if necessary to fit into the array.
+c$ External_references:
+c	none
+c$ Examples:
+c	none
+c$ Error_handling:
+c	none
+c$ Limitations:
+c	The dimensioned length of the byte array must be at least one greater
+c	than the effective length of the character string.
+c$ Author_and_institution:
+c	Mark R. Showalter
+c	PDS Rings Node, NASA/Ames Research Center
+c$ Version_and_date:
+c	1.0: January 1994
+c$ Change_history:
+c	none
+c*******************************************************************************
+
+	subroutine	FORT_CSTRING(string, array, nbytes)
+	character*(*)	string
+	logical*1	array(*)
+	integer*4	nbytes
+
+	integer		last, i
+
+c Search for the last character actually used.
+	do 100 last = len(string), 1, -1
+		if (string(last:last) .ne. ' ') goto 101
+100	continue
+101	continue
+
+c Truncate string if necessary
+	if (last .gt. nbytes-1) last = nbytes-1
+
+c Copy bytes from character string
+	do 200 i = 1, last
+		array(i) = ichar( string(i:i) )
+200	continue
+
+c Append null terminator
+	array(last+1) = 0
+
+	return
+	end
+
+c
+c*******************************************************************************
+c$ Component_name:
+c	FORT_FSTRING (fstrings.for)
+c$ Abstract:
+c	Converts a null-terminated byte array returned from a C function to a
+c	FORTRAN character string.
+c$ Keywords:
+c	UTILITY, FORTRAN_C
+c	FORTRAN, INTERNAL, SUBROUTINE
+c$ Declarations:
+c	subroutine	FORT_FSTRING(array, string)
+c	byte		array(*)
+c	character*(*)	string
+c$ Inputs:
+c	array(1...)	string of bytes with terminal null.
+c$ Outputs:
+c	string		FORTRAN character string.
+c$ Returns:
+c	none
+c$ Detailed_description:
+c	This subroutine converts a null-terminated byte array returned from a C
+c	function to a FORTRAN character string.  The string is truncated if
+c	necessary.
+c$ External_references:
+c	none
+c$ Examples:
+c	none
+c$ Error_handling:
+c	none
+c$ Limitations:
+c	none
+c$ Author_and_institution:
+c	Mark R. Showalter
+c	PDS Rings Node, NASA/Ames Research Center
+c$ Version_and_date:
+c	1.0: January 1994
+c$ Change_history:
+c	none
+c*******************************************************************************
+
+	subroutine	FORT_FSTRING(array, string)
+	logical*1	array(*)
+	character*(*)	string
+
+	integer		i
+
+c Copy bytes into string, one by one
+	do 100 i = 1, len(string)
+		if (array(i) .eq. 0) goto 101
+		string(i:i) = char(array(i))
+100	continue
+	return
+
+c Pad remainder of string with blanks
+101	continue
+	string(i:) = ' '
+
+	return
+	end
+
+c*******************************************************************************
+c
+
+#-----------------------------------------------------------------------
+http://www.fftw.org/doc/fftw_5.html
+#-----------------------------------------------------------------------
+2.5.4 Intermixing Fortran and C
+
+Because there are so many reliable subroutine libraries written in Fortran, you will sometimes need to call a Fortran routine from C. Likewise, you might need to call a low-level C routine from a Fortran program.
+
+For a detailed overview of such `mixed language programming', see SUN/209, CNF and F77 Mixed Language Programming, which gives a detailed introduction to calling each language from the other, as well as a set of C macros to help support this. I will not duplicate the contents of that guide, but instead give a very compressed introduction to the problem. This might be enough to get you going. There is a further discussion of the issues, and a compressed description of the solutions, at the Cambridge High Performance Computing Facility (HPCF), at <http://www.hpcf.cam.ac.uk/mixed.html>. For a Sun-specific discussion, see Chapter 12 of [sunf77].
+
+The biggest difference between C and Fortran is that `C is call-by-value, Fortran is call-by-reference'. What that means is that when a C function is called, it receives the values of its arguments, so that any changes to them disappear when the function finishes, but when a Fortran function is called, it receives a reference to its arguments, so they can be altered easily within the function. The consequence of this is that when you call a Fortran function from C, you should pass arguments using C's address-of operator,&, and when you call a C function from Fortran, you will typically need to pass it the value of the variable using the %val() function (this is a non-standard VAX Fortran extension, but one which is now so ubiquitous that it's safe to use). These remarks apply to unstructured types such as characters, integers and floats - arrays and strings present other problems, as described below. It follows from what I've said that if a C function is declared as void subr (int *p), it's expecting (the value of) a pointer to an integer, so that this could be called in the `normal' way from fortran: call subr (ia), where ia is an integer variable.
+
+See Appendix A.6 for example programs.
+2.5.4.1 Arrays
+
+Fortran's arrays are simple: an array of any dimension is just a list of locations in memory, stored in the order a(1,1), a(2,1), and so on (see Section 2.5.2.2); when a Fortran function is given an array argument, what it actually receives is a pointer to the `top-left' element. If you're calling Fortran from C, you simply have to be aware of the switch on order, and then pass &a[0][0].
+
+If you have a C routine with a one-dimensional array argument (either void func (int a[]) or void func (int *a)), and you want to call it from Fortran, you can call it simply by giving the array name as an argument: call func (a).
+
+Passing a multi-dimensional array to a C function is potentially problematic. However, you'll almost never need to do that, because Fortran very rarely needs to invoke C to do a numerical calculation. If the C declaration is func (int a[][3]), for example (that is, an array of three-element arrays), then a Fortran array integer a(3,n) could be passed simply, as call func (a). If, on the other hand, the C declaration were func (int **a) (that is, a pointer to pointer to integer, with the actual array elements separately allocated), then the above Fortran array could not be passed as shown (and no, smarty, call func (%loc(a)) wouldn't work, even though it's the right type). If you do need to call such a C function, you'll probably have to provide a suitable C wrapper for it, and call that from the Fortran code. C's array/pointer syntax is elegant, but not ideally suited for numerical work[Note 10].
+2.5.4.2 Strings
+
+C strings are simple objects: they are by definition arrays of characters, with the end of the string marked by a zero byte. The internal structure of Fortran strings is not defined, so that they could be stored in whichever way is most convenient to the author of the compiler; typically, however, they are an array of characters with a length encoded with them. The practical upshot of this is that you simply cannot pass strings back and forth between Fortran and C code in a portable way, and it is fortunate that you rarely need to do this. On those occasions when you do need such a facility, you can use a library of conversion routines such as those described in SUN/209.
+2.5.4.3 Compiling and linking
+
+When a Fortran compiler produces object code,it typically adds an underscore to the end of each function name. That is, the subroutine:
+
+subroutine func1 (i)
+      integer i
+      call func2 (i)
+      end
+
+will produce object code with an external symbol func1_ calling a subroutine named func2_. You must be aware of this when you compile Fortran code which is to be linked with C functions. There are two ways of dealing with this.
+
+First, you can call this subroutine from C by calling it with the correct name:
+
+int i1;
+extern void func1_ (int *i);
+/* call it */
+func1_ (&i1);
+
+So far so good. The problem arises when you want to call C from the Fortran function, since the Fortran function will expect to link against a function with a trailing underscore. If the C function is written by you, then you could provide this, but if it is a library routine, you will have to tell the compiler not to add the underscore to the external name when it generates object code. For Sun's f77 compiler, you do this with the compiler option -ext_names=plain, for the GNU g77 compiler it is with the -fno-underscoring option, and for f77 on the Alpha, it is -assume nounderscore [RW]. Note that this will apply to all function names in that module. Sun's compiler also allows you to declare that a function is in a C module, using a pragma, but this is obviously non-portable, and so is not recommended. On this subject, [RW] points out that to get access to main() via f77 on decs, you need to set -nofor_main at link time.
+
+You should, in general, use the Fortran compiler to link the object files into an executable. This calls the linker with all the correct Fortran libraries. It is of course possible to do the same with the C compiler, but requires a much more elaborate call.
+
+#-----------------------------------------------------------------------
+
+LIBRARIES,ETC interesting
+
+POOMA framework, using
+every trick in the book -- and many that aren't in any books -- to
+build general purpose scientific class libraries for high performance
+and parallelism.  We're using expression templates, lazy evaluation,
+cache optimizations, loop reorderings, the whole nine yards. My team
+and I have worked with other folks, like Todd Veldhuizen of Blitz++
+and Jeremy Siek of MTL
+
+With FORTRAN 90 you get
+array syntax (i.e. you can say A=B+C*D for whole arrays)
+
+The bottom line,
+sadly enough, is that given comparably smart optimizers, under
+circumstances that are pretty common in scientific computing, the
+C/C++ equivalent to a FORTRAN program, will often not run as fast.
+Depending on the architecture it may not be a big difference, but it
+can be up to a factor of two on conventional workstations, and much
+larger than that on vector machines.
+
+The FORTRAN standard is clear that aliasing is not allowed.  The
+standard also does not allow implicit reshaping of arrays across
+subroutine boundaries.  The way to alias data is through use of
+pointers.  The way to reshape arrays in through intrinsics such as
+RESHAPE.  Use of pointers inhibits some optimizations, as it should.
+RESHAPE may or may not be efficient (e.g. logical reshaping, while
+leaving the data unchanged in memory).
+
+built-in support for visualization, which occurs in a 
+straightforward way without the endless screwing around required in Fortran (although CVF's Array Viewer has helped signficantly)
+
+2) reshape changes the arrangement of the elements of an array, but it
+cannot re-dimension  (i.e. increase the total number of elements) the array.
+In other words, you cannot use reshape as a substitute for allocate.
+
+3) when you allocate an array, its content is undefined or set to zeroes.
+Statements like LBS_FERT(J+1)=LBS_FERT(j), immediately after an allocate
+will either fill your array with garbage or have no effect. From the logic
+in your code, you seem to assume that allocating (or re allocating) an array
+will preserve its content. This is not true.
+
+4) Finally, before you reallocate an array, you should release the memory it
+uses (with a DEALLOCATE statement), otherwise your program will leak memory
+like a wild horse.
+
+The general procedure to change the size of an array and keep its content
+is:
+a) make a temporary copy of the original array
+b) deallocate the original array
+c) allocate the original array with its new size
+d) copy the content of the temporary array to the original array
+
+as you see this is time and resource consuming. There are ways to increase
+the performance for these operations, but you can start by following the
+previous guidelines.....
+
+
+The general procedure to change the size of an array and keep its 
+content
+is:
+a) make a temporary copy of the original array
+b) deallocate the original array
+c) allocate the original array with its new size
+d) copy the content of the temporary array to the original array
+================================================================
+e) deallocate the temporary array.
+
+due to the limitations of FORTRAN77 and our need to access dynamic memory a 
+code has been written to allocate a dynamic portion of memory via a 
+MALLOC() call, which returns a pointer to the beginning of the portion.
+
+this pointer is referenced by value to all subsequent routines, like this:
+
+call sub_1( arg1, arg2, %VAL(ptr_to_memory) ). 
+
+This code seems to work, even if the allocated memory is much larger than 
+512MB. But why is it so? I did expect a failure due to the limitations of 
+declaring static arrays in g77 which can not be larger than these 512MB. I 
+somewhere read in this group a posting which said that the g77 cannot 
+access array elements over 512MB and therefore g77 rejects all statements 
+in sourcecode which try to do this.
+
+So, what is the real reason that our code does not fail? Any hint is highly 
+appreciated.
+
+g77's problem is that its internal data structures are accounting for bits,
+not bytes. Thus, the 512 MByte limit.
+
+Is there any difference between
+DIMENSION A(1)
+ and
+DIMENSION A(*)
+ declarations?
+
+My g77 compiler warnes me when I use the first one
+and doesn't when I use the second.
+
+There is no reason to avoid DIMENSION A(*), but there may be some to
+prefer DIMENSION A(:), or DIMENSION A(<expr>) now that many restrictions
+on the complexity of <expr> have been removed: array-bound checking,
+shape consistency, ...
+
+
+There's a much more modern (standard since Fortran 77 I believe!) way to
+do this, which is your second example. This tells the compiler that the
+size of the array passed is defined by the array you actually pass. Many
+compilers can then do bounds-checking on it correctly, and future
+programmers can see instantly that you meant you want the array as sized
+in the calling routine.
+
+#--
+Take a look at
+The Fortran 77 Numerical Class Library
+
+    http://www.netwood.net/~edwin/svmt/
+
+It implements dynamic memory allocation with
+
+      integer function malloc(n)
+        integer n
+
+and
+
+      subroutine free(p)
+        integer p
+
+It also implements functions
+
+      integer function clocation(c)
+        character c(1)
+
+      integer function ilocation(i)
+        integer i(1)
+
+      integer function slocation(s)
+        real*4 s(1)
+
+      integer function dlocation(d)
+        real*8 d(1)
+
+      integer function sclocation(c)
+        complex*8  c(1)
+
+      integer function dclocation(z)
+        complex*16 z(1)
+
+that return a pointer to the first element
+of the respective array types.
+These functions all do the same thing.
+I just defined them this way
+to keep my compiler from complaining.
+
+
+The fncl directory 'fncl.tgz' was tar'd and gzip'd.
+Just type
+
+    gunzip fncl.tgz
+
+then
+
+    tar xvf fncl.tar
+
+to uncompress and unarchive it.
+If you have the GNU Fortran 77 compiler g77,
+type
+
+    cd fncl/src
+
+then
+
+    make
+
+to compile and archive the library.
+Type
+
+    cd ../examples
+
+and
+
+    make main
+
+to compile and link the main program.
+Just type
+
+    main
+
+to run the main program.
+
+
+The main program isn't very impressive.
+It creates matrix views of a two dimensional array.
+It uses one nested do loop to initialize the array
+and two more to print the matrix view and
+the transpose matrix view.
+
+It isn't nearly as elegant or safe
+as the kind of object oriented programming
+you can do in Fortran 90 and C++ or even C.
+And I'm not sure that there is any real net benefit
+to this particular solution.
+But you can create view objects and pass a reference to them
+instead of passing references to each individual attribute
+when you call Fortran 77 functions and subroutines
+like the Basic Linear Algebra (BLAS) library requires.
+And you can write functions and subroutines
+which allocate and deallocate memory dynamically
+instead of passing a reference to a preallocated work array
+
+
+      program main
+        include "matrix.h"
+        integer m, n
+        parameter (m = 4, n = 7)
+c       matrix    view
+        integer mview(subm_size)
+c       transpose view
+        integer tview(subm_size)
+        real*8 a(m, n)
+        integer i, j
+c
+        call subm_init(mview, dh_create(dlocation(a)), 0, m, 1, n, m)
+        call subm_init(tview, dh_create(dlocation(a)), 0, n, m, m, 1)
+        write (*,*) subm_handle(mview)
+        write (*,*) subm_offset(mview)
+        write (*,*) subm_extent1(mview)
+        write (*,*) subm_stride1(mview)
+        write (*,*) subm_extent2(mview)
+        write (*,*) subm_stride2(mview)
+c
+        do 200 i = 1, m
+          do 100 j = 1, n
+            a(i, j) = i*10 + j
+  100     continue
+  200   continue
+c
+        do 400 i = 1, m
+          do 300 j = 1, n
+            write (*,*) dsubm_get(mview, i, j)
+  300     continue
+  400   continue
+        write (*,*)
+c
+        do 600 i = 1, n
+          do 500 j = 1, m
+            write (*,*), dsubm_get(tview, i, j)
+  500     continue
+  600   continue
+        write (*,*)
+c
+        call subm_destroy(mview)
+        end
+
+#--
+I don't see any such
+mention in g77's info (automatic arrays are mentioned, but not allocatables).
+
+Current g77
+(gcc-2.95.2) has automatic arrays, but the size limits have not been
+tested thoroughly on all platforms.  Those are implemented internally by
+allocation, but that's not the correct Fortran terminology.  The syntax
+for f77 adjustable arrays involves the * for extents of unspecified
+size.  g77 doesn't implement any of the new : syntax.
+
+#--
+> One of the more common themes is to call something in C to allocate
+> some space and then to "trick" Fortran into using the C allocated
+> space.
+
+For completeness, it may be instructive to see how this is done.
+Suppose you have two C-routines, one to allocate new space and one
+to return an address, then you do dynamic allocation like this:
+ 
+  common /dummy/ idummy(0:10)            ! used as addressing-target
+
+  read *, N_size
+  call alloc( new_addr, N_size * 4 )     ! C routine calling malloc()
+  call loc( i_addr, idummy )             ! C routine returning address
+  index = (new_addr - i_addr) / 4
+ 
+  call loc( index_addr, idummy(index) )  ! This is just a check!
+  if ( index_addr .ne. new_addr ) stop 'allocation was corropted'
+ 
+  cal do_the_work( idummy(index) )       ! Pass array element at the
+                                         ! the start of a free block
+
+Note: instead of working in integer*4 units, you may want to work
+with real*8 or complex*16 targeting dummies. Allocating a few Bytes
+more and wasting some space before and after the block may then of
+course be necessary. The above is just a 'toy example'. Don't rely
+on it!
+
+#--
+The reason why paramenter-dimensioned local arrays (known in Fortranese as 
+"automatic arrays") lead to a segmentation violation is that g77 generates 
+code to allocate said arrays on the stack - and allowed stack size limits for 
+ordinary users are small on a lot of OS's (not so on IRIX, but you're using 
+Linux).
+
+For constant-sized local arrays, g77 makes the decision to allocate all 
+arrays with an extent less than 32K on the stack, but all with a larger size 
+"statically", i.e. not on the stack.  This explains why your second example 
+above doesn't lead to a segmentation violation.
+Please see "Stack Overflow" in the documentation (a node by that name
+in the Info version; a subsection by that name in the Chapter "Known
+Causes of Trouble with GNU Fortran" in the Section "Bugs Not In GNU
+Fortran").
+
+The pertinent portion of documentation is indexed by the phrase
+"segmentation violation".  Would an identical index entry for
+"segmentation fault" have helped you find this?  We know the g77
+doc, especially the indexing, is incomplete, so feel free to make
+suggestions regarding improvements.
+
+> > I was wondering if someone could comment on a "good" fairly portable
+> >technique for dynamically allocating arrays in Fortran 77 ...
+...
+
+See the sample programs at 
+
+    http://envpro.ncsc.org/products/ioapi/H.SAMPLE.html
+
+If g77 (supporting automatic arrays) doesn't work on any of them, feel
+free to submit a bug report.  (Auto arrays are only good for
+stack-style alloctaion, of course, but that's often the right thing,
+and heap-style just can't be done remotely portably with f77 unless
+you use library routines uniformly to copy fixed-length data in and
+out.)
+
+> What is going on?  Is there a size limit for automatic arrays in g77?
+
+Automatic arrays are placed on the stack.  If you're using bash, `ulimit
+-s` will tell you the max stack size.  There's both a soft and a hard
+limit.  
+
+
+info g77 "Maximum Stackable Size"
+
+Another approach is to explicitly allocate the array on the heap
+using some kind of interface to malloc() and free().  g77 currently
+does not provide this; Fortran 90 and many FORTRAN 77 compilers
+do, and g77 should someday.
+
+
+http://gcc.gnu.org/onlinedocs/g77/
+
+Adjustable Arrays (DIMENSION)
+
+For example:
+
+REAL ARRAY(5)
+DATA ARRAY/5*2/
+CALL X(ARRAY, 5)
+END
+SUBROUTINE X(A, N)
+DIMENSION A(N)
+N = 20
+PRINT *, N, A
+END
+
+
+http://developer.intel.com/software/products/compilers/f50/linux/
+ftp://download.intel.com/software/products/downloads/vtune50wd_010108.exe
+   Intel(R) VTune(TM) Performance Analyzer
+ Evaluate Intel® Math Kernel Library
+
+A fully functional, free evaluation copy of the Intel® Math Kernel Library (MKL) is available for download. MKL is available for both the Microsoft* Windows* and Linux* operating systems. This download is licensed for "Internal Evaluation or Research purposes only."
+
+Downloading and Installing the Intel® Math Kernel Library
+ftp://download.intel.com/design/perftool/perflibst/mkl/exes/mkl5/mkleval-514.tar
+
+Downloading and Installing the Intel® Signal Processing Library
+ftp://download.intel.com/design/perftool/perflibst/spl/exes/spl45/splman.pdf
+ftp://download.intel.com/design/perftool/perflibst/spl/exes/spl45/spl45.exe
+
+ Like the Intel C++ Compiler 5.0 for Linux, there are two forms of no-charge compiler licenses for Intel Fortran 5.0 for Linux -- a 30-day evaluation copy that comes with support (you must register  for support) or a non-commercial, unsupported version. The compilers are identical. The differences are in the length of use, the nature of use and support. If you are a student and don't care about support or if you just want to use the compiler for personal use, again, with no support, the non-commercial, unsupported version is a great value.
+
+Intel(R) Fortran compiler for Linux* for Red Hat* 7.1
+
+Important License Installation Information:  You will be receiving your license to activate the trial version in your e-mail receipt. Once you have installed your software you will need to follow the directions in the e-mail receipt for license installation before your trial will be activated.
+
+ftp://download.intel.com/software/products/downloads/fc010821rh71.tar
+
+freeware:
+ftp://download.intel.com/software/products/downloads/fc010821rh71.tar
+
+v6.0:
+serial number for this product evaluation is 1130-47374399
+http://developer.intel.com/software/products/compilers/downloads/l_fc_p_6.0.140.htm
+ftp://download.intel.com/software/products/compilers/downloads/l_fc_p_6.0.140.tar
+2.  Untar the product in the directory of your choice.  After doing so, 
+you will see the installation script "install" in that directory.
+3.  Ensure you have root permission and execute the installation script 
+"./install".  The installation script will prompt you for the top-level 
+directory for installation.  The default installation path is 
+"/opt/intel".
+4.  Install the attached license file by copying it to the location 
+pointed to by the INTEL_LICENSE_FILE environment variable.  Do not change 
+the file name as the ".lic" extension is critical.  Following are some 
+common locations:
+          <installation path>/licenses
+          i.e. "/opt/intel/licenses"
+
+#--l_for_47374399.lic
+PACKAGE I0000000004 INTEL 9999.1231 F68587629330 COMPONENTS=FComp \
+OPTIONS=SUITE ck=44 SIGN=58B8D86AB1AA
+FEATURE I0000000004 INTEL 9999.1231 permanent uncounted 900A7F78C69F \
+VENDOR_STRING=SUPPORT=NCOM HOSTID=ID=1220110619 \
+PLATFORMS="i86_r it64_lr" ck=129 SN=SMSA47374399 \
+SIGN=AC78DB4A5DF2
+#--
+
+
+Intel(R) C++ compiler for Linux* for Red Hat* 7.1
+ftp://download.intel.com/software/products/downloads/cc010911rh71.tar
+
+
+
+
+
+#-----------------------------------------------------------------------
+http://www.starlink.rl.ac.uk/star/docs/sun209.htx/sun209.html#stardoccontents
+ CNF and F77
+
+Mixed Language Programming - FORTRAN and C
+
+#-----------------------------------------------------------------------
+1.1  What is Q?
+
+Q is an interactive programming language for use in scientific data analysis. It combines features found in a typical command language like a UNIX shell with those found in high level languages like Fortran. The primary design aims were to provide fast interactive processing, user-friendly syntax and a simple programming interface.
+
+Q is built around the Starlink HDS data file system and the Leicester Parameter System written by Clive Page. It is therfore fully compatible with the Starlink ADAM subroutine interfaces. Graphics are implemented using the Starlink form of the PGPLOT graphics subroutine library from Caltech.
+
+The ``variables'' handled by Q are data objects on HDS files and any data that exist on HDS files can be accessed and processed by Q.
+
+1.2  Why use Q instead of just FORTRAN?
+
+When using Fortran to perform data analysis there is always the problem of getting data values into Fortran variables from data files and writing out results from variables to files after processing. Since the ``variables'' in Q reference HDS data object directly there is no such I/O problem. Of course you must get your data into the HDS files to start with. Facilities are provided in Q to convert ASCII data files (text) into HDS files. It is also easy to write simple conversion routines to transfer from other data formats into HDS files. Many Starlink packages use HDS files anyway so Q can be used on these data directly.
+
+Vector and matrix operations in Fortran must use explicit repetition structures like do loops. Most operations in Q handle vector-vector and vector-scalar implicitly. If A and B are data objects then A+B will perform an element by element addition giving a vector result. The interactive and interpretive nature of Q does impose an overhead on operations involving scalars or small vectors. However for large vectors ( > 1000 elements) these overheads are diminishingly small and there is little difference in speed between calculations performed in Q compared with the equivalent coded directly in Fortran.
+
+Q is interactive while Fortran has to be compiled and linked. In fact Q acts as a fast interactive linker for independently written Fortran subroutine modules. It therefore combines the power and speed of Fortran with a flexible interactive user interface. Q does not necessarily replace or compete with Fortran, rather it enhances and complements it. Furthermore since Q runs as a single continuous process it avoids the overheads involved in starting and stopping processes.
+http://www.star.le.ac.uk/~rw/q/q_manual.html#tth_sEc1.1
+#-----------------------------------------------------------------------
+
+David Axon very kindly posted a some info regarding CFORTRAN and CNF,
+a couple of solutions to the problem of calling Fortran from C, and
+C from Fortran. I have been able to obtain CFORTRAN (a macro library
+from CERN) but have been unable to locate the macro lib CNF written
+by Peter Alan of the Starlink project.
+
+Can anyone point me in the right direction? I have looked in the /pub
+directory at starlink-ftp.rl.ac.uk with no success (which doesn't mean
+it's not in there somewhere).
+Thanks in advance.
+
+http://www-zeus.desy.de/~burow/cfortran/
+http://wwwinfo.cern.ch/asd/cernlib/cfortran.html
+#-----------------------------------------------------------------------
+
+3.3.2) What are ENCODE and DECODE statements, and how are they translated
+       to standard Fortran? How can I convert numbers to character strings
+       (and vice-versa)?
+
+       ENCODE and DECODE are vendor extensions to Fortran (invented in
+       the sixties, long before X3.9-1978 added internal I/O to the
+       language) which are most often used to convert data between
+       numeric and character representations.  They may be viewed as
+       formatted writes to (ENCODE) or reads from (DECODE) memory.
+       The standard-conforming alternatives are internal write and
+       internal read statements respectively.
+
+       For example,
+
+            INTEGER MONTH, DAY, YEAR
+
+            MONTH = 7
+            DAY = 4
+            YEAR = 93
+       C    FORM THE STRING  7/ 4/93 IN VARIABLE "DATE"
+            ENCODE (8,10,DATE) MONTH,DAY,YEAR
+        10  FORMAT (I2,'/',I2,'/',I2)
+
+       The above can be translated as "write 8 characters, formatted
+       according to format 10, storing the results in variable DATE, and
+       using the contents of variables MONTH, DAY, and YEAR as the data to
+       write."
+
+       A DECODE statement would be used to reverse the process (extract
+       the variables MONTH2, DAY2, and YEAR2 from the string DATE).
+       Thus:
+
+          INTEGER MONTH2, DAY2, YEAR2
+          DECODE (8,20,DATE) MONTH2, DAY2, YEAR2
+     20   FORMAT (I2,1X,I2,1X,I2)
+
+       Conversion of ENCODE/DECODE to standard Fortran-77 is not difficult.
+       The critical thing to remember is that the variable to be written
+       to (ENCODE) or read from (DECODE) must be a CHARACTER variable
+       which is long enough to contain the string.
+       The first number within the parentheses (in this case 8) is the
+       minimum length to use in a type declaration.
+
+       Thus a standard-conforming equivalent of the above
+       example is:
+
+           CHARACTER*8 DATE
+           INTEGER MONTH, DAY, YEAR
+
+           INTEGER MONTH2, DAY2, YEAR2
+           MONTH = 7
+           DAY = 4
+           YEAR = 93
+
+           WRITE (DATE,10) MONTH, DAY, YEAR
+        10 FORMAT (I2,'/',I2,'/',I2)
+           READ (DATE,20) MONTH2, DAY2, YEAR2
+       20  FORMAT (I2,1X,I2,1X,I2)
+
+       Although the above example used integers, any other data type
+       may also be used.
+
+
+
+#-----------------------------------------------------------------------
+Recently I wrote fairly large cgi-driver in f77 and found that
+       it was not very difficult, and for my application since the
+       output I was putting on the web was originally created from
+       fortran analysis programs, there were some particular advantages
+       in the program logic.
+
+       If interested see:
+
+          http://archive.stsci.edu/mds/mds_cgi.f
+
+Kavan Ratnatunga
+
+
+#-----------------------------------------------------------------------
+Write a C wrapper. 
+
+For how to do this, check out rtfm.mit.edu:/pub/usenet/news.answers/fortran-faq.
+
+
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------

@@ -1,0 +1,52 @@
+
+#---------------------------------------------------
+
+RFB:
+x0rfbserver:
+use VNC to show/control an existing X session (pcAnywhere-like)
+
+http://forum.hexonet.com/
+http://download.hexonet.com/software/xclass/xclass-0.6.2.tar.gz
+http://download.hexonet.com/software/rfb/rfb-0.6.1.tar.gz
+
+tar xzvf xclass-*tar.gz && cd xclass-*/
+./configure && make
+checkinstall -Ry
+
+tar xzvf rfb-*tar.gz && cd rfb-*/
+make depend
+make
+cp ./x0rfbserver/x0rfbserver /usr/local/bin
+cp ./xrfbviewer/xrfbviewer /usr/local/bin
+cp ./xrfbviewer/xplayfbs /usr/local/bin
+cp ./rfbcat/rfbcat /usr/local/bin
+cp ./man/man1/* /usr/local/man/man1/
+
+TEST:
+x0rfbserver
+#first time: opens up gui that sets passwd, viewonly, etc in ~/.x0rfbserver
+#does not background itself, and opens up a little icon window when running
+# netstat -anp --inet
+tcp        0      0 0.0.0.0:5900            0.0.0.0:*               LISTEN      17135/x0rfbserver
+
+#to open from within an ssh session
+#TODO: right now it just screws it up, listens on port 5911, etc...
+
+#connect with any VNC client
+vncviewer 192.168.0.234::5911
+
+#---------------------------------------------------
+
+TIGHTVNC:
+
+viewer:
+tightvnc-1.2.8-1.i386.rpm
+/usr/bin/vncviewer
+
+vncviewer 
+
+
+#---------------------------------------------------
+#---------------------------------------------------
+#---------------------------------------------------
+#---------------------------------------------------

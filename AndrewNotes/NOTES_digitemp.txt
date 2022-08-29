@@ -1,0 +1,90 @@
+
+#---------------------------------------------
+
+http://freshmeat.net/projects/digitemp/
+http://www.digitemp.com/software/linux/digitemp-3.3.2.tar.gz
+http://www.digitemp.com/software/linux/digitemp-3.3.2-1_ds9097u.i386.rpm
+
+#as root
+rpm -ivh ~n9n/downloads/digitemp-3.3.2-1_ds9097u.i386.rpm
+ln -s /usr/local/bin/digitemp_DS9097U /usr/local/bin/digitemp
+chmod o+rw /dev/ttyS0  #to be able to use digitemp as a normal user
+#as user
+digitemp -s/dev/ttyS0 -i
+digitemp -a
+
+digitemp-3.0.0.tar.gz
+digitemp-3.0.0-1_ds9097u.i386.rpm
+
+digitemp -s/dev/ttyS0 -i   #creates .digitemprc in PWD
+digitemp -a
+
+#if you get:
+#Error, you don't have +rw permission to access
+# you have run digitemp -a from a directory that does NOT have
+# a .digitemprc file
+
+while true; do digitemp -aq; sleep 5; done
+
+#list all sensors on one line in deg F
+digitemp -a -q -o3
+
+#---------------------------------------------
+
+setting up rrdtool to get graphs
+
+wget http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool-1.0.45.tar.gz
+wget http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool-1.0.45.tar.gz.md5.pgp
+
+gpg --decrypt rrdtool-1.0.45.tar.gz.md5.pgp
+gpg --keyserver wwwkeys.us.pgp.net --recv-keys 7F09EF11 #this should be the key from above
+gpg --decrypt rrdtool-1.0.45.tar.gz.md5.pgp
+#spits out md5sum
+md5sum rrdtool-1.0.45.tar.gz
+
+tar xzvf rrdtool-1.0.45.tar.gz && cd ./rrdtool-*/
+./configure && make
+make install # !! install in /usr/local/rrdtool-1.0.45/bin/
+make site-perl-install
+ln -s /usr/local/rrdtool-1.0.45 /usr/local/rrdtool
+
+cd ~/digitemp
+#create the rrd DB
+#http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdcreate.html
+/usr/local/rrdtool/bin/rrdtool create digitemp.rrd \
+	DS:sensor1:GAUGE:1200:U:U   \
+	DS:sensor2:GAUGE:1200:U:U   \
+	RRA:AVERAGE:0.5:1:1200 \
+	RRA:MIN:0.5:12:2400 \
+	RRA:MAX:0.5:12:2400 \
+	RRA:AVERAGE:0.5:12:2400
+
+vi log_temps
+#--
+#!/bin/bash
+reading=`/usr/local/bin/digitemp -a -q -o3`
+sensor1=`echo $reading | gawk '{print $2}'`
+sensor2=70
+/usr/local/rrdtool/bin/rrdtool update /home/n9n/digitemp/digitemp.rrd N:$sensor1:$sensor2
+#--
+chmod a+x ~/digitemp/log_temps
+crontab -e
+*/5 * * * * /home/n9n/digitemp/log_temp
+
+#make graph
+/usr/local/rrdtool/bin/rrdtool graph /home/n9n/digitemp/digitemp.png --imgformat PNG   \
+	DEF:data1=/home/n9n/digitemp/digitemp.rrd:sensor1:AVERAGE \
+	DEF:data2=/home/n9n/digitemp/digitemp.rrd:sensor2:AVERAGE \
+	LINE1:data1#00FF00:'Sensor1' \
+	LINE2:data2#0000FF:'Sensor2' \
+	1> /dev/null
+
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+
+meta for search
+temperature serial port temp probe temp sensor
+
+#---------------------------------------------
+

@@ -1,0 +1,148 @@
+
+
+First Stab (really should read some guides, blah,blah,...)
+
+#pick a kernel security patch
+grsecurity patches (www.grsecurity.net)
+LIDS (www.lids.org)
+#end pick
+
+get dynfw scripts to limit outbound connections
+   (www.gentoo.org/projects/dynfw.html)
+
+get good chroot shell for people
+  fm: Jail Chroot Project
+
+
+program that creates accounts
+  fm: Blogin2
+
+BASH patch to log input
+   project.honeynet.org/papers/honeynet/bash.patch
+TTY Watcher
+   project.honeynet.org/papers/honeynet/doord-src.tar.gz
+
+PASSWD REPLACEMENT to ensure better passwords
+http://www.utexas.edu/cc/unix/software/npasswd/
+
+
+#------
+only marginally useful
+killuser project (auto disconnect based on certain parameters)
+   fm: ku   /  www.technotronic.com/issue/ku/
+
+
+#-------
+read and reread:
+project.honeynet.org
+www.happyhacker.org
+www.enteract.com/~lspitz/papers.html
+www.whitehats.com
+www.net-security.org/
+
+
+www.rootprompt.org/article.php3?article=210
+project.honeynet.org/papers/honeynet/
+
+Oreilly book: Practical UNIX & Internet Security
+
+#----------
+VULNERABILITIES TO CHROOT
+No mknod()
+No ptracing
+No fchmod +s or chmod +s (usually used to make a shell)
+No double chroots
+Restricted signal sending to other processes
+No mounting or remounting of devices
+Enforced chdir("/") on all chroots
+
+
+#---------------
+npasswd notes
+
+http://www.utexas.edu/cc/unix/software/npasswd/doc/BuildInstall.html
+http://www.utexas.edu/cc/unix/software/npasswd/download2.html
+
+wget http://www.utexas.edu/cc/unix/software/npasswd/dist/npasswd-words.tar.gz
+wget http://www.utexas.edu/cc/unix/software/npasswd/dist/npasswd-2.05.tar.gz
+
+mkdir npasswd
+cd npasswd
+tar xzvf ../npasswd-words.tar.gz
+tar xzvf ../npasswd-2.05.tar.gz
+
+mv npasswd-2.00/dict/* ./npasswd-2.05/dict/
+cd ./npasswd-2.05
+./Configure 
+defaults except
+	none  TO debugging
+	y TO activate the paranoid option (only one uname to uid)
+
+npasswd keeps a password history database.  This database is kept
+in a DBM database or file (default "/usr/lib/passwd/passwd.history").
+
+make
+su
+make install
+
+
+#-----------------------------------------------------------------------------
+
+TRIPWIRE
+
+http://prdownloads.sourceforge.net/tripwire/tripwire-2.3.1-2.tar.gz
+tar xzvf tripwire-2.3.1-2.tar.gz 
+cd ./tripwire-2.3.1-2/src
+vi Makefile 
+
+check the line:
+SYSPRE = i686-pc-linux
+to make sure it fits your system
+
+make release
+
+executables are in ../bin/i686-pc-linux_r/
+man files are in ../man/
+
+su
+\rm -r ../man/man*/CVS/
+cp -r ../man/man* /usr/local/man/
+
+cd ..
+mkdir -p /var/tripwire/sbin
+cp ./bin/i686-pc-linux_r/* /var/tripwire/sbin/
+mkdir /var/tripwire/etc
+
+
+
+cd ../install/
+
+vi install.cfg 
+I use:
+TWBIN="/var/tripwire/sbin"
+TWPOLICY="/var/tripwire/etc/tripwire"
+TWMAN="/usr/man"
+TWDB="/var/tripwire/lib"
+TWDOCS="/usr/doc/tripwire"
+TWSITEKEYDIR="${TWPOLICY}"
+TWLOCALKEYDIR="${TWPOLICY}"
+TWREPORT="${TWDB}/report"
+
+cd ../
+su
+./install/install.sh 
+
+The main executables are : twprint twadmin siggen tripwire
+
+#-----------------------------------------------------------------------------
+
+
+                    2.A tool called NFSBug can be used to test the configuration. The tests will include finding world exported
+                      file systems, determining whether export restrictions work, determining whether file systems can be
+                      mounted through the portmapper, trying to guess file handles, and exercising various bugs to access file
+                      systems. ftp://coast.cs.purdue.edu/pub/tools/unix/nfsbug/ 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+

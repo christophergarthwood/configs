@@ -1,0 +1,171 @@
+
+
+#------------------------
+new home:
+http://sourceforge.net/projects/blackboxwm
+http://unc.dl.sourceforge.net/sourceforge/blackboxwm/blackbox-0.65.0.tar.gz
+
+#--
+For RH:
+Before you run configure run the following commands in the shell:
+
+unset LANG
+unset LC_ALL
+export LC_ALL=en_US
+
+then run the script.  The translation code seems to dislike RH's en_US.UTF8 
+locale.
+#--
+./configure
+make
+make install
+
+http://bbkeys.sourceforge.net/download.php
+
+./configure --disable-x
+make
+make install
+
+#------------------------
+
+for a single user system, just change the system-wide menu:
+/usr/X11R6/share/blackbox/menu or /usr/local/share/blackbox/menu
+
+link to menu b/c it's easy to forget where it is
+ln -s /usr/local/share/blackbox/menu /etc/blackbox.menu
+
+vi /etc/blackbox.menu
+#--------------------
+[begin] (Blackbox)
+  [exec] (xterm)    {xterm -ls -sb -sl 1000}
+  [exec] (rxvt)     {rxvt}
+
+  [submenu] (Graphics)
+    [exec] (XV)           {xv}
+    [exec] (The GIMP)     {gimp}
+    [exec] (Image Magick) {display}
+    [exec] (Bluefish) {bluefish}
+  [end]
+
+  [exec] (Sylpheed)  {sylpheed}
+  [exec] (Mozilla)  {mozilla}
+
+  [submenu] (SSH)
+    [exec] (ssh AVATAR) {gnome-terminal -t AVATAR -e 'ssh AVATAR'}
+    [exec] (ssh FRANCE) {gnome-terminal -t FRANCE -e 'ssh FRANCE'}
+    [exec] (ssh GRUDGE) {gnome-terminal -t GRUDGE -e 'ssh GRUDGE'}
+    [exec] (ssh SCOTLAND) {gnome-terminal -t SCOTLAND -e 'ssh SCOTLAND'}
+    [exec] (ssh LATVIA) {gnome-terminal -t LATVIA -e 'ssh LATVIA'}
+    [exec] (ssh MAG2) {gnome-terminal -t "" -e "ssh -P -l n9n magrathea2.dentarthurdent.com"}
+    [exec] (ssh MAG) {gnome-terminal -t "" -e "ssh -P -l n9n magrathea.ods.org"}
+  [end]
+
+  [submenu] (X Utilities)
+    [exec] (BBkeys)  {/usr/local/bin/bbkeys -t}
+    [exec] (Xfontsel) {xfontsel}
+    [exec] (Xman)     {xman}
+    [exec] (Xcalc)    {xcalc}
+    [exec] (Xload)    {xload}
+  [end]
+
+  [submenu] (Styles) {Choose a style...}
+    [stylesdir] (/usr/local/share/blackbox/styles)
+  [end]
+
+  [workspaces] (Workspace List)
+  [config] (Configuration)
+
+  [reconfig] (Reconfigure)
+  [restart] (Restart)
+  [exit] (Exit)
+[end]
+#--------------------
+
+for bbkeys (to use key shortcuts)
+vi ~/.bbkeysrc
+#---
+KeyToGrab(Up), WithModifier(Mod1), WithAction(NextWorkspace)
+KeyToGrab(Tab), WithModifier(Mod1), WithAction(NextWindow)
+KeyToGrab(Tab), WithModifier(Control), WithAction(NextWorkspace)
+KeyToGrab(Tab), WithModifier(Shift), WithAction(PrevWorkspace)
+#-----
+
+vi ~/.xinitrc
+#--
+exec /usr/local/bin/blackbox
+OR
+exec /usr/local/bin/ssh-agent /usr/local/bin/blackbox
+#--
+chmod 0700 ~/.xinitrc
+cp ~/.xinitrc ~/.xsession
+
+vi /etc/blackbox.menu  (HOME)
+#--------------------
+[begin] (Blackbox)
+  [exec] (xterm)    {xterm -ls -sb -sl 1000}
+  [exec] (rxvt)     {rxvt}
+
+  [submenu] (Graphics)
+    [exec] (XV)           {xv}
+    [exec] (The GIMP)     {gimp}
+    [exec] (Image Magick) {display}
+    [exec] (Bluefish) {bluefish}
+  [end]
+
+  [exec] (Sylpheed)  {sylpheed}
+  [exec] (Mozilla)  {mozilla}
+
+  [submenu] (SSH)
+    [exec] (ssh MAGRATHEA - rxvt) {rxvt -sl 500 -title "MAGRATHEA" -e ssh magrathea}
+    [exec] (ssh MAGRATHEA - gnometerm) {gnome-terminal -t "MAGRATHEA" -e "ssh magrathea"}
+    [exec] (WORK ssh FRANCE) {gnome-terminal -t FRANCE -e 'ssh acoleman@france.hfdirect.com'}
+    [exec] (WORK ssh NORWAY) {gnome-terminal -t NORWAY -e 'ssh acoleman@norway.hfdirect.com'}
+  [end]
+
+  [submenu] (X Utilities)
+    [exec] (BBkeys)  {/usr/local/bin/bbkeys -t}
+    [exec] (Xfontsel) {xfontsel}
+    [exec] (Xman)     {xman}
+    [exec] (Xcalc)    {xcalc}
+    [exec] (Xload)    {xload}
+  [end]
+
+  [submenu] (Styles) {Choose a style...}
+    [stylesdir] (/usr/X11R6/share/blackbox/styles)
+  [end]
+
+  [workspaces] (Workspace List)
+  [config] (Configuration)
+
+  [reconfig] (Reconfigure)
+  [restart] (Restart)
+  [exit] (Exit)
+[end]
+#--------------------
+
+#------------------------
+
+For gcc3.3 and 0.6.5 make error:
+Window.cc:3234: error: `assert' undeclared (first use this function)
+make[3]: *** [Window.o] Error 1
+
+vi ./src/Window.cc
+#include <cassert>
+
+#------------------------
+
+to set background to an image:
+bsetbg --full ~/images/1.jpg 
+
+#from some weblog:
+Some more digging and I found that the file ~/.bsetbgrc containts
+the actual command(s) used for the various incarnations of bsetbg
+-- the command called in my sunset style.
+
+So I created ~/.bsetbgrc with the following line
+FULL="xv -root -quit -max"
+
+#------------------------
+#------------------------
+
+

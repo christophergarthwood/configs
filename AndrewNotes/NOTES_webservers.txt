@@ -1,0 +1,756 @@
+#--------------------------------------------------------------------------------------
+
+cd openssl-0.9.6a
+MAKE MAKE INSTALL
+
+export SSL_BASE=../openssl-0.9.6a
+cd ../mod_ssl-2.8.4-1.3.20
+./configure --with-apache=../apache_1.3.x \
+--with-crt=/path/to/your/server.crt \              (optional)
+--with-key=/path/to/your/server.key              (optional)
+
+export SSL_BASE=../openssl-0.9.6a
+./configure --enable-module=most --enable-shared=max --enable-module=ssl
+make
+make certificate
+make install
+
+
+#--------------------------------------------------------------------------------------
+TINY WEB SERVERS
+#--------------------------------------------------------------------------------------
+BOA  boa is a tiny fast webserver (versions up to 0.94 atleast cannot be started from inetd)
+	no auth or ssl(without stunnel/sslwrap)
+
+www.boa.org
+
+wget http://www.boa.org/boa-0.94.13.tar.gz
+tar xzvf boa-0.*.tar.gz && cd boa-0.*/
+./configure
+make
+
+this creates boa,boa_indexer (you only need boa, boa_indexer does the nice directory list (instead of index.html)
+su
+cp ./src/boa /usr/local/bin
+#cp ./src/boa_indexer /usr/local/bin
+cp ./docs/boa.8 /usr/local/man/man8/
+
+server root (NOT document root) is /etc/boa
+mkdir /etc/boa
+cp ./examples/boa.conf /etc/boa
+
+vi /etc/boa/boa.conf
+User boaweb
+Group boaweb
+VerboseCGILogs
+ServerName www.dentarthurdent.com
+DocumentRoot /var/www
+#UserDir public_html
+#DirectoryMaker /usr/lib/boa/boa_indexer
+#Alias /doc /usr/doc
+ScriptAlias /cgi-bin/ /var/www-cgi-bin/
+# Uncomment the next line if you want .cgi files to execute from anywhere
+#AddType application/x-httpd-cgi cgi
+
+mkdir /var/log/boa
+mkdir /var/www
+mkdir /var/www-cgi-bin
+
+groupadd boaweb
+useradd -c "Boa Webserver" -d /var/www -g boaweb -M -n -s /bin/false boaweb
+chown -R boaweb:boaweb /var/www
+
+vi /var/www/index.html
+#--
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<title>Root</title>
+	<link rel="STYLESHEET" href="/default.css" type="text/css">
+</head>
+<body>
+	<p>
+		Thanks you for your interest. Welcome to the Root Document.
+		<a href="http://www.google.com" class="normref">For your convenience</a>.
+	</p>
+<!-- last update: ..Wed Jun 19 14:04:19 CDT 2002..  -->
+</body>
+</html>
+#--
+touch /var/www/default.css
+
+vi /etc/init.d/boa
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: boa
+RETVAL=0
+case "$1" in
+  start)
+        echo "Starting boa: "
+        /usr/local/bin/boa -c /etc/boa
+        ;;
+  stop)
+        echo "Shutting down boa: "
+        killall boa
+        ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage: boa {start|stop|restart}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/boa
+
+vi /var/www-cgi-bin/example_sh.cgi
+#--
+#!/bin/sh
+#use like: lynx http://localhost/cgi-bin/example_sh.cgi
+echo Content-type: text/plain
+echo
+env
+#--
+chmod 0755 /var/www-cgi-bin/example_sh.cgi
+
+vi /var/www-cgi-bin/hello_cgi.c
+#--
+/* hello_cgi.c - minimal CGI program
+**
+** Compile with:  gcc -O hello_cgi.c -s -o hello_cgi.cgi
+*/
+
+#include <stdio.h>
+
+int
+main( int argc, char** argv )
+    {
+    fputs( "Content-type: text/plain\n\nHello.\n", stdout );
+    exit( 0 );
+    }
+#--
+
+
+vi /var/www-cgi-bin/example_cgi.cgi
+#--
+#!/usr/bin/perl
+use CGI qw/:standard/;
+print header,
+	start_html('A Simple Example'),
+	h1('A Simple Example'),
+	start_form,
+		"What's your name? ",textfield('name'),p,
+		"What's the combination?", p,
+		checkbox_group(-name=>'words',
+			-values=>['eenie','meenie','minie','moe'],
+			-defaults=>['eenie','minie']), p,
+		"What's your favorite color? ",
+		popup_menu(-name=>'color',
+			-values=>['red','green','blue','chartreuse']),p,
+		submit,
+	end_form,
+	hr;
+
+if (param()) {
+	print "Your name is",em(param('name')),p,
+		"The keywords are: ",em(join(", ",param('words'))),p,
+		"Your favorite color is ",em(param('color')),
+	hr;
+}
+#--
+chmod 0755 /var/www-cgi-bin/example_cgi.cgi
+
+#--------------------------------------------------------------------------------------
+For boa just to serve out CD's for installs,etc.
+
+Follow the above, except
+vi /etc/boa/boa.conf
+
+Group nobody
+DocumentRoot /mnt/cdrom
+#UserDir public_html
+#DirectoryMaker /usr/lib/boa/boa_indexer
+#Alias /doc /usr/doc
+#ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+
+mkdir /var/log/boa
+
+#the rh7.3 install gives an error about a missing package when you need to switch cd's
+# on the server. it works, though.
+
+#--------------------------------------------------------------------------------------
+
+boa on 8080:
+vi /etc/init.d/boa8080
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: boa
+RETVAL=0
+case "$1" in
+  start)
+        echo "Starting boa: "
+        /usr/local/bin/boa -c /etc/boa8080 
+        ;;
+  stop) 
+        echo "Shutting down boa8080 instance: "
+        #killall boa
+        PID=`ps -efl | grep '/usr/local/bin/boa -c /etc/boa8080' | awk '{print $4}' | head -1`
+        kill $PID
+        ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        ;; 
+  *)    
+        echo "Usage: boa {start|stop|restart}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/boa8080
+#--------------------------------------------------------------------------------------
+for LAN party boa (to work well with lan party proftpd)
+vi /etc/boa/boa.conf
+#--
+Port 80
+User nobody
+Group nobody
+ErrorLog /var/log/boa/error_log
+AccessLog /var/log/boa/access_log
+DocumentRoot /var/proftpd_dump
+#UserDir public_html
+DirectoryIndex index.html
+DirectoryMaker /usr/local/bin/boa_indexer
+KeepAliveMax 1000
+KeepAliveTimeout 10
+MimeTypes /etc/mime.types
+DefaultType text/plain
+#CGIPath /bin:/usr/bin:/usr/local/bin
+#Alias /doc /usr/doc
+#ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+#--
+
+#--------------------------------------------------------------------------------------
+
+wrapping boa in SSL using stunnel
+
+http://www.stunnel.org/download/stunnel/src/stunnel-3.22.tar.gz
+tar xzvf stunnel-3.22.tar.gz 
+cd stunnel-3.22
+./configure
+make
+su
+make install
+
+cp ./stunnel.pem /usr/share/ssl/certs/       (for fake cert)
+chmod 0600 /usr/share/ssl/certs/stunnel.pem
+
+http://www.stunnel.org/faq/args.html
+
+for a constantly running boa bound to 127.0.0.1:88
+stunnel -d 443 -r 127.0.0.1:88 -s boassl -g boassl
+
+To launch boassl only when needed
+stunnel -d 443 -s boassl -g boassl -L /usr/local/bin/boa -- boa -c /etc/boassl
+
+boa:
+mkdir /etc/boassl
+cp /etc/boa/boa.conf /etc/boassl/
+
+mkdir /var/log/boassl
+mkdir /var/wwwssl
+
+groupadd boassl
+useradd -c "Boa STunneled Webserver" -d /var/wwwssl -g boassl -M -n -s /bin/false boassl
+chown -R boassl:boassl /var/wwwssl
+
+vi /etc/boassl/boa.conf
+User boassl
+Group boassl
+Port 88             (unless you actually have kerberos running...)
+Listen 127.0.0.1
+ErrorLog /var/log/boassl/error_log
+AccessLog /var/log/boassl/access_log
+DocumentRoot /var/wwwssl
+
+start command: /usr/local/bin/boa -c /etc/boassl
+
+#--------------------------------------------------------------------------------------
+
+thttpd tiny webserver includes basic auth
+
+http://www.acme.com/software/thttpd/thttpd-2.20c.tar.gz
+tar xzvf thttpd-*.tar.gz && cd thttpd*/
+
+#to change defaults:  but not needed otherwise
+vi ./config.h
+
+./configure
+make
+
+groupadd www
+useradd -c "Webserver" -d /usr/local/www/ -g www -M -n -s /bin/false www
+
+make install
+
+start with
+/usr/local/sbin/thttpd -C /usr/local/etc/thttpd.conf
+
+In summary, data files should be mode 644 (rw-r--r--), directories should be 755 (rwxr-xr-x) if you want to allow indexing and 711 (rwx--x--x) to disallow it,
+and CGI programs should be mode 755 (rwxr-xr-x) or 711 (rwx--x--x). 
+
+#*** I never could get CGI_s to work with thttpd, only boa.
+# thttpd would recognize they were CGI_s, but not send any data back
+
+vi /usr/local/etc/thttpd.conf
+#--
+dir=/var/www
+chroot
+nosymlink
+user=www
+logfile=/var/log/thttpd.log
+pidfile=/var/run/thttpd.pid
+#-
+
+#NOTE: thttpd compiles in mime types, to add a type
+vi mime_types.txt #in thttpd main source directory
+#--
+jnlp    application/x-java-jnlp-file
+jardiff application/x-java-archive-diff
+#--
+
+#--------------------------------------------------------------------------------------
+
+thttpd stunneled:
+
+cd /usr/local/etc/
+vi thttpd_stunnel.conf 
+#--
+dir=/var/wwwssl
+chroot
+nosymlink
+user=www
+logfile=/var/log/thttpd_ssl.log
+pidfile=/var/run/thttpd_ssl.pid
+host=127.0.0.1
+port=88
+globalpasswd
+#--
+
+start with
+/usr/local/sbin/thttpd -C /usr/local/etc/thttpd_stunnel.conf
+
+/usr/local/sbin/stunnel -s www -g www -p /usr/share/ssl/certs/stunnel.pem -N stunnel -d 443 -r 127.0.0.1:88
+#put in -f after stunnel (-f foreground mode) for testing
+
+#to put in auth for username in that dir (or global in root www dir)
+/usr/local/sbin/htpasswd -c .htpasswd username
+
+#--------------------------------------------------------------------------------------
+
+fnord
+www.fefe.de/fnord/
+18k static binary!
+
+wget http://www.fefe.de/fnord/fnord-1.3.tar.bz2
+tar xjvf fnord-*.tar.bz2 && cd fnord-*/
+
+expects tcpserver from Dan Bernstein's ucspi-tcp :(
+
+
+http://www.fbunet.de/fnord.shtml
+
+
+#--------------------------------------------------------------------------------------
+
+wshare
+http://home.billsbox.net/wshare/
+wshare is a command line-driven HTTP server that requires
+no setup or configuration prior to execution.
+All directories listed on the command line are indexed
+and shared via HTTP.
+
+#--------------------------------------------------------------------------------------
+
+poor perl CGI DBI example:
+#!/usr/bin/perl
+
+#example of CGI/CGI_Lite and DBI for a simple lookup
+#CGI_Lite:http://www.cpan.org/modules/by-module/CGI_Lite/CGI_Lite-1.8.tar.gz
+
+#change your_username and your_password below.
+
+#populate mysql with:
+#mysql
+#>use test;
+#>CREATE table webtestA52 (name varchar(15) NOT NULL,id int NOT NULL, PRIMARY KEY (name));
+#>INSERT into webtestA52 (name,id) values ("fred",15);
+#>INSERT into webtestA52 (name,id) values ("nancy",8126);
+#>INSERT into webtestA52 (name,id) values ("ed",738);
+#>INSERT into webtestA52 (name,id) values ("jack",8276);
+#>INSERT into webtestA52 (name,id) values ("susan",21);
+
+use strict;
+use CGI;        #I only use this to get my own url, and to put HTTP headers in
+use CGI_Lite;   #I use this to build everything, could also use CGI
+use DBI();
+
+#I don_t, but in production use on form data:
+#$safe_string = escape_dangerous_chars ($string);
+
+############################################################# 
+
+main();
+exit();
+
+############################################################# 
+sub main {
+
+        # Very much like the reference.pl example, except for the fact 
+        # that we're calling the parse_form_data in a different context;
+        # the method returns a hash, so we don't need to dereference.
+
+        my $cgi  = new CGI_Lite;
+        my %data = $cgi->parse_form_data;
+
+        #This starts the enormous if
+        # (if data, then form has been filled. if no data, show form)
+        #*******#########*********##########********#######*******
+        if ( %data ) {
+                my $Rcgi = new CGI;
+                print $Rcgi->header(-expires=>"+15s");
+
+                my $dbh = DBI->connect("DBI:mysql:database=test;host=localhost",
+                        "your_username","your_password",
+                        {'RaiseError' => 1});
+
+                if ($data{"typelookup"} eq "single") {
+
+                        my $this_name;
+                        if ($data{"onename"}) {$this_name=$data{"onename"};} else {$this_name="fred";}
+
+                        my $this_id = $dbh->selectrow_array("SELECT id FROM webtestA52 where name='$this_name' ");
+
+                        print "<table><tr><td>NAME: $this_name</td><td>ID: $this_id </td></tr></table>";
+
+                        finishhtml();
+                } elsif ($data{"typelookup"} eq "full") {
+
+                        my $sth = $dbh->prepare("SELECT name,id FROM webtestA52");
+                        $sth->execute();
+                        my $numRows = $sth->rows;
+                        while (my $ref = $sth->fetchrow_hashref()) {
+                                my $this_name = $ref->{'name'};
+                                my $this_id = $ref->{'id'};
+                                print "<table><tr><td>NAME: $this_name</td><td>ID: $this_id </td></tr></table>";
+                        }
+                        $sth->finish();
+
+                        finishhtml();
+                }
+                $dbh->disconnect();
+
+        #*******#########*********##########********#######*******
+        } else { #FRESH FORM
+
+                my $Rcgi = new CGI;
+                print $Rcgi->header(-expires=>"+15s");
+
+                print '<form><input type="submit" value="SINGLE LOOKUP"><BR>';
+                print '<input type="hidden" name="typelookup" value="single"><BR>';
+                print 'THIS NAME: <input name="onename"><BR>';
+                print '</form><BR>';
+                #print '<img src="/dc1b.jpg"><BR>';
+
+                print '<hr>';
+                print '<form><input type="submit" value="LOOKUP ALL FROM DATABASE"><BR>';
+                print '<input type="hidden" name="typelookup" value="full"><BR>';
+                print '</form><BR>';
+
+                print '<hr>';
+        }
+
+}
+############################################################# 
+
+sub finishhtml {
+
+# usage finishhtml();
+        my $query = new CGI;
+        my $netloc = $query->url();
+
+        #print "<P><a href=\"http://192.168.0.99:81/perl/proj2.pl\">NEW FORM</a></P>";
+
+        print "<P><a href=\"$netloc\">NEW FORM</a></P>";
+        print "</BODY></HTML>";
+}
+
+############################################################# 
+
+#--------------------------------------------------------------------------------------
+
+Apache (and similar) simple authentication for a directory:
+
+htpasswd -cb /tmp/htpasswd/.htpasswd simpleuser simplepasswd
+
+(from http://www.mindflip.com/inet/htaccess.html)
+Configuring .htaccess for Password Authentication
+
+Table of Contents
+     .htaccess: Simple Any-User Authentication 
+     .htaccess: Specific User or Group Authentication 
+     .htpasswd User Password Management 
+     .htgroup User Group Management 
+
+###.htaccess: Simple Any-User Authentication
+AuthUserFile /usr/local/htpasswd/.htpasswd
+AuthGroupFile /dev/null
+AuthName "Please enter password"
+AuthType Basic
+
+<Limit GET POST>
+	require valid-user
+</Limit>
+
+###.htaccess: Specific User or Group Authentication
+AuthUserFile /usr/local/htpasswd/.htpasswd
+AuthGroupFile /usr/local/htpasswd/.htgroup
+AuthName "Please enter password"
+AuthType Basic
+
+<Limit GET POST>
+	require user joe sally bob
+	require group admins
+</Limit>
+
+.htpasswd User Password Management
+
+While it's possible to create the .htpasswd file manually, it's usually much
+more convenient to manage passwords through the shell via the htpasswd
+command. Syntax is
+as follows: 
+
+   1.cd to the directory in which the .htpasswd file should exist 
+   2.type htpasswd -c .htpasswd username. This will create the new .htpasswd
+file and add the first username into it. It will then ask you for the password
+     for that username. 
+   3.Add subsequent entries by typing htpasswd .htpasswd username. 
+   4.Your .htpasswd file will looks something like this: 
+     user:$1$VqLTB/..$w1WS3OUqXwOr42xTHR31e1
+     user2:$1$zf1Wo/..$SRY1LpMqYVCsndxlLD1Hz/
+
+An alternate method for adding new users to the .htpasswd file is to copy the
+username and encrypted password directly from the /etc/passwd or shadow file
+into the
+.htpasswd file. This is useful if the user would like to use their existing
+shell or FTP password for web authentication as well. 
+
+.htgroup User Group Management
+
+The format for the .htgroup file is as follows: 
+
+     # Example .htgroup file
+     group1:user1,user2,user3
+     group2:user2
+
+The .htgroup file is always edited manually. 
+
+#--
+IP restrictions:
+<limit GET>
+     deny from all
+     allow from 192.168.
+     allow from .dentarthurdent.com
+</limit>
+#--
+vi .htaccess
+#--
+AuthUserFile /fullpath/to/.htpasswd
+AuthName "Please enter password"
+AuthType Basic
+<Limit GET POST>
+    require valid-user
+    deny from all
+    allow from 192.168.
+    allow from .dentarthurdent.com
+</Limit>
+#--
+htpasswd -bc .htpasswd username pa33wd
+chmod 0644 .htpasswd
+chmod 0644 .htaccess
+lynx --dump http://webserver/path/.htaccess
+lynx --dump http://webserver/path/.htpasswd
+
+#--
+nice place to put htpasswd files:
+mkdir -p /usr/local/apache/htpasswd/path/to/served/dir
+
+#restrict to a subnet OR a valid user
+    # Site or userID/password restriction:                              (30)
+    AuthUserFile    /u/f4220??/secusers
+    AuthGroupFile   /dev/null
+    AuthName        "User F4220?? Secured Files"
+    AuthType        Basic
+    <Limit GET POST PUT>
+    order deny,allow
+    deny from all
+    allow from w.x.y
+    require valid-user
+    satisfy any
+    </Limit>
+
+ To illustrate, the following would permit any client on the local network (IP addresses 10.*.*.*) to access the foo.html  page without let or hindrance, but require a username and password for anyone else:
+
+    <Files foo.html>
+        Order Deny,Allow
+        Deny from All
+        Allow from 10.0.0.0/255.0.0.0
+        AuthName "Insiders Only"
+        AuthType Basic
+        AuthUserFile /usr/local/web/apache/.htpasswd-foo
+        Require valid-user
+        Satisfy Any
+    </Files>
+  
+
+#--------------------------------------------------------------------------------------
+
+#init.d for boa with iptables wrapper, will not start without iptables up
+vi /etc/init.d/template
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: template
+
+#start config variables
+IPTABLES='/sbin/iptables'
+MYLAN='192.168.0.0/24'
+PROTOCOL='tcp'
+DPORT='8080'
+ACTION='DROP'
+
+MYPROGRAM='boa'
+#end config variables
+
+function isRulePresent {
+    return `$IPTABLES -L -n | grep "$PROTOCOL dpt:$DPORT" | grep "!$MYLAN" | wc -l`
+}
+
+function checkAndStart {
+    isRulePresent
+    if [ $? -ge 1 ]
+    then
+        startProg
+    else
+        echo "ERROR IN $0. The iptable rule is not loaded. I am refusing to continue."
+        exit 1
+    fi
+}
+
+function startProg {
+    $MYPROGRAM &
+}
+
+function stopProg {
+    MYPID=`ps -ef | grep $MYPROGRAM | grep -v grep | awk '{print $2}' | head -1`
+    kill $MYPID
+}
+
+function insertRule {
+    $IPTABLES -I INPUT -p $PROTOCOL -s ! $MYLAN --dport $DPORT -j $ACTION
+}
+
+function deleteRule {
+    $IPTABLES -D INPUT -p $PROTOCOL -s ! $MYLAN --dport $DPORT -j $ACTION
+}
+
+case "$1" in
+  start)
+        echo "Starting $0: "
+        isRulePresent
+        if [ $? -eq 0 ]
+        then          #no rule, so insert and start
+            insertRule
+            checkAndStart
+        else          #rule exists so start
+            checkAndStart
+        fi
+        ;;
+  stop)
+        echo "Shutting down $0: "
+        isRulePresent
+        NUMRULES=$?
+        if [ $NUMRULES -eq 0 ]
+        then          #no rule, so stop, but yell
+            echo "$0 did not find the iptables rule. Stopping prog anyway."
+            stopProg
+        else
+            if [ $NUMRULES -gt 1 ]
+            then
+                echo "$0 found $NUMRULES matching rules. Only deleting one. Rerun stop to delete more."
+            fi
+            deleteRule
+            stopProg
+        fi
+        ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/template
+#--------------------------------------------------------------------------------------
+
+no-cache policy 
+<?php
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+?>
+
+#--------------------------------------------------------------------------------------
+
+PEAR php library  #http://pear.php.net/
+
+#upgrade all installed packages
+# pear upgrade-all #as root
+
+#install Auth package, not installed by FC4
+pear install Auth  #lists optional dependencies
+
+##for this error in error_log
+Fatal error: Cannot unset string offsets in
+/usr/local/lib/php/pear/Auth.php on line 180
+#
+this is a patch/fix which I have made to Auth.php (v1.2.3)
+
+    function Auth($storageDriver, $options = '', $loginFunction = '',
+$showLogin = true)
+    {
+        if (is_array($options) &&
+!empty($options['sessionName'])) {
+            $this->_sessionName = $options['sessionName'];
+            unset($options['sessionName']);
+        }
+
+note that is checking whether $options is an array before attempting to
+index into it (indexing into a string with an associative key, can't
+work).
+
+On FC4:vi /usr/share/pear/Auth.php
+ADD: is_array($options) &&
+#
+
+#auth using the http auth mechanism (like .htpassword)
+pear install Auth_HTTP
+#example: http://pear.php.net/manual/en/package.authentication.auth-http.auth-http.example.php
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------

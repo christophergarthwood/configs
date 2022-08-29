@@ -1,0 +1,186 @@
+
+R:
+
+http://www.r-project.org/
+R is a language and environment for statistical computing and graphics.
+
+Case-Sensitive!
+
+manuals:
+http://cran.us.r-project.org/doc/manuals/R-intro.pdf
+http://cran.us.r-project.org/doc/manuals/R-data.pdf
+
+http://stat.ethz.ch/CRAN/doc/contrib/kickstart/index.html
+http://stat.ethz.ch/CRAN/doc/contrib/rpsych.htm#tth_sEc6.5
+
+example data is in:
+library/base/data/
+
+installed libraries are in:
+/usr/local/lib/R/library
+
+alos see:
+http://www.joeconway.com/plr/
+PL/R - R Procedural Language for PostgreSQL
+
+#-----------------------------------------------------
+
+INSTALL:
+
+download base:
+
+binary:
+http://cran.us.r-project.org/bin/linux
+
+src:
+http://cran.us.r-project.org/src/base/R-1.7.1.tgz
+
+INSTALL EXTRA PACKAGES:
+DBI:
+http://cran.us.r-project.org/src/contrib/DBI_0.1-6.tar.gz
+http://cran.us.r-project.org/doc/packages/DBI.pdf
+
+as root in directory with DBI...tar.gz download:
+R CMD INSTALL DBI_0.1-6.tar.gz    
+
+RMySQL:
+http://cran.us.r-project.org/src/contrib/RMySQL_0.5-2.tar.gz
+http://cran.us.r-project.org/doc/packages/RMySQL.pdf
+
+as root in directory with RMySQL_...tar.gz download:
+R CMD INSTALL RMySQL_0.5-2.tar.gz
+
+#-----------------------------------------------------
+
+TEST R,RMySQL:
+R
+library(RMySQL)
+con <- dbConnect(dbDriver("MySQL"), dbname="test")
+dbListTables(con)
+data(USArrests)
+dbWriteTable(con,"arrests",USArrests,overwrite=TRUE)
+dbListTables(con)
+dbReadTable(con,"arrests")
+dbGetQuery(con,"select row_names,Murder from arrests \
+	where Rape>30 order by Murder")
+dbRemoveTable(con,"arrests")
+dbDisconnect(con)
+CTRL+d  then n  #to exit
+
+#-----------------------------------------------------
+
+TEST:
+
+data(sunspots)
+data(USArrests)
+edit(sunspots)  #brings up spreadsheet to manually edit
+	#for structures brings up vi like interface
+sunspots   #just list data to screen
+summary(sunspots)  #summary stats on each column/variable
+help(plot)  #help on plot function
+plot(USArrests)
+help.start()  #opens manuals in netscape
+ls()   #lists data
+
+testv <- as.vector(airquality[,"Temp"])  #get vector from dataframe column
+hist(testv)   #histogram of vector
+hist(as.vector(airquality[,"Temp"]))  #same but no intermed vector
+attributes(airquality)
+
+v1 <- sample(c(0,1), 100, replace = TRUE)  #length 100 random vector of 0,1s
+d1 <- data.frame(v1,v2,v3)  #make data frame d1 from vectors v1,v2, and v3
+
+
+#-----------------------------------------------------
+
+library(multidim)   #loads installed package
+
+#-----------------------------------------------------
+#-----------------------------------------------------
+
+crosstab:
+
+data(warpbreaks)
+attach(warpbreaks)
+tapply(breaks,list(wool,tension),mean)
+
+http://www.ens.gu.edu.au/robertk/R/help/98b/0336.htm
+
+data(airquality)
+table(airquality$Temp,airquality$Wind)
+plot(airquality$Temp,airquality$Wind)
+
+epi.crosstab(MILK,COFFEE) ??
+xtab??
+
+http://stat.ethz.ch/CRAN/doc/contrib/kickstart/kr_xtab.html
+
+Cross Tabulation
+
+xtabs
+Description:
+
+     Create a contingency table from cross-classifying factors, usually
+     contained in a data frame, using a formula interface.
+
+http://www.ku.edu/~kups/maillist/classes/ps707/2002/msg00009.html
+
+This thread stated with a question about crosstabs, which I think of as a
+technique related to areas such as survey research and what are known in
+statistics as "contingency tables."  That's why I suggested R.  "Pivot
+tables" seems to be nothing more than M$'s buzzword for the same kind of
+thing.
+
+example:
+ABOROP          RELIGION             row total / percent
+         Catholic     non-Catholic 
+Favor     3              5              8 
+         27.3%        55.6%            40.0%
+
+Oppose    8              4              12 
+         72.7%        44.4%            60.0%
+
+Column    11             9              20 
+total/ %  55.0%       45.0%            100.0%
+
+#-----------------------------------------------------
+
+http://www.omegahat.org/RSPostgres/
+Embedding R in Postgres - The REmbeddedPostgres package
+#-----------------------------------------------------
+#-----------------------------------------------------
+#-----------------------------------------------------
+H-PolMeth Members:  Listed below are links to online textbooks of statistics
+     that I thought you might find interesting for yourselves and useful for
+     students.
+
+     Glyn Davis
+     http://sbm-connect.tees.ac.uk/webstat/
+
+     William Trochim
+     http://trochim.human.cornell.edu/
+
+     David Garson
+     http://www2.chass.ncsu.edu/garson/pa765/statnote.htm
+
+     David Lane
+     http://www.davidmlane.com/hyperstat/index.html
+
+     David Stockburger
+     http://www.psychstat.smsu.edu/multibook/mlt00.htm
+
+     Julian Simon
+     http://www.resample.com/content/text/index.shtml
+
+     StatSoft.com
+     http://www.statsoft.com/textbook/stathome.html
+
+     Rice Virtual Lab in Statistics (simulations and demonstrations)
+     http://www.ruf.rice.edu/%7Elane/stat_sim/index.html
+
+     StatCenter Sampler, University of Utah
+     http://www.psych.utah.edu/learn/statsampler.html#List
+
+
+#-----------------------------------------------------
+

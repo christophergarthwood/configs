@@ -1,0 +1,275 @@
+
+#---------------------------------------------------------------------------------------------------
+
+http://www-106.ibm.com/developerworks/library/l-fs5.html
+
+Getting ready for devfs
+
+Devfs configuration
+Now that you know what to do in case of an emergency, we're ready to get your system ready for devfs. In the next article, we're going to be making some relatively complex changes to your Linux system. Why is this necessary? Because we're not just enabling devfs functionality in the kernel, which is actually quite easy. We're also going to set up devfsd (the device management daemon) in a special mode so that it backs up and restores any changes to device permissions and ownership. We need to do a lot of little tricks to get this new system working perfectly. But once it is, I think you'll be very pleased with the result.
+
+Devfs kernel support
+The first step to enabling devfs on your system is easy: you'll need to enable devfs support in the kernel. For this, you'll need a 2.4 series kernel. Using make menuconfig or make xconfig, head over to the Code maturity level options section and make sure that the Prompt for development and/or incomplete code/drivers option is enabled. Then, head over to the File systems kernel configuration section and look for the /dev file system support (EXPERIMENTAL) option. Enable it. You'll see a couple of additional options appear below the option you just enabled. The first one controls whether devfs will be mounted to /dev automatically when the kernel boots. Don't enable this option; we will manually mount /dev using a special script. The second option, Debug devfs, should also be disabled.
+
+Disable /dev/pts
+While you have the File systems kernel configuration section on screen, disable support for the /dev/pts file system for Unix98 PTYs if you happen to have it enabled. Devfs provides similar functionality, so you won't need the devpts filesystem anymore. Go ahead and save your kernel configuration; we'll compile and install a new kernel in a bit. Finally, before moving on to the next step, check to see if you have a /dev/pts entry in your /etc/fstab; if you do, comment it out so that it doesn't get mounted at boot-time anymore.
+
+Miscellaneous configuration quirks
+Next, load the /etc/securetty file into an editor. This file is used by login and allows you to specify the ttys that the root user is allowed to use to login. Normally, it contains the devices tty1 through tty12, one per line. In order to get this file ready for devfs, you should add the appropriate devfs-style names for these ttys, keeping the older tty? names in case you decide to boot with devfs disabled. Add the following lines to the bottom of /etc/securetty.
+
+
+vc/1
+vc/2
+vc/3
+vc/4
+vc/5
+vc/6
+vc/7
+vc/8
+vc/9
+vc/10
+vc/11
+vc/12
+
+Installing devfsd
+The next step is to get devfsd, the devfs helper daemon, installed on the system. Devfsd will take care of creating "old-style" compatibility device nodes, performing automated actions when a driver is registered/unregistered, take care of backing up changes to device permissions and ownership to a directory on the root filesystem, and more. Right now, we'll just get devfsd installed; next article, we'll get it up and running, along with devfs. To install devfsd, first download the most recent version of the devfsd tarball (see Resources later in this article), currently version 1.3.16. Then perform the following steps:
+
+
+# tar xzvf devfsd-1.3.16.tar.gz
+# cd devfsd
+# make
+
+Now, devfsd should be compiled and ready to install. If your man pages are stored in /usr/man, type make install; if you are using an FHS-compliant system and your man pages are in /usr/share/man, type make mandir=/usr/share/man install. Devfsd will now be installed but not runnning, which is exactly how we want it at this point.
+Configuration note
+We will be configuring devfsd so that we will have full support for compatibility devices, so the tty? entries should be adequate. However, it's better to be safe than sorry, especially when it may affect whether login will allow the superuser to gain access to the system. With our approach, even if there is a problem and devfsd isn't able to start, the superuser can log in at the login: prompt without problems, even with devfs enabled.
+
+Getting the new kernel going
+Now, go ahead and compile and install your recently configured kernel. This kernel should be a drop-in replacement for your current kernel; it should boot normally, and although it has devfs support built in, you should notice no difference from the one you're running now. Once the new kernel is installed, reboot your system to make sure that everything is working fine up to this point.
+
+Devfs configuration approaches
+Your system is now ready for the devfs conversion, which I will cover in detail in the next article. Now would be a good time to get familiar with the approach we are using. As you will see, devfs-enabling a distribution can be very tricky, especially if you want to use all the nice devfs features like persistent permissions and ownership.
+
+The problems with kernel automounting
+There are actually a number of ways to devfs-enable a system. One is to have the kernel automatically mount devfs to /dev at boot; we won't be using this option, but it is available. At first glance, this approach would seem to make a lot of sense because it would ensure that all devfs-style devices are available to all processes, even the first process, /sbin/init. However, there's a problem with this approach. While devfs provides all the "new-style" devices, the old-style device nodes are created by the devfsd daemon. devfsd isn't started by the kernel, so even if we have the kernel mount devfs at boot, we are still only left with a partial set of device nodes by the time /sbin/init starts up. This means that tweaks to your system initializations scripts will be required in order to get devfsd up and running at just the right time. Not only is this tricky (since it requires that you have an expert understanding of your own system's startup scripts), but this approach has other problems as well.
+
+The main problem with the kernel mounting approach is that devfsd works best when it has access to the contents of your original old-style on-disk /dev directory. Typically, we allow access to the original old-style devices by bind-mounting /dev to another location (typically /dev-state) before devfs itself is mounted to /dev.
+
+This ensures that the contents of your old /dev are still accessible at /dev-state even after devfs is mounted, which allows devfsd to use this directory for persistent device storage. It's important to understand that without the bind mount, the old contents of /dev would be inaccessible, since mounting devfs at /dev would effectively cover them up. And this is the problem with having the kernel mount devfs. If the kernel mounts the devfs filesystem at /dev before any process is able to start, then we have no opportunity to perform the bind mount, and the original contents of /dev are completely hidden. Icky, isn't it? (To learn more about bind mounts, see Part 3 of this series.)
+
+The best solution
+Ideally, it would be great if we could have a full set of device nodes (new-style and compatibility devices) as soon as /sbin/init is started and also have the opportunity to bind mount /dev to another location before devfs is even mounted; but how is this possible?
+
+The init wrapper
+Well, one way would be to add a kernel patch to perform the bind mount from /dev to /dev-state. However, while this is definitely possible and actually quite easy to perform, it would be inconvenient to manually patch every new Linux kernel you install. Therefore, probably the best way to solve the devfs "chicken and egg" problem is to use an init wrapper. For our particular application, the init wrapper will be a bash script that takes the place of /sbin/init -- our real init has been renamed as /sbin/init.system. In short, this is what the init wrapper will do:
+
+
+#!/bin/bash
+mkdir -f /dev-state
+mount --bind /dev /dev-state
+mount -t devfs none /dev
+devfsd /dev
+exec /sbin/init.system
+
+As you can see, the first thing the wrapper does is ensure that /dev-state exists. Then, the /dev tree is bind mounted to /dev-state, so that the contents of /dev are available via the /dev-state directory. Then, our devfs filesystem is mounted on top of /dev and we start devfsd so that our compatibility devices are automatically registered with devfs. Finally, we exec the original /sbin/init, which has now been renamed to /sbin/init.system. The exec command causes init.system to replace the running bash process. This means that our bash script terminates and init.system inherits process ID 1, the coveted process ID of the init process. When /sbin/init.system starts up, the system boots as normal except that devfs is now fully operational; by using an init wrapper, we avoided having to patch the kernel, tweak our startup scripts, or deal with having only a semi-operational devfs system.
+
+In my next article, I'll guide you through the process of getting the full version of the init wrapper up and running and show you how to take advantage of devfsd's many powerful features. Stay tuned!
+
+
+#-
+The init wrapper
+
+Beginnings
+I ended Part 5 by introducing the concept of an init wrapper, and explained why it was such a good fit for solving several devfs initialization problems. Without further ado, let's step through the full version of the init wrapper and take a look at what each piece does. We'll start at the top:
+
+The init wrapper, top portion
+
+
+#!/bin/bash
+# Copyright 2001 Daniel Robbins <drobbins@gentoo.org>, Gentoo Technologies, Inc.
+# Distributed under the GNU General Public License, version 2.0 or later.
+
+trap ":" INT QUIT TSTP	
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+umask 022
+
+if [ $$ -ne 1 ]
+then
+	exec /sbin/init.system $*
+fi
+
+As you can see, the init wrapper is a true bash script, since we have a #!/bin/bash at the top of the script. This would be a good time to mention that our init wrapper requires bash 2.0 or greater to run; type /bin/bash --version to see if your bash shell is recent enough. If not, you may want to see if you have a /bin/bash2 executable installed. If so, change the first line of the script to read #!/bin/bash2.
+
+Now, let's walk throught the script. The trap command prevents the script from being interrupted by the user (by pressing control-C during boot, for example) while the script executes. Then, we export a reasonable default path and set a default umask of 022. It's always a good idea to set a default umask as early as possible in the boot process, since a good number of the earlier 2.4 kernel releases had a bug that resulted in a default umask of 0, which can pose a security threat.
+
+Next, we encounter our first conditional statement, if [ $$ -ne 1 ]. bash expands $$ to the process ID of the currently-running process, so you can see that we're really asking the question "is our process ID anything but 1?" What's the significance of this? Well, if we are being started by the kernel during the boot process, we'll always have a PID of 1, since PID 1 is reserved for the init process. If our PID isn't 1, then we know that we're being run from the command-line after the system has already booted. This is not unusual, since the /sbin/init command has the dual purpose of allowing the superuser to change the runlevel of an already-booted system. If this is the case, we simply exec the original /sbin/init, now renamed to /sbin/init.system. We pass any of our command-line arguments to init.system by using the $* variable, our init wrapper terminates, and init.system begins execution.
+
+Kernel boot options
+However, if our wrapper is being started by the kernel at boot-time, bash's PID will be 1 and this conditional will be skipped altogether as bash continues executing our wrapper. Speaking of which, here are the next few lines:
+
+More of the init wrapper
+
+
+mount -n /proc
+devfs="yes"
+for copt in `cat /proc/cmdline`
+do
+	if [ "${copt%=*}" = "wrapper" ]
+	then
+		parms=${copt##*=}
+		#parse wrapper option
+		if [ "${parms/nodevfs//}" != "${parms}" ]
+		then
+			devfs="no"
+		fi
+	fi
+done
+
+If we've gotten to this chunk of code, it means that we're being run by the kernel during the boot process; and as our first order of business, we mount /proc to our root filesystem, which is currently read-only. After that, we execute a big, complicated chunk of bash code that takes advantage of a very handy Linux feature. You may not know this, but the kernel allows us to see what options were passed to it by LILO or GRUB by looking at the contents of /proc/cmdline. On my development box, the contents of /proc/cmdline are as follows:
+
+Contents of /proc/cmdline
+
+
+# cat /proc/cmdline
+root=/dev/hda6 hda=89355,16,63 mem=524224K
+
+Above, we take advantage of the existence of /proc/cmdline by scanning it for a kernel boot variable that we created ourselves, called wrapper. If wrapper=nodevfs appears among the kernel boot options, then the script knows not to enabled devfs. However, if this variable doesn't appear in /proc/cmdline, then our wrapper will proceed with devfs initialization. The moral of this story is that you can easily disable devfs by booting with the wrapper=nodevfs kernel boot option. If you do, the devfs variable will be set to no; otherwise, it'll be yes.
+
+Wrapping it up
+Here's the rest of the wrapper:
+
+Rest of the init wrapper
+
+
+if [ "$devfs" = "yes" ]
+then
+ if [ -e /dev/.devfsd ] 
+ then
+	clear
+	echo
+	echo "The init wrapper has detected that /dev has been automatically mounted by"
+	echo "the kernel. This will prevent devfs from automatically saving and"
+	echo "restoring device permissions. While not optimal, your system will still"
+	echo "be able to boot, but any perm/ownership changes or creation of new compat."
+	echo "device nodes will not be persistent across reboots until you fix this"
+	echo "problem."
+	echo
+	echo "Fortunately, the fix for this problem is quite simple; all you need to"
+	echo "do is pass the \"devfs=nomount\" boot option to the kernel (via GRUB"
+	echo "or LILO) the next time you boot.  Then /dev will not be auto-mounted."
+	echo "The next time you compile your kernel, be sure that you do not"
+	echo "enable the \"Automatically mount filesystem at boot\" devfs kernel"
+	echo "configuration option.  Then the \"devfs=nomount\" hack will no longer be"
+	echo "needed."
+	echo
+     read -t 15 -p "(hit Enter to continue or wait 15 seconds...)" 
+ else	
+	mount -n /dev /dev-state -o bind
+	mount -n -t devfs none /dev
+	if [ -d /dev-state/compat ]
+	then
+			echo Copying devices from /dev-state/compat to /dev
+			cp -ax /dev-state/compat/* /dev
+	fi
+ fi
+ /sbin/devfsd /dev >/dev/null 2>&1;
+fi 
+
+exec /sbin/init.system $*
+
+We now arrive at a large conditional statement that only executes if devfs is set to yes. If this isn't the case, devfs initialization is skipped completely and devfs doesn't even get mounted. This will result in a traditional non-devfs boot.
+
+However, if we are setting up devfs then we dive inside the conditional. Inside, we check to see if devfs has already been mounted by the kernel; we do this by checking to see if the /dev/.devfsd character device exists. When devfs is mounted, this device is automatically created by the kernel, and our future devfsd process will use it to communicate with the kernel. If devfs is already mounted (because the user selected the "Automatically mount devfs at boot" kernel option), we print out an informational message letting the user know that we won't be able to set up the persistence features of devfs, since we can only do that if devfs has not been mounted by the kernel.
+
+Device persistence
+However, if everything is OK, we perform the devfs setup that I covered at the end of my last article: /dev is bind-mounted to /dev-state and a devfs filesystem is mounted at /dev. Then, we perform a step that I didn't mention last article; we check for the existence of a /dev-state/compat directory and recursively copy its contents to /dev. While this procedure may seem a bit redundant at first (we're going to be taking advantage of devfsd's device persistence features, aren't we?) it turns out to be necessary and useful. The reason why we need a compat directory is that devfsd's persistence features only work with devfs-enabled drivers.
+
+So, if you happen to be using a non-devfs kernel module, you'll need to create a device node in /dev manually. The problem with this approach is that this new device node will be ignored by devfsd, meaning that the next time you reboot, it will disappear. Our solution to this problem is to have the /dev-state/compat directory; if you have a non-devfs module, simply create your old-style device nodes in /dev-state/compat and they will be manually added to the devfs filesystem at boot time, thanks to the considerate steps of our handy init wrapper.
+
+Finally, we start up devfsd, and then exit the conditional and exec our real init, /sbin/init.system to begin the standard system boot process. Well, everything's standard except for the fact that we now have a devfs-enabled system! :)
+
+Init wrapper installation
+Here's how we get the init wrapper installed. First, grab the source for wrapper.sh, and save it somewhere on your system. Then, do the following:
+
+Installing the init wrapper
+
+
+# cd /sbin
+# cp init init.system
+# cp /path/to/wrapper.sh init
+# chmod +x init
+
+The init wrapper is now in place.
+
+Tweaking umount
+By using the init wrapper, we've avoided a good amount of complicated initscript tweaking. Nevertheless, there is likely to be one tweak that we can't avoid. Your rc scripts will probably have a hard time umounting your root filesystem now that we have a devfs filesystem mounted at /dev. Fortunately, there's an easy fix for this. Simply grep your rc script directory all occurrences of umount by typing cd /etc/rc.d; grep -r umount * or cd /etc/init.d; grep -r umount * depending on where your particular distributions' rc scripts are installed. Then, in every script that makes reference to umount, make sure that it is being called with the -r option. Of particular importance is the specific umount command that umounts the root filesystem, although sprinkling umount -r's all over the place will also work. :)
+
+The -r option tells umount to try to remount the filesystem as read-only if unmounting is unsuccessful. This is sufficient for putting the root filesystem into a consistent state and get it ready for rebooting, even if it can't be unmounted due to an existing mount at /dev that can't be unmounted itself due to open device nodes.
+
+Now, we're almost ready to reboot; but before we do, let's look at devfsd and whip /etc/devfsd.conf into shape so that compatibility devices and device persistence is enabled. Don't fear, we're just one step away from completing our transition to devfs.
+
+devfsd.conf
+Load /etc/devfsd.conf into your favorite editor. Here are the first four lines of my recommended devfsd.conf:
+
+devfsd.conf, top portion
+
+
+REGISTER        .*              MKOLDCOMPAT
+UNREGISTER      .*              RMOLDCOMPAT
+REGISTER        .*              MKNEWCOMPAT
+UNREGISTER      .*              RMNEWCOMPAT
+
+Each of the above four lines consists of an event (REGISTER or UNREGISTER), a regular expression (.*) and an action (the *COMPAT strings). So, what do they all mean? The first line tells devfsd to perform the MKOLDCOMPAT action when any device (.* is a regular expression that will match any device) is registered with the kernel. The MKOLDCOMPAT action is built-in to devfsd and is understood to mean "make any old compatibility devices that correspond to the device being registered thru devfs". As you've probably figured out, the RM*COMPAT actions that get run at device unregistration cause these special compatibility devices to magically disappear. Taken as a whole, these four lines instruct devfsd to create compatibility devices (if any) when a device is registered, and to remove the compatibility devices when the device is unregistered. Thanks to these lines, when the IDE device driver registers the /dev/ide/host0/bus0/target0/lun0/disc devfs-style device with the system, devfs automatically creates a matching /dev/hda compatibility-style device. This is extremely helpful for commands such as mount and fsck who may be reading an /etc/fstab that contains old-style device names. Generally, the creation of compatibility devices makes the transition to devfs a seamless one. The next line in my devfsd.conf is:
+
+Module auto-loading
+
+devfsd.conf, continued
+
+
+LOOKUP          .*              MODLOAD
+
+This entry tells devfsd to execute the MODLOAD action whenever any device (.*) is "looked up", which is what happens when a program looks for the existence of a particular device node. The MODLOAD action will cause modprobe /dev/mydev to be executed, where /dev/mydev is the name of the device that a particular process is trying to find. Thanks to this feature (along with a properly-configured /etc/modules.conf), it's possible for your sound card drivers to be auto-loaded on demand when you start up your music player, and other neat things.
+
+Device persistence
+Here are the next few lines of my devfsd.conf:
+
+devfsd.conf, continued
+
+
+REGISTER        ^pt[sy]/.*      IGNORE
+CHANGE          ^pt[sy]/.*      IGNORE
+REGISTER        .*              COPY    /dev-state/$devname $devpath
+CHANGE          .*              COPY    $devpath /dev-state/$devname
+CREATE          .*              COPY    $devpath /dev-state/$devname
+
+These next few lines tell devfsd to use /dev-state as a repository for any device permission or ownership changes, as well as any new compatibility devices that the user may create. On the first two lines, we explicitly tell devfsd to not perform any special actions when any pseudo-terminal devices are registered with the kernel, or when their attributes are changed. Without these lines, the permissions and ownership of our pseudo-terminals would be preserved across reboots. This isn't optimal since we should always have a fresh set of default perms on our pseudo-terminal devices right after the system starts up.
+
+The next three lines turn on /dev-state persistence for all other devices. Specifically, we will restore any attributes from /dev-state when a device is registered or devfsd itself is started (as well as copying over any existing compatibility devices), and we will immediately back up any changes to attributes, as well as any newly-created compatibility devices to /dev-state.
+
+CFUNCTION and symlinks
+And to complete my devfsd.conf, I have these lines:
+
+devfsd.conf, end
+
+
+REGISTER        ^cdrom/cdrom0$          CFUNCTION GLOBAL symlink cdroms/cdrom0 cdrom
+UNREGISTER      ^cdrom/cdrom0$          CFUNCTION GLOBAL unlink cdrom
+REGISTER        ^misc/psaux$            CFUNCTION GLOBAL symlink misc/psaux mouse
+UNREGISTER      ^misc/psaux$            CFUNCTION GLOBAL unlink mouse
+
+These last four lines are optional, but they are worth taking a look at. While /dev-state persistence works wonderfully for device nodes, it has no effect at all on symbolic links, which are ignored. So, this raises the question: how does one go about ensuring that /dev/mouse or /dev/cdrom symlinks not only exist, but are persistent across reboots? Fortunately for us, devfsd is extremely configurable, and these four lines (or something similar, customized to your particular system) will do the trick. The first two instruct devfsd to make a /dev/cdrom symlink appear when the /dev/cdrom/cdrom0 device is registered. To do this, devfsd actually performs a dynamic call to the libc function you specify, in this case symlink() and unlink(). The last two lines of the file use an identical approach to create a /dev/mouse symlink when the /dev/misc/psaux (PS/2 mouse) device is registered with devfs. Customize these lines to your system, and then save this file. If you'd like, you can download this devfsd.conf for use on your own system.
+
+Notes before rebooting
+Before rebooting, you may want to take a look at Richard Gooch's devfs FAQ; you may find the information about the devfs naming scheme particularly helpful as you get acquainted with the new-style device names (see Resources below). I also recommend that you print out a copy of Part 5 of this series in case you need to make use of my "emergency bash rescue" instructions in order to fix a boot-related problem. Remember that if for some reason the new init wrapper bombs out, you can always remove it by following my emergency rescue instructions, remounting the root filesystem as read-write, and then performing the following steps:
+
+Returning to pre-wrapper state, if needed
+
+
+# cd /sbin
+# mv init wrapper.sh
+# mv init.system init
+
+After performing these steps, remounting your filesystem(s) as read-only and rebooting, your system will be back in its pre-wrapper state. Now go ahead, reboot, and enjoy devfs!
+
+
+#---------------------------------------------------------------------------------------------------
+

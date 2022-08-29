@@ -1,0 +1,79 @@
+#!/bin/sh
+
+kernel="FOOK"
+supfile="supfile"
+server1="ftp4.freebsd.org"
+server2="ftp.freebsd.org"
+
+if [ -r /var/tmp/UPGRADEone.lock ]
+then
+   echo "CANNOT CONTINUE /var/tmp/UPGRADEone.lock exists"
+   echo "       rm /var/tmp/UPGRADEone.lock"
+   cat /var/tmp/UPGRADEone.lock
+   exit 0
+fi
+
+echo "BEGIN" > /var/tmp/UPGRADEone.lock
+
+echo "*****************************" >> /root/OUThistoryTIMING.txt
+echo "BEGIN" >> /root/OUThistoryTIMING.txt
+echo `date` >> /root/OUThistoryTIMING.txt
+
+echo "BEGIN" > /root/OUTcurrentTIMING.txt
+echo `date` >> /root/OUTcurrentTIMING.txt
+
+if [ ! -r $supfile ]
+then
+   echo " $supfile DOES NOT EXIST, CREATING GENERIC VERSION"
+
+   echo "*default host=ftp4.FreeBSD.org" > $supfile
+   echo "*default base=/usr" >> $supfile
+   echo "*default prefix=/usr" >> $supfile
+   echo "# change "RELENG_4" to "RELENG_3" or "RELENG_2_2"  OR . for curent" >> $supfile
+   echo "*default release=cvs tag=RELENG_4" >> $supfile
+   echo "*default delete use-rel-suffix" >> $supfile
+   echo "*default compress" >> $supfile
+   echo "src-all" >> $supfile
+   echo "ports-all tag=." >> $supfile
+
+fi
+
+#zero out OUT1 and OUT2
+echo " " > /root/OUT1.txt
+echo " " > /root/OUT2.txt
+
+/usr/local/bin/cvsup -r 3 -h $server1 -g -L 2 /root/$supfile > /root/OUT1.txt 2>&1 &&
+
+echo "FINISHED CVSUP /root/$supfile" 2>&1 /var/tmp/UPGRADEone.lock &&
+
+echo "FINISHED CVSUPing...." &&
+
+cd /usr/src &&
+make buildworld 2>&1 > /root/OUT2.txt &&
+echo "FINISHED buildworld" > /var/tmp/UPGRADEone.lock &&
+echo "FINISHED buildworld...." &&
+
+make installworld 2>&1 >> /root/OUT2.txt &&
+echo "FINISHED installworld" > /var/tmp/UPGRADEone.lock &&
+echo "FINISHED installworld...." &&
+
+make buildkernel KERNEL=$kernel 2>&1 >> /root/OUT2.txt &&
+echo "FINISHED buildkernel $kernel" > /var/tmp/UPGRADEone.lock &&
+echo "FINISHED buildkernel.. $kernel.." &&
+
+make installkernel KERNEL=$kernel 2>&1 >> /root/OUT2.txt &&
+echo "FINISHED installkernel $kernel" > /var/tmp/UPGRADEone.lock &&
+
+rm /var/tmp/UPGRADEone.lock &&
+
+echo "END" >> /root/OUThistoryTIMING.txt &&
+echo `date` >> /root/OUThistoryTIMING.txt &&
+
+echo "END" >> /root/OUTcurrentTIMING.txt &&
+echo `date` >> /root/OUTcurrentTIMING.txt &&
+
+reboot &&
+
+echo "FINISHED installkernel..$kernel..Run mergemaster now.."
+
+

@@ -1,0 +1,83 @@
+#-----
+Make sure to call regularly use the command 'nessus-update-plugins' to stay up-to-date
+To automate the update process, please visit <http://www.nessus.org/documentation/index.php?doc=cron>
+
+Congratulations ! Nessus is now installed on this host
+
+. Create a nessusd certificate using /usr/local/sbin/nessus-mkcert
+. Add a nessusd user use /usr/local/sbin/nessus-adduser
+. Start the Nessus daemon (nessusd) use /usr/local/sbin/nessusd -D
+. Start the Nessus client (nessus) use /usr/local/bin/nessus
+. To uninstall Nessus, use /usr/local/sbin/uninstall-nessus
+
+. Remember to invoke '/usr/local/sbin/nessus-update-plugins' 
+  periodically to update your list of plugins
+
+. A step by step demo of Nessus is available at : 
+        http://www.nessus.org/demo/
+
+#-----
+
+www.nessus.org
+
+download package or get current from cvs:
+
+export CVSROOT=":pserver:anonymous@cvs.nessus.org:/usr/local/cvs"
+cvs login
+  (password is anon)
+cvs -z3 checkout nessus-libraries
+cvs -z3 checkout libnasl
+cvs -z3 checkout nessus-core
+cvs -z3 checkout nessus-plugins
+
+to update if you already have a checkout:
+cvs -z3 update -P nessus-libraries
+cvs -z3 update -P libnasl
+cvs -z3 update -P nessus-core
+cvs -z3 update -P nessus-plugins
+
+now in the dir you have have 4 directories (the names above...)
+do "./configure make make install" IN ORDER in each dir
+nessus-libraries
+libnasl
+nessus-core
+nessus-plugins
+
+make sure /etc/ld.so.conf has /usr/local/lib, then /sbin/ldconfig
+
+as root
+/usr/local/sbin/nessus-mkcert  (all defaults ok)
+/usr/local/sbin/nessus-adduser
+  Login: nessus
+  Password: nessus
+  Rules: CTRL-d  (no rules - so this user can do anything)
+  OK: y
+/usr/local/sbin/nessusd &
+
+/usr/local/bin/nessus
+
+SIMPLE SCAN:
+pretty self-explanatory
+LOGIN with nessus/nessus
+In Target Selection tab, put host to be scanned (such as localhost, or
+192.168.0.2) - ranges can be specified 192.168.0.2-4
+press Start Scan
+
+when the report comes up:
+first click on the subnet IP numbers (like 192.168.0)
+then click on the host IP address in the window below ( 192.168.0.2 )
+then click on the specific port in the port window
+
+#-----------
+or
+
+(NOT as root)
+lynx -source http://install.nessus.org | sh
+
+Nessus is now installed on this host
+. Create a certificate for nessusd using /usr/local/sbin/nessus-mkcert
+. Add a user by typing /usr/local/sbin/nessus-adduser
+. Then start nessusd by typing /usr/local/sbin/nessusd -D
+
+
+

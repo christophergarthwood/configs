@@ -1,0 +1,173 @@
+
+#----------------------------------------------------------------
+
+http://www.pdflib.com/pdflib/download/pdflib-4.0.2.tar.gz
+    LICENSE:
+      A commercial PDFlib license is required for all uses of the
+      software which are not explicitely covered by the Aladdin Free
+      Public License (see bottom), for example:
+         shipping a commercial product which contains PDFlib
+         distributing (free or commercial) software based on
+           PDFlib when the source code is not made available
+         implementing commercial Web services with PDFlib
+      you may develop free software with PDFlib, provided
+        you make all of your own source code publicly available
+      you may develop software for your own use with PDFlib
+        as long as you don't sell it
+
+wrapper: PDFLib
+http://www.cpan.org/authors/id/M/MS/MSERGEANT/PDFLib-0.12.tar.gz
+http://www.cpan.org/authors/id/M/MS/MSERGEANT/PDFLib-0.12.readme
+
+
+tar xzvf pdflib-*.tar.gz && cd ./pdflib-*
+./configure --enable-cxx
+make
+make install
+
+#----------------------------------------------------------------
+
+PERL:
+
+use pdflib_pl 3.03;
+
+my $p;
+
+my $RPpageht=792;
+my $RPpagewd=612;
+my $RPbotmargin=50;
+my $RPinitx=50;
+my $RPinity=$RPpageht-$RPbotmargin;
+
+my $RPlogofontsize=24.0;
+my $RPbasefontsize=12.0;
+my $RPsmallishfontsize=9.0;
+my $RPsmallerfontsize=8.0;
+my $RPtinyfontsize=4.0;
+
+$p = PDF_new();
+
+#for actual file
+my $pdffile = "/home/acoleman/TEST/etest.pdf";
+die "Couldn't open PDF file" if (PDF_open_file($p, "$pdffile") == -1);
+#OR for in-memory pdf buffer
+die "Couldn't open PDF file" if (PDF_open_file($p, "") == -1);
+
+PDF_set_info($p, "Creator", "ME :) ");
+PDF_set_info($p, "Author", "ME :) ");
+PDF_set_info($p, "Title", "ME :) ");
+
+PDF_begin_page($p, 612, 792);
+my $LOGOfont = PDF_findfont($p, "Times-Italic", "host", 0);
+$font = PDF_findfont($p, "Helvetica", "host", 0);
+
+PDF_setfont($p, $font, $RPbasefontsize);
+
+PDF_set_text_pos($p, $RPinitx, $RPinity);
+
+PDF_setfont($p, $LOGOfont, $RPlogofontsize);
+my $gotx = PDF_get_value($p,"textx",0);
+my $goty = PDF_get_value($p,"texty",0);
+
+my $strwidth = PDF_stringwidth($p,"My Name Here",$LOGOfont,$RPlogofontsize);
+my $startx = ((612 - $strwidth)/2.0);
+PDF_show_xy($p,"My Name Here",$startx,$goty);
+
+PDF_setfont($p, $font, $RPbasefontsize);
+PDF_continue_text($p,"");
+PDF_continue_text($p,"");
+my $gotx = PDF_get_value($p,"textx",0);
+my $goty = PDF_get_value($p,"texty",0);
+PDF_set_text_pos($p, $RPinitx, $goty);
+
+PDF_show($p,"This is some text and");
+PDF_continue_text($p,"This is some more text \n");
+PDF_continue_text($p,"");
+my $goty = PDF_get_value($p,"texty",0);
+PDF_set_text_pos($p, 100, $goty);
+
+PDF_continue_text($p,"");
+bigline($p,4.0,1,$RPinitx);
+
+PDF_continue_text($p,"");
+my $goty = PDF_get_value($p,"texty",0);
+PDF_set_text_pos($p, $RPinitx, $goty);
+my $trimpj = trim($ARRproj[$jj]->{Ir});
+my $trimne = trim($ARRproj[$jj]->{N});
+PDF_continue_text($p,"$trimpj  $trimne");
+my $goty = PDF_get_value($p,"texty",0);
+PDF_set_text_pos($p, $RPinitx, $goty);
+
+rollpage($p,$RPbotmargin,$RPinitx,$RPinity);
+
+my $pdfbuffer;
+PDF_end_page($p);
+PDF_close($p);
+
+#if I used a file it is now finished, if I used a memory buffer I need this
+$pdfbuffer = PDF_get_buffer($p);
+
+#then for both cases
+PDF_delete($p);
+
+#-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+sub rollpage {
+
+#use: rollpage($p,$RPbotmargin,$RPinitx,$RPinity);
+
+   my $p=$_[0];
+   my $botmargin=$_[1];
+   my $initx=$_[2];
+   my $inity=$_[3];
+
+
+                   my $gotx = PDF_get_value($p,"textx",0);
+                   my $goty = PDF_get_value($p,"texty",0);
+                   if ( $goty < $botmargin) {
+                       #print "\n\t GOTY $goty botmargin $botmargin\n";
+                       my $currfont = PDF_get_value($p,"font",0);
+                       my $currfontsize = PDF_get_value($p,"fontsize",0);
+                       PDF_end_page($p);
+                       PDF_begin_page($p, 612, 792);
+                       PDF_setfont($p, $currfont, $currfontsize);
+                       PDF_set_text_pos($p, $initx, $inity);
+                       PDF_show_xy($p," ",$initx, $inity);
+
+                       my $goty = PDF_get_value($p,"texty",0);
+                       #print "\n\t AFTER PAGE SET GOTY $goty botmargin $botmargin\n";
+                   }
+
+
+}
+
+#-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+sub bigline {
+
+#use: bigline($p,4.0,1,$RPinitx);
+
+   my $p=$_[0];
+   my $linewidth=$_[1];
+   my $linecap=$_[2];
+   my $initx=$_[3];
+
+   my $gotx = PDF_get_value($p,"textx",0);
+   my $goty = PDF_get_value($p,"texty",0);
+
+   PDF_setlinewidth($p, $linewidth);
+   PDF_setlinecap($p, $linecap);
+   PDF_moveto($p,$initx,$goty);
+   PDF_lineto($p,(612-$initx),$goty);
+   PDF_stroke($p);
+   PDF_setlinecap($p, $linecap);
+
+}
+
+#-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+#----------------------------------------------------------------

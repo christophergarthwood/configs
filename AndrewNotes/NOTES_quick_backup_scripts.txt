@@ -1,0 +1,70 @@
+#---------------------------------------------------------
+
+to create a backup just run as root:
+/usr/local/bin/my_quick_backup.sh
+from the directory with gpg_expect.expect, tar_exclude.txt, and
+  tar_include.txt.
+The output will be gpg encrpypted and left in the PWD
+
+#---------------------------------------------------------
+
+mkdir ./backups
+cd ./backups
+
+vi /usr/local/bin/my_quick_backup.sh
+#--
+#!/bin/sh
+export MYNAME=`hostname|awk -F '.' '{print $1}'`  #maybe problems with this, hardcode below
+#export MYNAME="mynamehere"
+export NOWDATE=`date +"%Y_%m_%d"`
+export FILENAME="$MYNAME""_""$NOWDATE.tar"
+export FILETAG="$MYNAME""_""$NOWDATE"
+nice -19 tar -cv -f ./$FILENAME -T ./tar_include.txt -X ./tar_exclude.txt
+nice -19 gzip -9 ./$FILENAME
+tar tzvf "./$FILETAG"".tar.gz" > "./$FILETAG"".listing.txt"
+mail -s "MY_QUICK_BACKUP Listing" myemailaddr@dentarthurdent.org < "./$FILETAG"".listing.txt"
+nice -19 ./gpg_expect.expect MyS3cr3tPassW0rd "./$FILETAG"".tar.gz"  #CHANGE PASSWORD HERE
+rm -f "./$FILETAG"".tar.gz" #might want to use wipe here
+#could put an (scp,ftp,etc) here to move encrypted file somewhere else
+#--
+chmod 0700 /usr/local/bin/my_quick_backup.sh
+
+vi ./tar_include.txt
+#--
+/var/proftpd
+/var/named
+/root
+/etc
+/boot
+/usr/local/etc
+/var/mysql/
+/usr/local/bin/manage_ftp_users.pl
+/usr/local/samba/lib/smb.conf
+#--
+vi ./tar_exclude.txt  #only need to list excludes that are inside the includes above
+#--
+/var/proftpd/do_not_backup
+/etc/shadow
+/var/mysql/*-bin.0*
+/usr/local/apache/logs
+#--
+
+vi ./gpg_expect.expect
+#--
+#!/usr/bin/expect -f
+#use as: nice -19 ./gpg_expect.expect password filename
+send_user "Starting Script. Do Not Type.\n"
+spawn gpg -c [lrange $argv 1 1]
+
+expect "Enter passphrase:"
+send "[lrange $argv 0 0]\n"
+expect "Repeat passphrase:"
+send "[lrange $argv 0 0]\n"
+wait
+send_user "Ending Script.\n"
+#--
+chmod 0755 ./gpg_expect.expect
+
+#---------------------------------------------------------
+#---------------------------------------------------------
+

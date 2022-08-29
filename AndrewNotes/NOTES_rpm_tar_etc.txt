@@ -1,0 +1,94 @@
+
+#----------------------------------------------------------------------------
+vi /usr/local/bin/explode.sh
+#--
+#! /bin/sh
+# $Id: untar,v 1.7 2001/01/02 13:57:09 friedman Exp $
+for f in ${1+"$@"}; do
+  case "$f" in
+    *.t[ag]z | *.tar.gz | *.tar.[Zz] | *.xtar.gz | *.xtar.[Zz] | *.nif )
+      ${GZIP-gzip} -dc "$f" | ${TAR-tar} -xpvf -
+     ;;
+    *.tbz | *.tbz2 | *.tar.bz2 | *.xtar.bz2 | *.tar.bz )
+      ${BZIP2-bzip2} -dc "$f" | ${TAR-tar} -xpvf -
+     ;;
+    *.tar | *.xtar )
+      ${TAR-tar} -xpvf "$f"
+     ;;
+    *.zip | *.jar )
+      ${UNZIP-unzip} -oL "$f"
+     ;;
+    *.rpm )
+      rpm2cpio "$f" | cpio -dimv --no-absolute-filenames
+     ;;
+  esac
+done
+#--
+chmod 0755 /usr/local/bin/explode.sh
+#----------------------------------------------------------------------------
+
+Summary:	Gnome SMB Browser 
+Name:		gnomba
+Version:	0.6.2
+Release:	0
+License:	GPL
+Group:		Networking/Other
+BuildRequires:	XFree86-devel gnome-libs-devel audiofile-devel esound-devel imlib-devel zlib-devel readline-devel
+
+Source:		http://gnomba.sourceforge.net/src/gnomba-%version.tar.gz
+
+URL:		http://gnomba.sourceforge.net/
+BuildRoot:	%_tmppath/%name-%version-%release-root
+Requires:	samba >= 2.0.5
+
+%description
+gnomba is a GUI network browser using the smb protocol.  It allows users
+to browse workgroups, machines, and shares in a "Network Neighborhood."
+
+%prep
+
+%setup -q
+
+%build
+%configure
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
+     
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT
+
+%makeinstall
+
+install -m 755 -d $RPM_BUILD_ROOT/%{_menudir}
+#bzip2 -dc  %SOURCE1 > $RPM_BUILD_ROOT/%{_menudir}/%{name}
+#mkdir -p $RPM_BUILD_ROOT/%{_miconsdir}
+#mkdir -p $RPM_BUILD_ROOT/%{_liconsdir}
+#cd $RPM_BUILD_DIR/%{name}-%{version}
+#install -m644  %{name}_16.xpm $RPM_BUILD_ROOT%{_miconsdir}/%{name}.xpm
+#install -m644  %{name}_32.xpm $RPM_BUILD_ROOT/%{_iconsdir}/%{name}.xpm
+#install -m 644 %{name}_48.xpm  $RPM_BUILD_ROOT/%{_liconsdir}/%{name}.xpm
+#%{find_lang} %{name}
+
+%post
+#%{update_menus}
+  
+%postun
+#%{clean_menus}
+
+%clean
+rm -fr %buildroot
+
+%files
+%defattr(-,root,root)
+%doc README COPYING ChangeLog
+%{_bindir}/*
+
+%changelog
+* Sun Aug 11 2002 Andrew Coleman <acoleman@dentarthurdent.com>
+- made tiny spec template
+
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+

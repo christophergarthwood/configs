@@ -1,0 +1,17 @@
+To ensure the user list is disabled, run the following command:
+
+$ gconftool-2 --direct \
+--config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory \
+--get /apps/gdm/simple-greeter/disable_user_list
+
+The output should be "true". If it is not, this is a finding. 
+
+Fix Text: 
+In the default graphical environment, users logging directly into the system are greeted with a login screen that displays all known users. This functionality should be disabled.
+
+Run the following command to disable the user list:
+
+$ sudo gconftool-2 --direct \
+--config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory \
+--type bool --set /apps/gdm/simple-greeter/disable_user_list true
+

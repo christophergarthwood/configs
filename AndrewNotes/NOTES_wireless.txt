@@ -1,0 +1,297 @@
+#---------------------------------------
+
+http://umn.dl.sourceforge.net/sourceforge/pcmcia-cs/pcmcia-cs-3.2.1.tar.gz
+
+##ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/linux-wlan-ng-0.1.15.tar.gz
+ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/linux-wlan-ng-0.2.0.tar.gz
+tar xzvf linux-wlan-ng-*.tar.gz && cd linux-wlan-ng-*/
+#make sure /usr/src/linux is right
+
+make config   #answer questions (all defaults)
+make all
+make install
+
+everything relevant exists in /etc/wlan/*
+
+#---------------------------------------
+#---------------------------------------
+
+loads wvlan_cs module
+ds module (used by wvlan_cs)
+
+Dec  8 14:14:27 localhost cardmgr[541]: initializing socket 0
+Dec  8 14:14:27 localhost cardmgr[541]: socket 0: Intersil PRISM2 11 Mbps Wireless Adapter
+Dec  8 14:14:27 localhost kernel: cs: memory probe 0xa0000000-0xa0ffffff: clean.Dec  8 14:14:27 localhost cardmgr[541]: executing: 'modprobe wvlan_cs'
+Dec  8 14:14:28 localhost kernel: wvlan_cs: WaveLAN/IEEE PCMCIA driver v1.0.7
+Dec  8 14:14:28 localhost kernel: wvlan_cs: (c) Andreas Neuhaus <andy@fasta.fh-dortmund.de>
+Dec  8 14:14:28 localhost kernel: wvlan_cs: index 0x01: Vcc 3.3, irq 3, io 0x0100-0x013f
+Dec  8 14:14:28 localhost cardmgr[541]: executing: './network start eth0'
+Dec  8 14:14:28 localhost kernel: wvlan_cs: Registered netdevice eth0
+Dec  8 14:14:28 localhost kernel: wvlan_cs: MAC address on eth0 is 00 05 5d a7 07 9b
+Dec  8 14:14:28 localhost kernel: wvlan_cs: This is a PrismII card, not a Wavelan IEEE card :-(
+Dec  8 14:14:28 localhost kernel: You may want report firmare revision (0x8) and what the card support.
+Dec  8 14:14:28 localhost kernel: I will try to make it work, but you should look for a better driver.
+Dec  8 14:14:28 localhost kernel: wvlan_cs: Found firmware 0x8 (vendor 2) - Firmware capabilities : 1-0-0-0-1
+
+
+ok - so i really need to get a prism2 driver and use that by hand
+
+#---------------------------------------
+
+
+            Re:Pringles can waveguide? (Score:2, Informative) 
+            by xof on Tuesday August 28, @12:50AM (#2224379) 
+            (User #518138 Info) 
+            http://www.wlan2.dabsol.co.uk/tincan.gif 
+            http://www.saunalahti.fi/~elepal/antenna2.html 
+
+            and more of these on 
+            http://www.wlan2.dabsol.co.uk/antenna-page.html 
+
+            (from http://www.wlan2.dabsol.co.uk/page2.html) 
+
+            :-) 
+
+
+#---------------------------------------
+
+http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&oe=UTF-8&th=91f3447453b26b3e&rnum=1
+The Naughty Andy wrote:
+> Hello:
+> 
+> I recently formatted my laptop and installed Redhat Linux 7.1. I can't
+> remember during the installation as to whether I specified to install as
+> Laptop or Custom computer. Anyhow, when I downloaded the drivers from
+> http://pcmcia-cs.sourceforge.net/ the readme required me to unload the files
+> into /etc/pcmcia directory. I do not have this directory, and I may not have
+> other laptop components, so I can't really make use of the PCMCIA 802.11b
+> card right now.
+
+
+    * Unpack pcmcia-cs-3.1.?.tar.gz in /usr/src.
+     * Run ``make config'' in the new pcmcia-cs-3.1.? directory.
+     * Run ``make all'', then ``make install''.
+     * Customize the startup script and the option files in /etc/pcmcia 
+for your site, if needed.
+
+Have you done the first couple steps?  There should be an /etc/pcmcia if 
+you have unpacked the tar file and done make config; make all; make install.
+
+DanH
+
+i assume you're talking about the D-Link DWL-650? i'm running the latest
+Red Hat 7.2 beta and using these cards, along with a functional equivalent
+card, the Linksys WPC11...
+
+the purported 'best' solution is to use the orinoco_cs and hermes drivers;
+however, i have not had success... here' what works for me (and perfectly,
+too, i might add):
+
+- download the latest pcmcia-cs package... untar, make config and
+make install... the driver you want is wvlan_cs.o... the module is not
+'perfectly' suited for the card, but loads, reports 'ok, i'll try to make
+this work' (use dmesg to see output after popping the card in)...
+
+- you can then use the 'normal' wireless utilties to configure the card...
+for example, here's a short script i use in an IBM StinkPad 390X to set up
+wireless service (i don't use encryption, mind you) to forward packets
+from the LAN to a wireless subnet (i'm posting this from an IBM Z50
+WorkPad running NetBSD, which also uses the D-Link card):
+
+# take down eth0 (wired to the LAN)
+ifconfig eth0 down
+# now bring it up
+ifconfig eth0 yourlaptophostname up
+# now set the default LAN gateway
+route add default gw yourgateway
+# take down eth1 (the D-Link card)
+ifconfig eth1 down
+# now configure the card
+iwconfig eth1 essid "YOURNETNAME" 
+iwconfig eth1 mode Ad-hoc 
+iwconfig eth1 rate 11M
+# display the settings
+iwconfig eth1
+# now configure the card to the below IP
+ifconfig eth1 192.168.1.4 netmask 255.255.255.0 up
+# now ensure IP forwarding is enabled, then do it
+/etc/rc.d/init.d/ipchains start
+echo 1 >/proc/sys/net/ipv4/ip_forward
+ipchains -A forward -s 192.168.1.0/24 -j MASQ 
+
+this works great for me...
+
+BTW, the D-Link DWL-650 is a great card to modify for an external antenna
+connection... i just built a 2.4Ghz vertical collinear omnidirectional
+antenna for $10 last friday, modified the card, and then doubled the range
+of the card... see:
+
+http://www.tux.org/~bball/antenna
+
+
+
+#---------------------------------------
+
+http://mozillaquest.com/Network_02/Wireless_Network_Technology_03_Story-01.html
+
+Skyline PC Card, wvlan_cs
+The clue to the problem came from carefully watching the boot messages. That showed Red
+                             Hat Linux 7.2 was trying to start the wireless PC Card, Eth 0, before it started the PCMCIA
+                             services. Thus, the Linux operating system (OS) could not see the Skyline PC Card when it
+                             wanted to start Eth 0.
+
+open the /etc/init.d/pcmcia startup-script
+ chkconfig: 2345 45 96
+TO
+chkconfig: 2345 09 96
+
+The Proxim Skyline 802.11b PC Card for Notebooks
+                             uses the Intersil (previously Harris Semiconductor) Prism2
+                             chip
+
+
+
+#---------------------------------------
+#---------------------------------------
+
+Various crap::
+
+http://www.linuxvirtualserver.org/~julian/bridging.txt
+http://www.linuxvirtualserver.org/~julian/#bridging
+
+
+http://lists.linux-wlan.com/pipermail/linux-wlan-devel/2002-July/001306.html
+http://www.elixar.net/wireless/
+
+
+http://www.elixar.net/wireless/download/airids-wlan-ng-0.1.9-v0.8b.patch.tar.gz
+http://www.elixar.net/wireless/download/linux-wlan-ng-0.1.9.tar.gz
+
+http://www.lava.net/~newsham/wlan/
+
+http://www.goonda.org/wireless/prism2/
+With the release of the 0.1.10 drivers, its no longer necessary to patch
+0.1.8-pre13 with newsham's patches to get promiscuous mode support
+you can enable monitor mode on channel 11, for example, by doing the
+following:
+
+wlanctl-ng wlan0 lnxreq_wlansniff channel=11 enable=true
+
+If successful, you should see a message like:
+
+message=lnxreq_wlansniff
+  enable=true
+  channel=11
+  resultcode=success
+
+
+If you get a resultcode=no_value, then something is wrong. Once you have got
+this working, you can then run prismdump to capture packets on the wlan0
+interface.
+
+WEP (encryption)
+
+I have been able to use both 64 and 128-bit WEP to talk to a SMC2652W AP with
+no problems. I haven't yet figured out if I can set the value using wlancfg, I
+simply edited
+the /etc/pcmcia/wlan-ng.opts file to reflect my desired SSID, and WepKeys.
+
+
+http://www.glue.umd.edu/~chus/dosattack.html
+
+http://www.natecarlson.com/include/showpage.php?cat=linux&page=wireless-sniff
+To put the card into monitor mode (note: this WILL make the network card
+unusable for normal traffic!), run the following command:
+
+         wlanctl-ng wlan0 lnxreq_wlansniff channel=N enable=true
+
+         Generally, you'll want to sniff on Channel 6 (it's the default, and
+most people don't change the default), but you may want to play with other
+channels, too. To
+         stop sniffing, run the same thing, except enable=false.
+
+         Once you have the card in sniffing mode, you can use prismdump to
+dump some packets out into a pcap-format file. This is really simple; just
+run:
+
+         prismdump > sniff.out
+
+         I generally also run airsnort's capture with the '-c' flag while I am
+doing this; that way, I can see how many packets have gone through. This file
+will grow,
+         quick. Once it starts growing, it means you have some data!
+
+         Final Step: Analyze the packets!
+
+
+         Well, now that you have some packets saved to disk, I suppose you
+want to view them, huh? If all you want is the ESSID, and you don't care about
+anything
+         else, you can just dump the packets with tcpdump:
+
+         tcpdump -X -x -r sniff.out
+
+
+http://creatis-www.insa-lyon.fr/~bellet/creatis/wlan/wireless.html
+You can switch to promiscuous mode :
+
+wlanctl-ng  wlan0 lnxreq_wlansniff channel=10 enable=true
+
+#---------------------------------------
+
+make all
+make install
+
+/etc/wlan
+/etc/pcmcia/wlan-ng.conf
+/etc/pcmcia/config
+
+/sbin/wlanctl-ng
+/sbin/wland
+/sbin/wlancfg
+
+tail /var/log/messages
+Sep 25 08:31:54 localhost cardmgr[740]: initializing socket 0
+Sep 25 08:31:54 localhost cardmgr[740]: socket 0: Intersil PRISM2 11 Mbps Wireless Adapter
+Sep 25 08:31:54 localhost cardmgr[740]: executing: 'modprobe wvlan_cs'
+Sep 25 08:31:54 localhost kernel: wvlan_cs: WaveLAN/IEEE PCMCIA driver v1.0.6
+Sep 25 08:31:54 localhost kernel: wvlan_cs: (c) Andreas Neuhaus <andy@fasta.fh-dortmund.de>
+Sep 25 08:31:54 localhost kernel: wvlan_cs: index 0x01: Vcc 3.3, irq 3, io 0x0100-0x013f
+Sep 25 08:31:54 localhost cardmgr[740]: executing: './network start eth0'
+Sep 25 08:31:54 localhost kernel: wvlan_cs: Registered netdevice eth0
+Sep 25 08:31:54 localhost kernel: wvlan_cs: MAC address on eth0 is 00 05 5d a7 07 9b 
+Sep 25 08:31:54 localhost kernel: wvlan_cs: This is a PrismII card, not a Wavelan IEEE card :-(
+Sep 25 08:31:54 localhost kernel: You may want report firmare revision (0x8) and what the card support.
+Sep 25 08:31:54 localhost kernel: I will try to make it work, but you should look for a better driver.
+Sep 25 08:31:54 localhost kernel: wvlan_cs: Found firmware 0x8 (vendor 2) - Firmware capabilities : 1-0-0-0-1
+Sep 25 08:31:54 localhost /etc/hotplug/net.agent: invoke ifup eth0
+Sep 25 08:31:55 localhost kernel: wvlan_cs: WMAC controller asynchronous transmission unsuccessful completed
+
+
+#---
+
+http://www.kismetwireless.net/download.shtml
+./configure && make dep && make && make install
+
+#---------------------------------------
+
+/sbin/wlanctl-ng wlan0 lnxreq_wlansniff channel=6 enable=true
+
+message=lnxreq_wlansniff
+  enable=true
+  channel=6
+  prismheader=no_value
+  keepwepflags=no_value
+  stripfcs=no_value
+  packet_trunc=no_value
+  resultcode=success
+
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+

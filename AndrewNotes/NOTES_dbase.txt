@@ -1,0 +1,45 @@
+http://wuarchive.wustl.edu/systems/os2/apps/database/00filesd.txt
+
+ cdbflite_os2.zip  58989 2000/12/07  Command-line DBF Viewer and Editor
+                        Long desc:  The CDBFlite program allows to work with
+                                    .DBF files format from command line. You
+                                    can carry out various actions, which don't
+                                    requires presence of the man in a batch
+                                    mode.
+                        Runs on:    OS/2, DOS, Windows, Linux
+                        Contact:    Sergey Chehuta (info@whitetown.com)
+                        Source:     http://www.whitetown.com/cdbflite/
+
+dbf_edit1_0.zip 1241884 2000/07/18  Edit fields of .dbf file.
+                        Long desc:  Edits dBASE files (.dbf) in ways that are
+                                    are exceptionally difficult to accomplish
+                                    using database programs. Fields (i.e.
+                                    columns) may be copied, renamed, moved,
+                                    deleted, and redefined. "Magic"
+                                    operations, which perform tasks defined by
+                                    the programmer, are also available.
+                                    Programmers can add more such Magic
+                                    routines. .DBF files may also be
+                                    exported/imported in a form that is
+                                    readily edited by a REXX program.
+                        Runs on:    OS/2
+                        Requires:   REXX interpreter
+                        Contact:    Doug Rickman (doug@hotrocks.msfc.nasa.gov)
+
+rxbas223.zip     479922 1999/04/29  RexxBase - dBase Database For Rexx
+                        Long desc:  RexxBase ver 2.23 dBase Database For Rexx
+                                    Provides external functions for Rexx
+                                    command files and applications to
+                                    read/write/update dbase III and IV files.
+                        Runs on:    OS/2 Version 2.0 or better.
+                        Requires:   Not applicable
+                        Contact:    Joe McVerry (jmcverry@americancoders.com)
+                        Source:     http://www.americancoders.com/RexxBase.html
+
+dbffg04b.zip     147773 1999/01/19  DBF viewer for OS/2. v0.04b
+                        Long desc:  This program allows to view and edit DBF
+                                    files in OS/2 VIO-window of any size.
+                        Runs on:    OS/2 3.0+
+                        Source:     http://www1.yand.crimea.net/~dbfforge/
+
+

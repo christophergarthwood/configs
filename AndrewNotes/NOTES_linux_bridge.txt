@@ -1,0 +1,368 @@
+
+#---------------------------------------------------------------------------------------------
+
+#download and apply kernel patch from bridge.sourceforge.net to allow iptables
+#to work with bridges
+http://bridge.sourceforge.net/download.html
+http://bridge.sourceforge.net/devel/bridge-nf/bridge-nf-0.0.7-against-2.4.19.diff
+
+#download bridge utils
+http://bridge.sourceforge.net/bridge-utils/bridge-utils-0.9.6.tar.gz
+
+#apply patch
+cd /usr/src/linux-2.4.19
+patch -p1 < ~n9n/downloads/bridge-nf-0.0.7-against-2.4.19.diff.txt 
+#all should apply successfully
+make mrproper
+#make kernel with iptables and 802.1d Ethernet Bridging
+
+#make bridge utils ("locate brctl" to see if they are already installed)
+tar xzvf bridge-utils-0.9.6.tar.gz && cd bridge-utils
+
+
+#ok, now boot with that kernel and configure bridge.
+#both eth interfaces should NOT have IP addresses
+brctl addbr br0 
+brctl addif br0 eth0
+brctl addif br0 eth1
+ip link set br0 up 
+ip link set eth0 up 
+ip link set eth1 up 
+
+#mac os9 hates tree spanning protocol (stp)
+brctl stp br0 off
+
+
+#show stats
+brctl show
+brctl showmacs br0
+brctl showstp br0
+
+#assign an IP address to the bridge if you want to be able to ssh into the machine
+/sbin/ifconfig br0 192.168.0.51 netmask 255.255.255.0
+
+#bridging has a startup delay of 30 seconds - everything looks fine, just no
+# actual bridging occurs for about 30 seconds
+
+#---------------------------------------------------------------------------------------------
+tutorial:
+http://www.linuxgazette.com/issue76/whitmarsh.html
+
+www.sparkle-cc.co.uk/firewall/firewall.html
+
+http://bridge.sourceforge.net/docs/bridge.html
+http://bridge.sourceforge.net/docs/bridge-firewall.html
+
+#---------------------------------------------------------------------------------------------
+
+conntrack viewer works (even for non-NAT connections):
+http://cv.intellos.net/conntrack-viewer-1.3/conntrack-viewer-1.3.tar.gz
+
+#---------------------------------------------------------------------------------------------
+
+#eth0 internal, eth1 external
+
+#set default to drop, accept everything going out, and related stuff coming in
+/sbin/iptables -P FORWARD DROP
+/sbin/iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT
+/sbin/iptables -A FORWARD -i eth1 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+#let everything go thru for one machine 
+/sbin/iptables -A FORWARD -d 192.168.0.164 -j ACCEPT
+/sbin/iptables -A FORWARD -s 192.168.0.164 -j ACCEPT  #only needed if outbound is restricted
+
+#let certain ports go thru for one machine 
+/sbin/iptables -A FORWARD -d 192.168.0.164 -p tcp --dport 21 -j ACCEPT
+/sbin/iptables -A FORWARD -s 192.168.0.164 -p tcp --sport 21 -j ACCEPT  #only needed if outbound is restricted
+
+#test: drop everything bridged
+/sbin/iptables -A FORWARD -i eth0 -o eth1 -j DROP
+/sbin/iptables -A FORWARD -i eth1 -o eth0 -j DROP
+
+#not loaded automatically
+#/sbin/modprobe ip_conntrack_ftp
+#/sbin/modprobe ip_conntrack_irc
+
+
+#---------------------------------------------------------------------------------------------
+
+/etc/init.d/bridge_basic
+#--
+#!/bin/sh
+#chkconfig: - 10 10
+#description: bridge init.d
+case "$1" in
+  start)
+	echo "Starting bridge br0 across eth0 and eth1"
+	brctl addbr br0 
+	brctl addif br0 eth0
+	brctl addif br0 eth1
+	ip link set br0 up 
+	ip link set eth0 up 
+	ip link set eth1 up 
+	#mac os9 hates tree spanning protocol (stp)
+	brctl stp br0 off
+	echo "Bridging will begin in 30 seconds..."
+	;;
+  stop)
+	echo "Halting bridge br0 across eth0 and eth1"
+	ifconfig eth0 0.0.0.0
+	ifconfig eth1 0.0.0.0
+	ip link set eth0 down
+	ip link set eth1 down
+	ip link set br0 down
+	brctl delif br0 eth0
+	brctl delif br0 eth1
+	brctl delbr br0
+	;;
+  *)
+	echo "Usage: bridge {start|stop}"
+	exit 1
+	;;
+esac
+#--
+chmod 0755 /etc/init.d/bridge_basic
+#--
+/etc/init.d/bridge_fw
+#--
+#!/bin/sh
+#chkconfig: - 10 10
+#description: bridge init.d
+case "$1" in
+  start)
+	echo "Starting bridge br0 across eth0 and eth1"
+	brctl addbr br0 
+	brctl addif br0 eth0
+	brctl addif br0 eth1
+	ip link set br0 up 
+	ip link set eth0 up 
+	ip link set eth1 up 
+	#mac os9 hates tree spanning protocol (stp)
+	brctl stp br0 off
+
+	#eth0 internal, eth1 external
+	#set default to drop, accept everything going out, and related stuff coming in
+	iptables -P FORWARD DROP
+	iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT
+	iptables -A FORWARD -i eth1 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+	echo "Bridging will begin in 30 seconds..."
+	;;
+  stop)
+	echo "Halting bridge br0 across eth0 and eth1"
+	ifconfig eth0 0.0.0.0
+	ifconfig eth1 0.0.0.0
+	ip link set eth0 down
+	ip link set eth1 down
+	ip link set br0 down
+	brctl delif br0 eth0
+	brctl delif br0 eth1
+	brctl delbr br0
+
+	iptables -P INPUT ACCEPT
+	iptables -P FORWARD ACCEPT
+	iptables -P OUTPUT ACCEPT
+	iptables -t nat -P PREROUTING ACCEPT
+	iptables -t nat -P POSTROUTING ACCEPT
+	iptables -t nat -P OUTPUT ACCEPT
+	iptables -F
+	iptables -t nat -F
+	iptables -X
+	iptables -t nat -X
+	;;
+  *)
+	echo "Usage: bridge {start|stop}"
+	exit 1
+	;;
+esac
+#--
+chmod 0755 /etc/init.d/bridge_fw
+#---------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+
+vi /etc/init.d/bridge_fw.sh
+#--
+#!/bin/sh
+#chkconfig: - 11 11
+#description: bridge init.d
+# ETH0 INTERNAL  ETH1 EXTERNAL
+
+export PATH=/sbin:/usr/sbin:$PATH
+
+INTIF='eth0'
+EXTIF='eth1'
+INTNET='64.79.238.0/24'
+
+IPTABLES='/sbin/iptables'
+
+#modprobe ip_conntrack_ftp
+#modprobe ip_conntrack_irc
+
+case "$1" in
+  start)
+        echo "Starting bridge br0 across eth0 and eth1"
+        ifdown $INTIF
+        ifdown $EXTIF
+        brctl addbr br0 
+        brctl addif br0 $INTIF
+        brctl addif br0 $EXTIF
+        ip link set br0 up 
+        ip link set $INTIF up 
+        ip link set $EXTIF up 
+        #mac os9 hates tree spanning protocol (stp)
+        brctl stp br0 off
+
+        ifconfig br0 64.79.238.2 netmask 255.255.255.0
+
+        #set default to drop, accept everything going out, and related stuff coming in
+        $IPTABLES -P FORWARD DROP
+
+        #new chains
+        $IPTABLES -N BASICINOUT
+        $IPTABLES -N BASICOUTIN
+        $IPTABLES -N SERVERINOUT
+        $IPTABLES -N SERVEROUTIN
+
+        #jump to basic - then basic denys some stuff and sorts servers
+        $IPTABLES -A FORWARD -i $INTIF -o $EXTIF -j BASICINOUT
+        $IPTABLES -A FORWARD -i $EXTIF -o $INTIF -j BASICOUTIN
+
+        #OUTGOING
+        #Make sure internal IPs are what they are supposed to be (take into account any local IP's on the other side)
+        $IPTABLES -A BASICINOUT -i $INTIF -s ! $INTNET -j DROP
+        #DENY CERTAIN THINGS
+        $IPTABLES -A BASICINOUT -p tcp --dport 139 -j DROP
+        $IPTABLES -A BASICINOUT -p udp --dport 137 -j DROP
+        $IPTABLES -A BASICINOUT -p udp --dport 138 -j DROP
+        $IPTABLES -A BASICINOUT -p udp --dport 135 -j DROP
+        #mysql, other db's
+        $IPTABLES -A BASICINOUT -p tcp --dport 1433 -j DROP  #mssql
+        $IPTABLES -A BASICINOUT -p tcp --dport 5432 -j DROP  #postgres
+        $IPTABLES -A BASICINOUT -p tcp --dport 3306 -j DROP  #mysql
+        #afp (netatalk)
+        $IPTABLES -A BASICINOUT -p tcp --dport 548 -j DROP
+        #dhcp
+        $IPTABLES -A BASICINOUT -p udp --dport 67 -j DROP
+        #servers
+        $IPTABLES -A BASICINOUT -s 64.79.238.71 -j SERVERINOUT
+        $IPTABLES -A BASICINOUT -s 64.79.238.72 -j SERVERINOUT
+        $IPTABLES -A BASICINOUT -s 64.79.238.73 -j SERVERINOUT
+        $IPTABLES -A BASICINOUT -s 64.79.238.74 -j SERVERINOUT
+        $IPTABLES -A BASICINOUT -s 64.79.238.66 -j SERVERINOUT
+        $IPTABLES -A BASICINOUT -s 64.79.238.175 -j SERVERINOUT
+        #users
+        $IPTABLES -A BASICINOUT -p tcp --dport 25 -j DROP #drop mail (servers are allowed in a different chain)
+        $IPTABLES -A BASICINOUT -j ACCEPT
+
+        #SERVER OUTGOING
+        $IPTABLES -A SERVERINOUT -j ACCEPT
+
+        #INCOMING
+        #Make sure internal IPs are what they are supposed to be (take into account any local IP's on the other side)
+        $IPTABLES -A BASICOUTIN -i $EXTIF -d ! $INTNET -j DROP
+        #DENY CERTAIN THINGS
+        $IPTABLES -A BASICOUTIN -p tcp --dport 139 -j DROP
+        $IPTABLES -A BASICOUTIN -p udp --dport 137 -j DROP
+        $IPTABLES -A BASICOUTIN -p udp --dport 138 -j DROP
+        $IPTABLES -A BASICOUTIN -p udp --dport 135 -j DROP
+        #mysql, other db's
+        $IPTABLES -A BASICOUTIN -p tcp --dport 1433 -j DROP  #mssql
+        $IPTABLES -A BASICOUTIN -p tcp --dport 5432 -j DROP  #postgres
+        $IPTABLES -A BASICOUTIN -p tcp --dport 3306 -j DROP  #mysql
+        #afp (netatalk)
+        $IPTABLES -A BASICOUTIN -p tcp --dport 548 -j DROP
+        #dhcp
+        $IPTABLES -A BASICOUTIN -p udp --dport 67 -j DROP
+
+        $IPTABLES -A BASICOUTIN -d 64.79.238.71 -j SERVEROUTIN
+        $IPTABLES -A BASICOUTIN -d 64.79.238.72 -j SERVEROUTIN
+        $IPTABLES -A BASICOUTIN -d 64.79.238.73 -j SERVEROUTIN
+        $IPTABLES -A BASICOUTIN -d 64.79.238.74 -j SERVEROUTIN
+        $IPTABLES -A BASICOUTIN -d 64.79.238.66 -j SERVEROUTIN
+        $IPTABLES -A BASICOUTIN -d 64.79.238.175 -j SERVEROUTIN
+        #PCDUO
+        $IPTABLES -A BASICOUTIN -p tcp --dport 5405 -j ACCEPT
+        $IPTABLES -A BASICOUTIN -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+        #SERVER INCOMING
+        #SOME ICMP
+        $IPTABLES -A SERVEROUTIN -p icmp -j ACCEPT
+        #$IPTABLES -A SERVEROUTIN -p icmp --icmp-type 3 -j ACCEPT
+        #$IPTABLES -A SERVEROUTIN -p icmp --icmp-type 11 -j ACCEPT
+        #$IPTABLES -A SERVEROUTIN -p icmp --icmp-type 13 -j ACCEPT
+        #FTP
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 20 -j ACCEPT
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 21 -j ACCEPT
+        #EMAIL
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 25 -j ACCEPT
+        #HTTP
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 80 -j ACCEPT
+        #HTTPS
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 443 -j ACCEPT
+        #DNS
+        $IPTABLES -A SERVEROUTIN -p udp --dport 53 -j ACCEPT
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 53 -j ACCEPT
+        #SSH
+        $IPTABLES -A SERVEROUTIN -d 64.79.238.71 -p tcp --dport 22 -j ACCEPT
+        $IPTABLES -A SERVEROUTIN -d 64.79.238.175 -p tcp --dport 22 -j ACCEPT
+        #NTP
+        $IPTABLES -A SERVEROUTIN -p udp --dport 123 -m state --state ESTABLISHED,RELATED -j ACCEPT
+        #HIGH PORTS
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 1025:65535 -j ACCEPT
+        $IPTABLES -A SERVEROUTIN -p udp --dport 1025:65535 -j ACCEPT
+        #LOW PORTS - DROP
+        $IPTABLES -A SERVEROUTIN -p tcp --dport 1:1024 -j DROP
+        $IPTABLES -A SERVEROUTIN -p udp --dport 1:1024 -j DROP
+        echo "Bridging will begin in 30 seconds..."
+        ;;
+  stop)
+        echo "Halting bridge br0 across eth0 and eth1"
+        ifconfig eth0 0.0.0.0
+        ifconfig eth1 0.0.0.0
+        ip link set eth0 down
+        ip link set eth1 down
+        ip link set br0 down
+        brctl delif br0 eth0
+        brctl delif br0 eth1
+        brctl delbr br0
+        ifup $INTIF
+        ifup $EXTIF
+
+        $IPTABLES -P INPUT ACCEPT
+        $IPTABLES -P FORWARD DROP
+        $IPTABLES -P OUTPUT ACCEPT
+        $IPTABLES -t nat -P PREROUTING ACCEPT
+        $IPTABLES -t nat -P POSTROUTING ACCEPT
+        $IPTABLES -t nat -P OUTPUT ACCEPT
+        $IPTABLES -F
+        $IPTABLES -t nat -F
+        $IPTABLES -X
+        $IPTABLES -t nat -X
+        ;;
+        ip link set eth0 down
+        ip link set eth1 down
+        ip link set br0 down
+        brctl delif br0 eth0
+        brctl delif br0 eth1
+        brctl delbr br0
+        ifup $INTIF
+        ifup $EXTIF
+
+        $IPTABLES -P INPUT ACCEPT
+        $IPTABLES -P FORWARD DROP
+        $IPTABLES -P OUTPUT ACCEPT
+        $IPTABLES -t nat -P PREROUTING ACCEPT
+        $IPTABLES -t nat -P POSTROUTING ACCEPT
+        $IPTABLES -t nat -P OUTPUT ACCEPT
+        $IPTABLES -F
+        $IPTABLES -t nat -F
+        $IPTABLES -X
+        $IPTABLES -t nat -X
+        ;;
+  *)
+        echo "Usage: bridge {start|stop}"
+        exit 1
+        ;;
+esac
+#--
+chmod 0755 /etc/init.d/bridge_fw.sh
+#---------------------------------------------------------------------------------------------

@@ -1,0 +1,37 @@
+
+#------------------------------------------------------
+
+just enough gnome stuff to compile gnome apps:
+
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/audiofile-0.2.1.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/esound-0.2.26.tar.gz
+#already installed#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/glib-1.2.10.tar.gz
+#already installed#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gtk+-1.2.10.tar.gz
+wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/imlib-1.9.14.tar.gz
+wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gtk-engines-0.12.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/ORBit-0.5.15.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/libxml-1.8.17.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/oaf-0.6.10.tar.gz
+wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/GConf-1.0.9.tar.gz
+wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gnome-libs-1.4.1.6.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gnome-mime-data-1.0.1.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gnome-vfs-1.0.5.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/libgtop-1.0.13.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/xml-i18n-tools-0.9.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/libghttp-1.0.9.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/libglade-0.17.tar.gz
+wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/gdk-pixbuf-0.11.0.tar.gz
+#wget ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/scrollkeeper-0.2.tar.gz
+
+tar xzvf imlib-*.tar.gz && cd imlib-*/
+./configure --prefix=/usr
+
+
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------
+#------------------------------------------------------

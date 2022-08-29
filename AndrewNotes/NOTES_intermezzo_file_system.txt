@@ -1,0 +1,65 @@
+
+
+#--------------------------------
+
+imtermezzo file system/
+
+
+#--------------------------------
+
+http://www.byte.com/documents/s=2289/byt1010012679751/0107_moshe.html
+
+InterMezzo is a classic client-server application.
+InterMezzo includes a
+loadable kernel module, which is notified of all updates to directories
+and files. These updates are written into a journal log file.
+don't use 2.4.15, it has a
+serious bug that might end up destroying your partitions
+
+create /etc/intermezzo/ as root on the server and client.
+In that directory I edited a file called "sysid," inserting a
+single line that contains important information for InterMezzo
+(including the name of the system, the name of the device used for
+InterMezzo, and the system's IP address). 
+
+Then in another file in that directory, "serverdb", I put the key/value
+pairs for each InterMezzo file server: 
+
+{
+       InterMezzo => {
+          ipaddr => "10.100.255.254"
+                                 }
+};
+
+
+In the third and last file in /etc/intermezzo/, "voldb", I put a another
+key/value pair - similar to the serverdb file - to define servers and
+clients that replicate files and directories from the InterMezzo file
+server. In my case, the file looked like this: 
+
+{   shared => {
+       servername => "InterMezzo",
+       replicators =>     [ "T21" ]
+                       }
+};
+
+
+Then, on my T21 laptop, I created an ext2 filesystem to hold
+InterMezzo on my /home/moshe partition with mke2fs /dev/hdb7.
+You could also use a loop-back device or a plain file for that
+purpose, but I guess using a full partition makes everything a bit
+easier and faster. After formatting my partition with ext2, I mounted
+it. 
+
+In order to use InterMezzo for that filesystem, you have to start the
+cache manager with "lento.pl", which is part of the InterMezzo
+user-space utilities and is written in Perl. In other words, you do
+need Perl to use InterMezzo, unless you rewrite the user-space
+utilities in some other language. Doing a simple cd to /home/moshe
+and an ls now showed the files exported from the Qube. 
+
+#--------------------------------
+#--------------------------------
+#--------------------------------
+
+

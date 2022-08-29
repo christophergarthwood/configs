@@ -1,0 +1,168 @@
+tar xzvf ucspi-tcp-0.88.tar.gz 
+make
+./install 
+which tcpserver
+	/usr/local/bin/tcpserver
+
+
+tar xzvf daemontools-0.70.tar.gz 
+make
+./install 
+
+tar xzvf djbdns-1.05.tar.gz 
+make
+./install 
+
+
+#-----------------------
+setting up supervise
+
+http://cr.yp.to/daemontools/svscan.html
+
+as root
+mkdir /service
+chmod 755 /service
+
+
+On Linux and other SVR4-based systems with /etc/inittab, add to the end of /etc/inittab, and type kill -HUP 1.
+SV:123456:respawn:env - PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin svscan /service </dev/null >/dev/console 2>/dev/console
+On BSD systems, put into /etc/rc.local, and reboot.
+env - PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin csh -cf 'svscan /service &'
+
+Now use ps to check that svscan is running. 
+
+#------------------------
+setting up djbdns
+
+http://cr.yp.to/djbdns.html
+
+Now you have to decide which part on dns you want and where. There is the service (tinydns) which
+provides hfdirect.com names<->ip translation to nameservers, and then there is the service which
+acts as the nameserver (dnscache). They need different IP's (since they both bind to UDP 53). First
+set up is for each on a different machine.
+
+#set up dnscache
+Create users
+adduser dnscache
+adduser dnslog
+
+nscache:*:502:502:dnscache:/etc/dnscachex:/bin/false
+dnslog:*:503:503:dnslog:/etc/dnscachex:/bin/false
+
+#change the IP address at the end to the ip address of the machine (or interface) that will be the dns cache
+dnscache-conf dnscache dnslog /etc/dnscachex 192.168.1.175
+
+/etc/dnscachex should exist now (dnscache-conf created it)
+[root@test acoleman]# ls -la /etc/dnscachex
+total 28
+drwxr-sr-t    5 root     root         4096 Mar 14 10:07 .
+drwxr-xr-x   46 root     root         4096 Mar 14 10:07 ..
+drwxr-sr-x    2 root     root         4096 Mar 14 10:07 env
+drwxr-sr-x    3 root     root         4096 Mar 14 10:07 log
+drwxr-sr-x    4 root     root         4096 Mar 14 10:07 root
+-rwxr-xr-x    1 root     root          141 Mar 14 10:07 run
+-rw-------    1 root     root          128 Mar 14 10:07 seed
+
+Tell svscan about the new service: 
+
+     ln -s /etc/dnscachex /service
+
+svscan will start the service within five seconds. 
+
+By default, dnscache does not accept queries from remote hosts. Use 
+
+     touch /etc/dnscachex/root/ip/192.168.1
+
+to tell dnscache to accept queries from 192.168.1.*. You can add or remove networks on the fly. 
+
+
+TO use:
+Answer: Add 
+
+     nameserver 1.2.3.4
+
+to /etc/resolv.conf. Web browsers, SMTP clients, and other DNS client (``stub resolver'') applications running on this machine will send their DNS queries to 1.2.3.4.
+
+or for NT, etc add this IP as the only IP in dns servers.
+
+now you have a good namecache to service your internal clients.
+#------------------------- ok now onto setting up a name server for the outside to see hfdirect
+
+
+#---- but first a bit about setting up an ip alias so both can be run on one machine
+
+
+#Linux
+There are patches for ifconfig and the kernel to make ifconfig alias
+work...but a simpler approach is to use the dummy interface and proxy
+arp, as this requires no patching.
+
+## "IP: aliasing support" under Networking options is the oprion in compiling the kernel
+##     if it is compiled in (instead of module) then skip insmod
+
+A few months ago, Richard Postgate <postgate@CAFE.NET> posted the
+step-by-step instructions to get this working. Here's an abbridged
+version of his post:
+
+Load a dummy module:
+insmod dummy.o
+Configure the dummy device:
+ifconfig dummy0 ip.ad.re.ss up
+Add a route for the dummy device:
+route add -host ip.ad.re.ss dev dummy0
+NOW add a proxy-arp entry for the dummy device:
+arp -s ip.ad.re.ss <ethernet hardware address> pub
+
+Joel Katz has written an improved dummy module that gives you N dmy
+interfaces from a single loadable module. The default N is 16, but it
+can easily be hacked to 20, 30, or whatever number you need. I've made
+the file available at ftp://inorganic5.chem.ufl.edu/pub/Linux/sdummy.c
+
+#####so for
+real IP 192.168.1.175
+dummy (aliased) IP 192.168.1.83
+and /sbin/ifconfig showing (for eth0)
+eth0      Link encap:Ethernet  HWaddr 00:A0:CC:5B:B7:13  
+          inet addr:192.168.1.175  Bcast:192.168.1.255  Mask:255.255.255.0
+
+/sbin/ifconfig dummy0 192.168.1.83 up
+/sbin/route add -host 192.168.1.83 dev dummy0
+/sbin/arp -s 192.168.1.83 00:A0:CC:5B:B7:13 pub
+
+####
+
+#FreeBSD
+IFCONFIG(8)             FreeBSD System Manager's Manual            IFCONFIG(8)
+
+NAME
+     ifconfig - configure network interface parameters
+     alias   Establish an additional network address for this interface.  This
+             is sometimes useful when changing network numbers, and one wishes
+             to accept packets addressed to the old interface.  If the address
+             is on the same subnet as the first network address for this in-
+             terface, a netmask of 0xffffffff has to be specified.
+
+
+#END---- but first a bit about setting up an ip alias so both can be run on one machine
+
+adduser tinydns
+adduser dnslog (if doesn't exist from doing dnscache)
+
+dnslog:*:503:503:dnslog:/etc/dnscachex:/bin/false
+tinydns:*:504:504:tinydns:/etc/tinydns:/bin/false
+
+tinydns-conf tinydns dnslog /etc/tinydns 209.141.183.83
+
+ln -s /etc/tinydns /service
+
+[root@test acoleman]# cd /service/tinydns/root
+[root@test root]# ./add-ns test.com 192.168.1.83
+[root@test root]# ./add-ns 1.168.192.in-addr.arpa 192.168.1.83
+[root@test root]# make
+/usr/local/bin/tinydns-data
+[root@test root]# 
+
+
+
+
+

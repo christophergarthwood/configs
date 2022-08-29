@@ -1,0 +1,616 @@
+
+#---------------------industrial strength ftp----------------------------
+#virtual users chrooted individually
+#see manage_ftp_users.pl script tacked on to these notes
+
+mkdir -p /var/proftpd/ftpdir
+
+adduser -d /var/proftpd/ftpdir -M proftp
+
+check to make sure proftp group got created
+
+./configure --prefix=/var/proftpd --exec-prefix=/var/proftpd --disable-pam
+make
+make install
+
+mkdir /var/proftpd/var/proftpd/ (may already exist...)
+
+mkdir /var/proftpd/ftpdirs
+chown proftp:proftp /var/proftpd/ftpdirs/
+chmod 0755 /var/proftpd/ftpdirs/
+
+
+cd ./proftpd-1.2.*/contrib/dist/rpm
+cp proftpd.init.d /etc/init.d/proftpd
+
+chmod 0755 /etc/init.d/proftpd 
+
+vi /etc/init.d/proftpd
+FTPSHUT=/var/proftpd/sbin/ftpshut
+
+#       if [ -x ~ftp-master/bin/advert.sh ]; then
+#               echo -n "Adverts "
+#               su - ftp-master -c "bin/advert.sh fifo"
+#       fi
+#       $0 resume
+        daemon /var/proftpd/sbin/proftpd
+
+#       if [ -x ~ftp-master/bin/advert.sh ]; then
+#               echo -n "Adverts "
+#               su - ftp-master -c "bin/advert.sh kfifo"
+#       fi
+#       $0 suspend
+
+vi /var/proftpd/etc/proftpd.conf
+#---------------------
+ServerName                      "ProFTPD Private Server - No Unauthorized Access Allowed"
+ServerType                      standalone
+DefaultServer                   on
+Port                            21
+#mode 777 since we want local users to be able to clear out ftp dirs from smb
+Umask                           000
+#it is ok to double all of these (10-5-3-3), I would never take it above (30-15-9-9)
+MaxInstances                    10
+MaxClients                      5
+MaxClientsPerHost               3
+MaxHostsPerUser                 3
+RateWriteBPS                    40000
+User                            proftp
+Group                           proftp
+DefaultRoot ~
+AuthUserFile /var/proftpd/etc/FTPpasswd
+AuthGroupFile /var/proftpd/etc/FTPgroup
+DirFakeUser On
+DirFakeGroup On
+# Normally, we want files to be overwriteable.
+<Directory /*>
+  AllowOverwrite                on
+</Directory>
+
+#---------------------
+
+vi /var/proftpd/sbin/mkpasswd.pl
+--------------
+#!/usr/bin/perl
+# Small perl program to assist is encrypting passwords
+# Paul Gregg <pgregg@tibus.net>, March 1999.
+# http://www.pgregg.com/projects/
+if (@ARGV) {
+  $pw1 = shift; $seed = shift;
+} else {
+  system("stty -echo");
+  print "Enter a Password: "; $pw1 = <STDIN>;
+  print "\nAgain: "; $pw2 = <STDIN>;
+  system("stty echo");
+  if ($pw1 ne $pw2) { print "Sorry, passwords don't match.\n"; exit; }
+  print "\nSeed: "; $seed = substr(<STDIN>,0,2);
+}
+chomp($seed); chomp($pw1);
+if (length($seed) eq 0) {
+  srand(time());
+  $a = int(rand(25) + 0.5) + (int(rand(1) + 0.5) * 32) + 65;
+  $b = int(rand(25) + 0.5) + (int(rand(1) + 0.5) * 32) + 65;
+  $seed = sprintf ("%c%c", $a, $b);
+}
+printf("Encrypted password: %s\n", crypt($pw1, $seed));
+---------
+chmod 0777 /var/proftpd/sbin/mkpasswd.pl
+
+TO GET PASSWD FOR A LOGIN (put whatever you want for a seed, something like "asddq" or "viebfghyv":
+[root@tangier sbin]# /var/proftpd/sbin/mkpasswd.pl
+Enter a Password: 
+Again: 
+Seed: 
+Encrypted password: LKp5z/PVGFUqM
+[root@tangier sbin]# 
+
+mkdir /var/proftpd/ftpdirs/NewLoginHere
+chown proftp:proftp /var/proftpd/ftpdirs/NewLoginHere
+chmod 0755 /var/proftpd/ftpdirs/NewLoginHere
+
+vi /var/proftpd/etc/FTPpasswd
+NewLoginHere:LKp5z/PVGFUqM:511:511::/var/proftpd/ftpdirs/NewLoginHere:/bin/sh
+
+vi /var/proftpd/etc/FTPgroup
+ftpgroup::511:
+
+NOTES on FTPpasswd/FTPgroup
+	even though these are not real system acccounts the shell must be valid (such as /bin/sh)
+	b/c we leave proftpd checking that in case a server is set to accidently use the real passwd file
+
+	use the same group since it doesn't really matter
+
+	the uid and gid are really from the REAL /etc/passwd and /etc/group file FOR the proftp user
+	proftp:x:511:511::/usr/local/ftpdir:/bin/bash
+
+SO, the next ftp user will make /var/proftpd/etc/FTPpasswd look like (assume rtu3Lr4orWAKA came out of ./mkpasswd.pl)
+NewLoginHere:LKp5z/PVGFUqM:511:511::/var/proftpd/ftpdirs/NewLoginHere:/bin/sh
+NextLoginHere:rtu3Lr4orWAKA:511:511::/var/proftpd/ftpdirs/NextLoginHere:/bin/sh
+
+and
+mkdir /var/proftpd/ftpdirs/NextLoginHere
+chown proftp:proftp /var/proftpd/ftpdirs/NextLoginHere
+chmod 0755 /var/proftpd/ftpdirs/NextLoginHere
+
+
+-------------------------
+NOTES FOR FUTURE
+use in conf file
+
+AuthUserFile
+AuthGroupFile
+DefaultRoot
+
+Quotas
+RateWriteFreeBytes
+RateWriteHardBPS
+DefaultQuota
+MaxClients
+MaxClientsPerHost
+MaxClientsPerUser
+
+--- Probably want to put some kindof huge quota (if mail and ftp are on the same partition....)
+--- Then another quota like only 2 connections per user so that DOS on ftp is slower.. then a
+---      rate limiter for same purpose
+
+
+#---------------------quicko ftp for local users----------------------------------
+
+#make sure home directories have a ~/ftp dir, this chroots to that, denies if non-exist
+
+wget ftp://ftp.proftpd.org/distrib/source/proftpd-1.2.5.tar.bz2
+
+tar xjvf proftpd-1.2*.tar.bz2 && cd proftpd-1.2*/
+./configure && make && make install
+
+vi /usr/local/etc/proftpd.conf
+#--
+ServerName                      "ProFTPD"
+ServerType                      standalone
+DefaultServer                   on
+
+Port                            21
+Umask                           022
+MaxInstances                    30
+UseReverseDNS                   off
+
+User                            nobody
+Group                           nobody
+
+DefaultRoot ~/ftp
+
+<Directory /*>
+  AllowOverwrite                on
+</Directory>
+#--
+vi /etc/init.d/proftpd
+#--
+#!/bin/sh
+# chkconfig: 345 85 15
+# description: ProFTPD
+case "$1" in
+  start)
+        echo "Starting proftpd: "
+        /usr/local/sbin/proftpd
+        echo
+        ;;
+  stop)
+        echo "Shutting down proftpd: "
+        killall proftpd
+        echo
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+	echo "Wrong usage"
+	exit 1
+esac
+#--
+chmod 0755 /etc/init.d/proftpd
+
+#----------------------------------------------------------------------
+
+NOTE:
+
+RateWriteBPS (and Read) are PER CONNECTION NOT GLOBAL
+
+#----------------------------------------------------------------------
+
+#-----------------
+LAN PARTY FTP CONF (anonymous access, chrooted to one directory)
+#-----------------
+vi /usr/local/etc/proftpd.conf
+#--------------
+ServerName                      "ProFTPD"
+ServerType                      standalone
+DefaultServer                   on
+Port                            21
+Umask                           000
+UseReverseDNS                   off
+RequireValidShell               off
+User                            nobody
+Group                           nobody
+<Directory /*>
+  AllowOverwrite                on
+</Directory>
+<Anonymous /var/proftpd_dump>
+  User                          ftp
+  Group                         ftp
+  UserAlias                     anonymous ftp
+</Anonymous>
+#-------------
+mkdir /var/proftpd_dump
+chmod 0777 /var/proftpd_dump
+chown ftp:ftp /var/proftpd_dump
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+#see sub_config() for variables
+vi /usr/local/bin/manage_ftp_users.pl
+#--
+#!/usr/bin/perl
+
+$ENV{'PATH'} = '/bin:/usr/bin';
+delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+$path = $ENV{'PATH'};       # $path now NOT tainted
+
+use Getopt::Long;
+use Pod::Usage;
+use strict;
+
+#wget http://www.cpan.org/modules/by-module/MD5/MD5-1.7.tar.gz
+
+#./manage_ftp_users.pl --adduser username password
+if ($#ARGV==-1) {print "USE ./manage_ftp_users.pl --man\n";}
+
+my $man = 0;
+my $help = 0;
+my $adduser=0;
+my $deluser=0;
+my $changeuser=0;
+
+#READ CONFIGS
+sub_config();
+
+my $argin=GetOptions('help|?' => \$help,
+	man => \$man,
+	adduser => \$adduser,
+	deluser => \$deluser,
+	changeuser => \$changeuser,
+	)
+	or pod2usage(2);
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+my $arg1 = $ARGV[0];
+my $arg2 = $ARGV[1];
+my $arg3 = $ARGV[2];
+my $arg4 = $ARGV[3];
+
+if ($adduser==1) {sub_adduser($arg1,$arg2,$arg3);} 
+if ($deluser==1) {sub_deluser($arg1);} 
+if ($changeuser==1) {sub_changeuser($arg1,$arg2);} 
+
+#if ($#ARGV==-1) {print "USE ./manage_ftp_users.pl --man\n";}
+#./manage_ftp_users.pl --deluser notauser
+#./manage_ftp_users.pl --adduser notauser password Jack_Schlack
+#./manage_ftp_users.pl --changeuser notauser newpassword 
+
+# use a password of "roll" to let the computer decide
+
+exit(0);
+
+#-------------------------------------------------
+
+sub sub_config() {
+
+  use vars qw/ $proftpd_base_dir /;
+  use vars qw/ $shell /;
+  use vars qw/ $user_comment /;
+  use vars qw/ $proftpd_base_dir /;
+  use vars qw/ $log_file /;
+
+  $proftpd_base_dir = "/var/proftpd";
+
+  $shell = "/bin/sh";
+  $user_comment = "FTP ONLY USER";
+
+  #contains cleartext password (make 0600) - see way below to change
+  $log_file = "/usr/local/etc/ftp_manage_log.txt";
+
+}
+
+sub sub_check_base_dir() {
+  my $result=opendir(BASEHOMEDIR,$proftpd_base_dir);
+  if (! $result) {
+     print "THE BASE FTP DIRECTORY IS NOT AVAILABLE: $proftpd_base_dir \n";
+     exit(1);
+  } 
+}
+
+sub sub_find_proftpd_user() {
+  open(CONFIG,"$proftpd_base_dir/etc/proftpd.conf") || die "Cant open $proftpd_base_dir/etc/proftpd.conf: $! \n";
+  my ($proftpd_user,$proftpd_group);
+  my ($proftpd_uid,$proftpd_gid);
+  my $junk;
+  while (<CONFIG>) {
+     if (/^User/) {
+	($junk,$proftpd_user)=split();
+     }
+     if (/^Group/) {
+	($junk,$proftpd_group)=split();
+     }
+  }
+  open(ETCPASSWD,"</etc/passwd") || die "Cant open /etc/passwd: $! \n";
+  while (<ETCPASSWD>) {
+     my @pwdline = split(":",$_);
+     if ($pwdline[0] eq $proftpd_user) { $proftpd_uid=$pwdline[2] }
+  }
+  open(ETCGROUP,"</etc/group") || die "Cant open /etc/group: $! \n";
+  while (<ETCGROUP>) {
+     my @pwdline = split(":",$_);
+     if ($pwdline[0] eq $proftpd_group) { $proftpd_gid=$pwdline[2] }
+  }
+  close(CONFIG);
+  close(ETCPASSWD);
+  close(ETCGROUP);
+
+  #print "PROFTP USER: $proftpd_user PROFTP GROUP: $proftpd_group UID: $proftpd_uid GID: $proftpd_gid\n";
+
+  return $proftpd_user,$proftpd_group,$proftpd_uid,$proftpd_gid;
+}
+
+sub sub_check_ok_username($) {
+  my $suggest_username = shift;
+
+  open(ETCPASSWD,"$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+  while (<ETCPASSWD>) {
+     my @pwdline = split(":",$_);
+     if (lc($pwdline[0]) eq lc($suggest_username)) {
+	print "THERE IS A CONFLICT WITH USERNAME $pwdline[0] AND THE REQUESTED $suggest_username \n";
+	exit(1);
+     }
+  }
+}
+
+sub sub_check_passwd_files($$) {
+  my $proftpd_group = shift;
+  my $proftpd_gid = shift;
+
+  if ( ! -f "$proftpd_base_dir/etc/FTPpasswd") {
+	print "PASSWORD FILE $proftpd_base_dir/etc/FTPpasswd DOES NOT EXIST - CREATING \n";
+	open(THISFILE,">$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+	close(THISFILE);
+  }
+  if ( ! -f "$proftpd_base_dir/etc/FTPgroup") {
+	print "GROUP FILE $proftpd_base_dir/etc/FTPgroup DOES NOT EXIST - CREATING \n";
+	my $groupstr = "$proftpd_group\:\:$proftpd_gid\:";
+	open(THISFILE,">$proftpd_base_dir/etc/FTPgroup") || die "Cant open $proftpd_base_dir/etc/FTPgroup: $! \n";
+	print THISFILE "$groupstr\n";
+	print "ADDING TO GROUP FILE--- $groupstr\n";
+	close(THISFILE);
+  }
+
+}
+
+
+sub sub_make_home_dir($$$) {
+  my $username = shift;
+  my $proftpd_uid = shift;
+  my $proftpd_gid = shift;
+
+  my $homedir = "$proftpd_base_dir/ftpdirs/$username";
+
+#check to see if it exists already
+  my $result=opendir(HOMEDIR,$homedir);
+  if ($result) {
+     print "*** THE HOME DIRECTORY ALREADY EXISTS - ARE YOU SURE THIS WHAT YOU WANT: $homedir \n";
+  } 
+
+  mkdir $homedir,0777;
+
+  chown $proftpd_uid,$proftpd_gid,$homedir || die "Cant chown $homedir to $proftpd_uid,$proftpd_gid: $! \n";
+
+  chmod 0755, $homedir;
+}
+
+sub sub_rand_pass() {
+	#close enough to rand for me :)
+	srand (time());
+	my $rand1 = int(rand(25) + 0.5) + 97;
+	my $rand2 = int(rand(25) + 0.5) + 97;
+	my $rand3 = int(rand(8) + 0.5);
+	my $rand4 = int(rand(8) + 0.5);
+	my $rand5 = int(rand(25) + 0.5) + 65;
+	my $rand6 = int(rand(25) + 0.5) + 65;
+	my $randpass = chr($rand1).chr($rand2).$rand3.$rand4.$rand5.chr($rand6);
+
+	return $randpass;
+}
+
+sub sub_encrypt_passwd($$) {
+	my $pw1 = shift;
+	my $seed = shift;
+	chomp($seed); chomp($pw1);
+	if ( (length($seed) eq 0) || ($seed eq "roll") ) {
+	  srand(time());
+	  my $a = int(rand(25) + 0.5) + (int(rand(1) + 0.5) * 32) + 65;
+	  my $b = int(rand(25) + 0.5) + (int(rand(1) + 0.5) * 32) + 65;
+	  $seed = sprintf ("%c%c", $a, $b);
+	}
+	my $pw2 = crypt($pw1, $seed);
+	#printf("Encrypted password: %s\n", $pw2);
+	return $pw2;
+}
+
+sub sub_adduser($$$$) {
+  my $username = shift;
+  my $password = shift;
+  my $commentname = shift;
+
+  my ($proftpd_user,$proftpd_group,$proftpd_uid,$proftpd_gid)=sub_find_proftpd_user();
+
+  #print "REAL PROFTP USER: ($proftpd_user) PROFTP GROUP: ($proftpd_group) UID: $proftpd_uid GID: $proftpd_gid\n";
+
+  sub_check_base_dir(); 
+  sub_check_passwd_files($proftpd_group,$proftpd_gid);
+  sub_check_ok_username($username);
+
+  if ($password eq "roll") {
+	$password = sub_rand_pass();
+print "RANDOM PASSWORD IS $password\n";
+  }
+
+  my $enc_password = sub_encrypt_passwd($password,"roll");
+
+#NewLoginHere:LKp5z/PVGFUqM:511:511::/var/proftpd/ftpdirs/NewLoginHere:/bin/sh
+#ftpgroup::511:
+
+  my $passstr="$username\:$enc_password\:$proftpd_uid\:$proftpd_gid\:".
+	"$user_comment-$commentname-$password\:$proftpd_base_dir/ftpdirs/$username\:$shell";
+  open(THISFILE,">>$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+  print THISFILE "$passstr\n";
+  close(THISFILE);
+
+  sub_make_home_dir($username,$proftpd_uid,$proftpd_gid);
+
+  print "FINISHED ADDING USER $username WITH PASSWORD $password \n";
+  print "SHORTCUT: ftp://"."$username".":"."$password".'@ftp.hfdirect.com'." \n";
+  my $nowdate=`date`;
+  open(LOGFILE,">>$log_file");
+  print LOGFILE "FTP: $username $password $nowdate\n";
+  close(LOGFILE);
+}
+
+sub sub_deluser($) {
+  my $username = shift;
+
+  system("rm -r $proftpd_base_dir/ftpdirs/$username");
+  print "DELETING DIRECTORY : $proftpd_base_dir/ftpdirs/$username \n";
+
+  open(ORIGFILE,"<$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+  open(NEWFILE,">$proftpd_base_dir/etc/FTPpasswd.tmp") || die "Cant open $proftpd_base_dir/etc/FTPpasswd.tmp: $! \n";
+
+  my ($fieldone,$rest);
+  while (<ORIGFILE>) {
+	($fieldone,$rest) = split(/:/,$_);
+	if ($username ne $fieldone) {
+		print NEWFILE $_;
+	}
+  }
+
+  close(ORIGFILE);
+  close(NEWFILE);
+
+  rename("$proftpd_base_dir/etc/FTPpasswd","$proftpd_base_dir/etc/FTPpasswd.BAK");
+  rename("$proftpd_base_dir/etc/FTPpasswd.tmp","$proftpd_base_dir/etc/FTPpasswd");
+
+  print "DELETED USER $username (if they existed) \n";
+
+}
+
+sub sub_changeuser($$) {
+  my $username = shift;
+  my $password = shift;
+
+  if ($password eq "roll") {
+	$password = sub_rand_pass();
+print "RANDOM PASSWORD IS $password\n";
+  }
+
+  open(ETCPASSWD,"$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+  my $userexists=0;
+  while (<ETCPASSWD>) {
+     my @pwdline = split(":",$_);
+     if ($pwdline[0] eq $username) {
+	$userexists=1;
+     }
+  }
+  if ($userexists==0) {
+	print "NO SUCH USERNAME TO CHANGE PASSWORD FOR\n";
+	exit(1);
+  }
+
+  my $enc_password = sub_encrypt_passwd($password,"roll");
+
+  open(ORIGFILE,"<$proftpd_base_dir/etc/FTPpasswd") || die "Cant open $proftpd_base_dir/etc/FTPpasswd: $! \n";
+  open(NEWFILE,">$proftpd_base_dir/etc/FTPpasswd.tmp") || die "Cant open $proftpd_base_dir/etc/FTPpasswd.tmp: $! \n";
+
+  my ($fieldone,$fieldtwo,$fieldthree,$fieldfour,$fieldfive,$rest);
+  while (<ORIGFILE>) {
+	($fieldone,$fieldtwo,$fieldthree,$fieldfour,$fieldfive,$rest) = split(/:/,$_,6);
+	if ($username ne $fieldone) {
+		print NEWFILE $_;
+	} else {
+		my ($fiveone,$fivetwo,$fivethree) = split(/-/,$fieldfive);
+		my $newfive = "$fiveone-$fivetwo-$password";
+		my $newstr = "$fieldone\:$enc_password\:$fieldthree\:$fieldfour\:$newfive\:$rest";
+		print NEWFILE $newstr;  #already has a newline
+	}
+  }
+
+  close(ORIGFILE);
+  close(NEWFILE);
+
+  rename("$proftpd_base_dir/etc/FTPpasswd","$proftpd_base_dir/etc/FTPpasswd.BAK");
+  rename("$proftpd_base_dir/etc/FTPpasswd.tmp","$proftpd_base_dir/etc/FTPpasswd");
+
+  print "CHANGED PASSWORD FOR $username to $password \n";
+
+}
+
+
+#------------------------------------------------
+
+#--------------POD--------------------------------
+__END__
+
+=head1 NAME
+
+manage_ftp_users.pl
+
+=head1 SYNOPSIS
+
+manage_ftp_users.pl [options]
+
+ Options:
+   -help            brief help message
+   -man             full documentation
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+B<manage_ftp_users.pl> is used to manage a postfix
+and courier-imap setup with both SASL and courier POP3
+using non-system db. This means that even though postfix
+is using real system accounts, these accounts are disabled.
+
+=cut
+
+#--------------POD--------------------------------
+#--
+chmod 0755 /usr/local/bin/manage_ftp_users.pl
+#----------------------------------------------------------------------
+
+To add a bunch of logging:
+add to proftpd.conf:
+ExtendedLog /var/log/ftp.log all
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------

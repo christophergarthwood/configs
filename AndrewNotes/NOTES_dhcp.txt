@@ -1,0 +1,264 @@
+
+#HOME DHCP
+#----------------------
+vi /etc/dhcpd.conf
+#----------------------
+authoritative;
+ddns-updates on;
+ddns-update-style ad-hoc;
+ddns-domainname "dentarthurdent.org.";
+ddns-rev-domainname "in-addr.arpa.";
+subnet 192.168.0.0 netmask 255.255.255.0 {
+  range 192.168.0.200 192.168.0.240;
+              default-lease-time 21600;
+              max-lease-time 604800;
+              option subnet-mask 255.255.255.0;
+              option broadcast-address 192.168.0.255;
+              option routers 192.168.0.1;
+              option domain-name-servers 192.168.0.1;
+              option domain-name "dentarthurdent.org";
+}
+#printer
+group {
+        host hp1200n {
+                hardware ethernet 00:01:E6:46:2E:3C;
+                fixed-address 192.168.0.245;
+                option host-name "hp1200n";
+        }
+}
+#----------------
+
+wget ftp://ftp.isc.org/isc/dhcp/dhcp-3.0.1rc9.tar.gz
+
+tar xzvf dhcp-3.*.tar.gz && cd dhcp-3.*/
+./configure && make
+su
+make install
+
+touch /var/state/dhcp/dhcpd.leases
+#RH: /var/lib/dhcp/dhcpd.leases
+create /etc/dhcpd.conf
+
+interesting files:
+/usr/sbin/dhcpd
+/etc/dhcpd.conf
+/var/state/dhcp/dhcpd.leases
+
+/usr/sbin/dhcpd backgrounds itself upon successful start
+
+#--------------- THIS ONLY LISTENS ON eth0.
+#--------------- Just make "/usr/sbin/dhcpd eth0" into "/usr/sbin/dhcpd" for all insterfaces.
+vi /etc/init.d/dhcpd
+#---------------
+#!/bin/bash
+# chkconfig: 2345 80 30
+# description: www.isc.org DHCP
+# config: /etc/dhcpd.conf
+case "$1" in
+  start)
+        echo 'Starting dhcpd: '
+        /usr/sbin/dhcpd eth0
+        ;;
+  stop)
+        echo 'Shutting down dhcpd: '
+        killall dhcpd
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage: /etc/init.d/dhcpd {start|stop|restart}"
+        exit 1
+esac
+#---------------
+chmod 0755 /etc/init.d/dhcpd
+
+
+#----
+notes
+FIREWALL
+must_ allow packets from IP address 0.0.0.0 to IP address 255.255.255.255 from UDP port 68
+to UDP port 67 through.  They must also allow packets from your local
+firewall's IP address and UDP port 67 through to any address your DHCP
+server might serve on UDP port 68.  Finally, packets from relay agents
+on port 67 to the DHCP server on port 67, and vice versa, must be
+permitted.
+
+??? on DHCP clients, where the initial packet
+exchange is broadcast, but renewals are unicast - the client will
+appear to be unable to renew until it starts broadcasting its
+renewals, and then suddenly it'll work. The fix is to fix the
+firewall rules as described above.
+
+#-----------
+#-----------------------------------------------------------------------------------------------------
+
+http://www.iana.org/assignments/bootp-dhcp-parameters
+
+#-----------------------------------------------------------------------------------------------------
+
+kernel autoconfig:
+
+with dhcp, you get a /proc/net/pnp containing recommended values for resolv.conf.
+
+#-----------------------------------------------------------------------------------------------------
+DDNS styles:
+
+ddns-update-style ad-hoc;
+interim;
+
+#-----------------------------------------------------------------------------------------------------
+#quick LAN party dhcp
+#----------------------
+vi /etc/dhcpd.conf
+#----------------------
+authoritative;
+ddns-updates off;
+ddns-update-style ad-hoc;
+subnet 192.168.0.0 netmask 255.255.255.0 {
+  range 192.168.0.100 192.168.0.240;
+              default-lease-time 86400;
+              max-lease-time 86400;
+              option subnet-mask 255.255.255.0;
+              option broadcast-address 192.168.0.255;
+              option routers 192.168.0.1;
+              option domain-name-servers 192.168.0.1;
+}
+#----------------
+
+#-----------------------------------------------------------------------------------------------------
+
+Sidenote:
+169.254/16 subnet is Automatic Private IP Addressing (APIPA).
+APIPA allows a workstation to configure itself with an IP address in the
+absence of DHCP or any other IP addressing mechanism.
+
+#-----------------------------------------------------------------------------------------------------
+
+Windows problems/notes:
+
+The ICS service can hose 2k from getting a default gateway.
+(stop the ics service, ipconfig /release ... /renew)
+2k can lose its IP info if the dhcp server goes down even if it has a good lease
+
+DHCP Options Supported by Clients (windows...)
+http://support.microsoft.com/default.aspx?scid=KB;en-us;q121005
+Lease Time
+Renewal Time
+Rebind Time
+Subnet Mask
+Default Router
+DNS Server
+Domain Name
+WINS Server (NetBIOS Name Server)
+NetBIOS Node Type
+NetBIOS Scope Id
+Router Discovery
+Classless route
+Static router
+
+nice bookmark: http://www.labmice.net/networking/DHCP.htm
+
+#-----------------------------------------------------------------------------------------------------
+
+RH to listen on one interface:
+vi /etc/sysconfig/dhcpd
+DHCPDARGS=eth1
+
+#-----------------------------------------------------------------------------------------------------
+
+other groupings in dhcpd.conf:
+
+#NCD explora xterm
+group {
+        use-host-decl-names on;
+        filename "/Xncdxpl";
+
+        host NCD1 {
+                hardware ethernet 00:00:a7:03:22:20;
+                fixed-address 192.168.0.165;
+        }
+        host NCD2 {
+                hardware ethernet 00:00:a7:03:68:86;
+                fixed-address 192.168.0.166;
+        }
+}
+#-----------------------------------------------------------------------------------------------------
+
+PXEBOOT (see other notes for difference between PXE and RPL network boot protos)
+(also see PXE-kickstart: http://www.stanford.edu/~alfw/PXE-Kickstart/PXE-Kickstart.html )
+
+#using crossover cable to client off eth1 of server (eth1 is 192.168.1.1)
+#get MAC of client: 00:20:ED:67:94:C2
+
+vi /etc/dhcpd.conf
+#--
+# Group the PXE bootable hosts together
+group {
+        filename "pxelinux.0";
+
+        host netbootC1 {
+                hardware ethernet 00:20:ED:67:94:C2;
+                fixed-address 192.168.1.190;
+        }
+}
+#--
+
+#make sure dhcpd only listens on eth1 (/etc/sysconfig/dhcpd or change /etc/init.d/dhcpd)
+/etc/init.d/dhcpd start
+
+#start tftpd (from command line instead of xinetd) (backgrounds itself automatically)
+/usr/sbin/in.tftpd -l -s -v -a 192.168.1.1 /tftpboot
+ps -ef | grep tftp  #check and make sure it is running, else /var/log/messages for errors
+
+#populate /tftpboot
+locate pxelinux.0
+cp /usr/lib/syslinux/pxelinux.0 /tftpboot/
+mkdir /tftpboot/pxelinux.cfg
+vi /tftpboot/pxelinux.cfg/default
+#--
+default loadlinux
+label loadlinux
+  kernel vmlinuz
+  append initrd=initrd.img
+#--
+cp /mnt/tmp/images/pxeboot/vmlinuz /tftpboot/     #FC cd1 mounted on /mnt/tmp
+cp /mnt/tmp/images/pxeboot/initrd.img /tftpboot/
+
+#share out CD's/mirror directory thru http or ftp
+#then boot the client
+
+#when finished
+killall in.tftpd
+/etc/init.d/dhcpd stop
+
+#--
+for PXE-1.0 clients add this to dhcpd.conf (requires isc dhcpd 3.0+, different syntax for 2.0):
+allow bootp;
+
+option space PXE;
+option PXE.mtftp-ip    code 1 = ip-address;
+option PXE.mtftp-cport code 2 = unsigned integer 16;
+option PXE.mtftp-sport code 3 = unsigned integer 16;
+option PXE.mtftp-tmout code 4 = unsigned integer 8;
+option PXE.mtftp-delay code 5 = unsigned integer 8;
+
+and in host section:
+                fixed-address 192.168.1.190;
+
+                option vendor-class-identifier "PXEClient";
+                # At least one of the vendor-specific option must be set. We set
+		# the MCAST IP address to 0.0.0.0 to tell the bootrom to still use
+                # TFTP (address 0.0.0.0 is considered as "no address")
+                option PXE.mtftp-ip 0.0.0.0;
+                vendor-option-space PXE;
+#see: http://cui.unige.ch/info/pc/remote-boot/howto-4.html
+#--
+
+
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------

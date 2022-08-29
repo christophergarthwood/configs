@@ -1,0 +1,268 @@
+JUPYTER
+
+    % - line magic such as (%time)
+    %%- cell magic such as (%%time)
+
+    #setup a configuration file
+    jupyter notebook --generate-config
+
+    #jupyter notebook location
+    ~/.jupyter/jupyter_notebook_config.py
+
+    #jupyter notebook port and IP
+    c.NotebookApp.ip = '128.160.22.15' -> default is localhost and commented out
+    c.NotebookApp.port = 8890          -> default is 8080 and commented out
+
+
+CONDA
+
+    #WARNING - if you lose your Python3 environment do this
+    ./conda install python=3.7
+    #This appears to restore everything to it's proper place
+
+    #add channels, minimal channel to add
+    conda config --add channels conda-forge
+
+    TODS ARONNAX
+    YES  YES        conda install -c anaconda ipykernel=4.9.0
+    YES  YES        conda install -c anaconda jupyter
+    YES  YES        conda install -c anaconda xarray pandas
+    YES  YES        conda install -c anaconda seaborn
+    YES  YES        conda install -c anaconda tensorflow tensorflow-estimator keras
+    Default in 3.*  conda install -c anaconda pickle
+    YES  YES        conda install -c anaconda mayavi
+    YES  YES        conda install -c anaconda NetCDF4
+    YES  YES        conda install -c anaconda tabulate
+
+    #show information about environments
+    ./conda info --envs
+
+    #show information about what's installed
+    ./conda list
+
+CODE CHECKING TOOLS
+    Reference: https://www.cleancss.com/python-beautify/
+    Reference: https://pythoniter.appspot.com/
+    Reference: https://github.com/google/yapf
+    Reference: https://pypi.python.org/pypi/autopep8
+
+    /p/home/cwood/bin/autopep8
+    /p/home/cwood/bin/pycodestyle
+
+AUTOPEP8
+    Reference: https://github.com/hhatto/autopep8
+
+    autopep8 Python formater Installation Instructions
+    wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py --user
+    ln -s ~/.local/bin/pip ~/bin/pip
+    ln -s ~/.local/bin/wheel ~/bin/wheel
+    pip install --upgrade setuptools --user
+    pip install --upgrade pcodesytle --user
+    pip install --upgrade autopep8 --user
+    ln -s ~/.local/bin/autopep8 ~/bin/autopep8
+    ln -s ~/.local/bin/pycodestyle ~/bin/pycodestyle
+    ~/bin/autopep8 --in-place --aggressive --aggressive <filename>
+
+PYCODESTYLE
+    Reference: https://github.com/PyCQA/pycodestyle
+
+    pycodestyle --show-source --show-pep8 ./cardCounting.py 
+    pycodestyle --statistics -qq ./cardCounting.py
+
+PROFILING
+    pip install pip install pycallgraph
+    perf | gprof | valgrind
+
+PIP
+  Install Packages locally: --user
+
+  Path Configuration file
+  SITEDIR=$(python -m site --user-site)
+  PYTHON_DIR=python2.6
+  PYTHON_PATH=$PYTHON_PATH:/usr/lib/python2.6/site-packages/:~/.local/lib/python2.6/site-packages/
+  http://persagen.com/files/misc/Turning_vim_into_a_modern_Python_IDE.html
+
+  #Observed that this could conflict with your Anaconda installation
+  #List your local packages
+  pip freeze --local
+  pip freeze --local >> ./myLocalList.txt
+  
+  #remove packages one by one 
+  pip uninstall -r ./myLocalList.txt
+
+  #remove packages all at once
+  pip uninstall -r ./myLocalList.txt -y
+
+  #Useful packages
+  ln -s /home/cwood/.local/bin/pip         /home/cwood/bin/pip
+  pip install autopep8 --user
+  ln -s /home/cwood/.local/bin/autopep8    /home/cwood/bin/autopep8
+  pip install ansible --user
+  ln -s /home/cwood/.local/bin/ansible     /home/cwood/bin/ansible
+  pip install pycallgraph --user
+  ln -s /home/cwood/.local/bin/pycallgraph /home/cwood/bin/pycallgraph
+
+Best Practices
+
+1.  Use f srings and don't use "+" to concatenate strings, either "_".join([]) or f string:
+    the_result="_".join(["this", "is", var, "test])
+OR
+    the_result=f"this_is_{var}_test";
+
+2.  Use context driven statements and don't f.close() a file (open will do it for you).  Also try/finally is handled with context managers as well:
+    with open(filename) as file_handle:
+        f.write("Hello World.")
+OR
+    the_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+3.  Use qualified Exception meaning, minimally, "Exception" or the exception you're trying to catch.  No bare except clauses:
+
+    try:
+        do_something=something()
+    except ValueError as e:
+        debug.msg_warning("You entered an invalid entry.  Please try again.")
+    except Exception as e:
+        debug.msg_error(str(e))
+
+4.  Exponentiation in Python is ** not ^.
+
+5.  Don't use argument defaults unless they are planned for the entire runtime.  And use type-hinting...
+
+DON'T
+    def append(n, l=[]):
+
+INSTEAD
+
+    def append(n: int, l : []) -> []:
+     if l is None:
+         l = []
+     l.append(n)
+     return l
+
+6.  Use list comprehension over for loops unless using something like numba.
+
+    the_result = { i: i * i for i in range(10) }
+
+OR
+
+    fruits = ["apple", "banana", "cherry", "kiwi", "mango"]
+    newlist = [x for x in fruits if "a" in x]
+
+OR
+
+    dictionary = {i: i * i for i in range(10)}
+    list = [i*i for i in range (10)]
+    set = {i*i for i in range(10)}
+    generator_object = (i*i for x in range(10))
+
+7.   Type checking with == instead of is.  Due to inheritance you could get an invalid response (Liskov).
+
+DON'T
+  if type(p) == tuple:
+
+INSTEAD
+  if isinstance(p, typle):
+
+8.  Don't use == on object comparisons.
+
+DON'T
+
+    if x == None:
+
+OR
+
+    if x == False:
+
+INSTEAD
+
+    if x is None:
+
+OR
+
+    if x is False:
+
+9.   Use enumerate, direct variable substitution, and zip.
+
+DON'T
+
+    a=[1,2,3,4]
+    for idx in range(len(a)):
+        print(a[idx])
+
+INSTEAD
+
+    a=[1,2,3,4]
+    for val in a:
+        print(a)
+    
+OR 
+
+    a=[1,2,3,4]
+    for idx,val in enumerate(a):
+        print(f"Without index: {val} and with index: {a[idx]}")
+
+10.  Iterate through two arrays (preferably equal).
+
+    a=[1,2,3]
+    b=[4,5,6]
+    for a_val, b_val in zip(a,b):
+        print(f"A value is:{a_val} and B value is:{b_val}")
+
+11.  Looping over keys in a dictionary, the default access are the keys.
+
+    d={"a":1, "b":2}
+    for the_key in d:
+        print(f"Key:{the_key} and value: {d[the_key]} pairs.")
+
+OR
+
+    d={"a":1, "b":2}
+    for key, val in d.items():
+        print(f"Key:{key} and value: {val} pairs.")
+
+12.  Tuple unpacking.
+
+    mytuple=1,2
+    x,y=mytuple
+
+13.  Timing
+
+    import time
+    start = time.perf_counter()
+    time.sleep(1) #wrap you code inside here
+    end = time.perf_counter()
+    print(end - start)
+
+14.  Use a logging module versus print statements.
+
+15.  Use AutoPep8.
+
+16.  Use Numpy, Pandas
+
+17.  Only import what you need vice everything.
+
+18.  Use a main declaration:
+
+DO
+    def main():
+        print("This is the main function.")
+
+    if __name__ == "__main__":
+        main()
+
+19.  Ternary operations.
+
+DO
+    condition = False
+    x =1 if condition else 0
+    print(x)
+
+20.  Very large Numbers, use "_" (underscore) in place of commas.
+DO
+    x=1_000_000  #one million
+    print(x)
+    print(f"{x:10}")
+    print(f"{x:,}")
+    print(f"{float(x):12.2f}")
+
+

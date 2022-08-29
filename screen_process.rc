@@ -1,0 +1,8 @@
+screen watch -n .5 "free -h"
+split
+focus down
+screen watch -n .5 "ps -auxf | grep socom_ncoda_h5_writer"
+split
+focus down
+screen watch -n .5 "top"
+focus bottom

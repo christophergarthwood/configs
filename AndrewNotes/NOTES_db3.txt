@@ -1,0 +1,75 @@
+
+#------------------------
+db3 db-3 sleepycat
+#-------------------------
+
+cd db-4.0.14
+
+cd ./build_unix/
+../dist/configure --enable-compat185
+make
+make install
+
+ln -s /usr/local/BerkeleyDB.4.0/include/db.h /usr/include/db.h
+
+vi /etc/ld.so.conf
+/usr/local/BerkeleyDB.4.0/lib
+
+
+#-------------------------
+DB3
+#-------------------------
+cd ./build_unix/
+../dist/configure --enable-compat185
+make
+make install
+
+vi /etc/ld.so.conf
+/usr/local/BerkeleyDB.3.3/lib
+
+ln -s /usr/local/BerkeleyDB.3.3/include /usr/include/db3
+
+??why
+ln -s /usr/local/BerkeleyDB.3.3/lib/libdb-3.so  /usr/lib/libdb-3.so
+
+
+
+#-------------------------
+DB2
+cd db-2.7.7
+cd build_unix/
+../dist/configure --enable-compat185
+make 
+make install
+
+vi /etc/ld.so.conf
+/usr/local/BerkeleyDB/lib
+
+ln -s /usr/local/BerkeleyDB/include/db.h /usr/include/db.h
+ln -s /usr/local/BerkeleyDB/include/db_185.h /usr/include/db_185.h
+
+ln -s /usr/local/BerkeleyDB/lib/libdb.a /usr/lib/libdb.a
+ln -s /usr/local/BerkeleyDB/lib/libdb.a /usr/lib/libdb1.a
+
+
+
+
+#-------------------------
+A search of google yielded this info regarding  libdb:  version 1 uses
+dbopen; version 2 uses db_open and version 3 uses db_create.
+
+Re: Where can I get libdb1?
+You can find the source for BerkeleyDB at www.sleepycat.com
+
+Make sure you download version 2.7.7 and build it
+with DB1.85 compatibility mode.
+
+When you've installed it, make sure you have
+LDFLAGS="-L<libdbpath> -R<libdbpath>" exported before
+you do your configure.
+
+
+#-------------------------
+#-------------------------
+#-------------------------
+

@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts]
+"Monaco Regular (TrueType)"=""
+"Monaco Regular Bold (TrueType)"=""
+"Monaco Regular Bold Italic (TrueType)"=""
+"Monaco Regular Italic (TrueType)"=""
+"Monaco Regular Light (TrueType)"=""
+"Monaco Regular Semibold (TrueType)"=""
+"Monaco Regular Symbol (TrueType)"=""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes]
+

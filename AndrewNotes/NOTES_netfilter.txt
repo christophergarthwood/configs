@@ -1,0 +1,440 @@
+
+#---------------------------------------------------------------------
+iptables ipchains netfilter
+#---------------------------------------------------------------------
+get latest kernel from www.kernel.org
+
+now look at netfilter.samba.org
+
+get either a release fom there or cvs it:
+cvs -d :pserver:cvs@pserver.samba.org:/cvsroot login
+password is "cvs"
+Check out code with:
+cvs -d :pserver:cvs@pserver.samba.org:/cvsroot co netfilter
+Update a checkout with:
+cvs update -d -P
+
+
+cd ./netfilter
+cd userspace
+
+(I had to do this
+	cd /usr/src/linux/include/
+	ln -s ./asm-i386 ./asm )
+(and this
+	cd /usr/src/linux
+	make menuconfig (just default config)
+	make dep )
+make patch-o-matic
+
+if patches fail because a file already exists - you can mv the
+existing file somewhere safe and rerun patch-o-matic
+
+kernel compiled ok afterwards...
+
+#---------------------------------------------------------------------
+
+/sbin/modprobe ip_conntrack_ftp && /sbin/modprobe ip_nat_ftp
+
+#---------------------------------------------------------------------
+
+tiny, tiny firewall (one machine, one interface fw'ed, no services)
+vi /etc/init.d/personal_firewall
+#--
+#!/bin/bash
+IPTABLES="/sbin/iptables"
+IF="eth0"
+echo "0" > /proc/sys/net/ipv4/ip_forward
+echo "1" > /proc/sys/net/ipv4/ip_dynaddr
+$IPTABLES -P INPUT ACCEPT
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+$IPTABLES -t nat -P PREROUTING ACCEPT
+$IPTABLES -t nat -P POSTROUTING ACCEPT
+$IPTABLES -t nat -P OUTPUT ACCEPT
+$IPTABLES -F; $IPTABLES -t nat -F
+$IPTABLES -X; $IPTABLES -t nat -X
+
+case "$1" in
+ stop)
+     ;;
+ *)
+     $IPTABLES -A INPUT -i $IF -m state \
+          --state ESTABLISHED,RELATED -j ACCEPT
+     $IPTABLES -A INPUT -p tcp --dport 22 -j ACCEPT
+     $IPTABLES -A INPUT -i $IF -j DROP
+     /sbin/modprobe ip_conntrack_ftp
+esac
+#--
+chmod 0755 /etc/init.d/personal_firewall
+
+#---------------------------------------------------------------------
+
+./firewall-adsl-only.sh
+#--
+#!/bin/bash
+
+IPTABLES="/usr/local/sbin/iptables"
+INTIF="eth0"
+ADSLIF=`/sbin/ifconfig -a | grep ppp | awk '{print $1}'`
+###ADSLIF="ppp0"
+
+INTNET="192.168.0.0/24"
+
+echo "0" > /proc/sys/net/ipv4/ip_forward
+echo "1" > /proc/sys/net/ipv4/ip_dynaddr
+
+#FLUSH# SET DEFAULT AND FLUSH
+   $IPTABLES -P INPUT DROP
+   $IPTABLES -P FORWARD DROP
+   $IPTABLES -P OUTPUT ACCEPT
+   $IPTABLES -t nat -P PREROUTING DROP
+   $IPTABLES -t nat -P POSTROUTING ACCEPT
+   $IPTABLES -t nat -P OUTPUT ACCEPT
+
+   $IPTABLES -F
+   $IPTABLES -t nat -F
+   $IPTABLES -X
+   $IPTABLES -t nat -X
+#FLUSH# END 
+
+#MS# KILL MS CRAP STUFF
+   $IPTABLES -t nat -A PREROUTING -p tcp --sport 137:139 -j DROP
+   $IPTABLES -t nat -A PREROUTING -p udp --sport 137:139 -j DROP
+   $IPTABLES -t nat -A PREROUTING -p tcp --dport 137:139 -j DROP
+   $IPTABLES -t nat -A PREROUTING -p udp --dport 137:139 -j DROP
+#MS# END
+
+#LOCAL# Input (non-forwarded) to this computer
+   $IPTABLES -A INPUT -s 127.0.0.1 -j ACCEPT
+
+   #Allow contact from int net, dns,dhcp etc
+   $IPTABLES -A INPUT -i $INTIF -s $INTNET -j ACCEPT
+
+   #Allow SSH from anywhere
+   $IPTABLES -A INPUT -p tcp --dport 22 -j ACCEPT
+   $IPTABLES -t nat -A PREROUTING -p tcp --dport 22 -j ACCEPT
+
+   #This machine needs to talk out
+   $IPTABLES -A INPUT -i $ADSLIF -m state --state ESTABLISHED,RELATED -j ACCEPT
+#LOCAL# END
+
+#FORWARDING#
+   #Accept (to forward) only from internal interfaces
+   $IPTABLES -t nat -A PREROUTING -i $INTIF -j ACCEPT
+   $IPTABLES -t nat -A PREROUTING -j DROP
+
+   #Make sure internal IPs are what they are supposed to be
+   $IPTABLES -A FORWARD -i $INTIF -s $INTNET -j ACCEPT
+   $IPTABLES -A FORWARD -i $INTIF -d $INTNET -j ACCEPT
+   $IPTABLES -A FORWARD -i $INTIF -s ! $INTNET -j DROP
+
+   $IPTABLES -A FORWARD -i $ADSLIF -o $INTIF -m state \
+        --state ESTABLISHED,RELATED -j ACCEPT
+
+   $IPTABLES -t nat -A POSTROUTING -o $ADSLIF -j MASQUERADE
+
+#BULK# END
+
+#FINISHED SO TURN ON FORWARDING
+   echo "12000" > /proc/sys/net/ipv4/ip_conntrack_max
+   echo "1" > /proc/sys/net/ipv4/ip_forward
+
+#--
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+from: http://linuxjournal.com/article.php?sid=6041
+  At the peak, at 8pm, we ran into performance problems on the Linux firewall.
+  These weren't resolved until after the massive peaks. We
+  optimized all the TCP socket options (based on the results of experiments
+  of people at the NIKHEF institute in Amsterdam), which can
+  be done through the Linux /proc interface, and we added more
+  memory to the firewall (the socket options eat up a lot of memory). 
+
+  Here are the current socket options we use on our Linux firewall: 
+
+  RWIN_MIN="4096"
+  RWIN_MAX="25165824"
+  # NB: we have to force the default value to be equal to the max
+  # in order to have larger buffer assigned by the kernel
+  # RWIN_DEFAULT="87380"
+  RWIN_DEFAULT="25165824"
+  WWIN_MIN="4096"
+  WWIN_DEFAULT="65536"
+  WWIN_MAX="25165824"
+  echo -n "Configuring socket parameters"
+  echo "$RWIN_MIN $RWIN_DEFAULT $RWIN_MAX" > /proc/sys/net/ipv4/tcp_rmem
+  echo "$WWIN_MIN $WWIN_DEFAULT $WWIN_MAX" > /proc/sys/net/ipv4/tcp_wmem
+
+  echo  $RWIN_MAX > /proc/sys/net/core/rmem_max  
+  echo  $RWIN_DEFAULT > /proc/sys/net/core/rmem_default
+
+  echo  $WWIN_MAX > /proc/sys/net/core/wmem_max
+  echo  $WWIN_DEFAULT > /proc/sys/net/core/wmem_default
+  echo "."
+
+  # Having the ip_conntrack module loaded, even when not using it,
+  # will severely hamper and burden the firewall. If one REALLY has to
+  # run this, at least make sure it has enough connection bufferS:
+
+  echo  32768 >  /proc/sys/net/ipv4/ip_conntrack_max
+
+#---------------------------------------------------------------------
+
+firewalls with no userspace:
+http://www.samag.com/documents/s=1824/sam0201d/
+
+#---------------------------------------------------------------------
+
+env.sh
+export pppGW=`/sbin/ifconfig ppp0 | grep P-t-P | sed -e 's/:/ /g' - | awk '{print $5}' -`
+export pppADDR=`/sbin/ifconfig ppp0 | grep P-t-P | sed -e 's/:/ /g' - | awk '{print $3}' -`
+
+echo "pppGW     ppp0 GATWAY   $pppGW"
+echo "pppADDR   ppp0 ADDR     $pppADDR"
+
+export cableGW=`grep GATEWAY /etc/dhcpc/dhcpcd-eth3.info | awk -F"=" '{print $2}' - `
+export cableADDR=`grep IPADDR /etc/dhcpc/dhcpcd-eth3.info | awk -F"=" '{print $2}' - `
+
+echo "cableGW   eth3 GATWAY   $cableGW"
+echo "cableADDR eth3 ADDR     $cableADDR"
+
+export ethADDR=`/sbin/ifconfig eth0 | grep inet | awk -F ":" '{print $2}' | awk '{print $1}'`
+
+#---------------------------------------------------------------------
+
+#protect specific service
+#only allow acces to ssh from one machine
+
+/sbin/iptables -I INPUT -p tcp -s 64.79.238.175 --dport 22 -j ACCEPT
+/sbin/iptables -A INPUT -p tcp --dport 22 -j DROP
+
+/sbin/iptables -A INPUT -p tcp -s ! 192.168.0.0/24 --dport 8080 -j DROP
+
+#remove change the A to D
+#---------------------------------------------------------------------
+
+#iptables for a single machine with one interface (eth0) providing services
+export PATH=/sbin:$PATH
+
+#load up iptables modules that will not get loaded automagically
+/sbin/modprobe ip_conntrack_ftp
+#/sbin/modprobe ip_conntrack_irc     #uncomment if you use irc
+
+#flush everything to an open (default) state:
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -t nat -P PREROUTING ACCEPT
+iptables -t nat -P POSTROUTING ACCEPT
+iptables -t nat -P OUTPUT ACCEPT
+iptables -F
+iptables -t nat -F
+iptables -X
+iptables -t nat -X
+#end flush
+
+#we are not forwarding anything
+iptables -P FORWARD DROP
+
+#we allow everything going out
+iptables -P OUTPUT ACCEPT
+
+#set default input to drop
+iptables -P INPUT DROP
+#iptables -A INPUT -j REJECT
+
+#we allow everything local (lo interface)
+iptables -A INPUT -i lo -j ACCEPT
+
+#allow everything that is part of an establish conversation
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+#reject anything left (default is drop anyway, we will insert everything above this)
+iptables -A INPUT -j REJECT
+
+#ok, at this point all our services are denied to the outside world,
+#but stuff we initiate is allowed (websurfing, downloads, etc)
+# can check with a comparison of local netstat -an --inet and a
+# remote nmap and nmap -sU
+#since nmap has to time out on these dropped packets (unless REJECT is above) you might want to
+#just check the ports that are open (from netstat)
+#nmap -P0 -p 22,80 192.168.0.83
+#nmap -sU -P0 -p 53,67 192.168.0.83   #will mis-inform about filtered ports
+
+#allow enough icmp to ping etc
+iptables -I INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+#web (http)
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+#dhcp
+iptables -I INPUT -p udp --dport 67 -j ACCEPT
+#dns
+iptables -I INPUT -p udp --dport 53 -j ACCEPT
+#ftp (control, data is handled by ftp module)
+iptables -I INPUT -p tcp --dport 21 -j ACCEPT
+#ssh
+iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+#smb stuff (non-AD type stuff, normal smb)
+iptables -I INPUT -p tcp --dport 139 -j ACCEPT
+iptables -I INPUT -p udp --dport 137 -j ACCEPT
+iptables -I INPUT -p udp --dport 138 -j ACCEPT
+
+#---------------------------------------------------------------------
+
+#firewall off one interface
+vi /etc/init.d/firewall_one_interface
+#--
+#!/bin/bash
+INT2FW="eth1"
+IPTABLES="/sbin/iptables"
+
+case "$1" in
+ start)
+	$IPTABLES -A INPUT -i $INT2FW -m state \
+		--state ESTABLISHED,RELATED -j ACCEPT
+	$IPTABLES -A INPUT -i $INT2FW -j DROP
+	;;
+ stop)
+	$IPTABLES -D INPUT -i $INT2FW -m state \
+		--state ESTABLISHED,RELATED -j ACCEPT
+	$IPTABLES -D INPUT -i $INT2FW -j DROP
+	;;
+ *)
+	echo $"Usage: $0 {start|stop}"
+	exit 1
+	;;
+esac
+#--
+chmod 0755 /etc/init.d/firewall_one_interface
+
+#---------------------------------------------------------------------
+
+vi /etc/init.d/wireless_ap_firewall
+#--
+#!/bin/bash
+# wireless AP with dhcp enabled on INTIF, wired network on EXTIF
+# wireless has access out, but no access to wired network
+
+#the inside of the wireless net is 192.168.1.x
+
+#the inside of the wired net (offlimits) is 192.168.0.x
+
+#eth0=192.168.0.something
+#eth1=192.168.1.1 connected to AP eth interface
+
+#configure wireless AP as
+#WAN static ip:
+#192.168.1.2 / 255.255.255.0
+#gateway 192.168.1.1
+#dns 10.10.0.1   (some fake address outside gateway)
+
+OUTSIDEDNS="64.79.224.2"
+
+IPTABLES="/sbin/iptables"
+INTIF="eth1" #towards wireless
+EXTIF="eth0" #towards internet
+
+echo "0" > /proc/sys/net/ipv4/ip_forward
+echo "1" > /proc/sys/net/ipv4/ip_dynaddr
+
+case "$1" in
+ stop)
+        $IPTABLES -P INPUT DROP
+        $IPTABLES -P FORWARD DROP
+        $IPTABLES -P OUTPUT ACCEPT
+        $IPTABLES -t nat -P PREROUTING ACCEPT
+        $IPTABLES -t nat -P POSTROUTING ACCEPT
+        $IPTABLES -t nat -P OUTPUT ACCEPT
+        $IPTABLES -F; $IPTABLES -t nat -F
+        #we allow everything local (lo interface)
+        $IPTABLES -A INPUT -i lo -j ACCEPT
+        $IPTABLES -A INPUT -i $EXTIF -j ACCEPT
+        #drop wireless interface
+        $IPTABLES -A OUTPUT -o $INTIF -j DROP
+        ;;
+ *)
+        #FLUSH# SET DEFAULT AND FLUSH
+           $IPTABLES -P INPUT ACCEPT
+           $IPTABLES -P FORWARD ACCEPT
+           $IPTABLES -P OUTPUT ACCEPT
+           $IPTABLES -t nat -P PREROUTING ACCEPT
+           $IPTABLES -t nat -P POSTROUTING ACCEPT
+           $IPTABLES -t nat -P OUTPUT ACCEPT
+
+           $IPTABLES -F
+           $IPTABLES -t nat -F
+          $IPTABLES -X
+           $IPTABLES -t nat -X
+        #FLUSH# END
+
+           #reject packets destined for me (except for related so I can talk to AP web config)
+           $IPTABLES -A INPUT -i $INTIF -m state --state ESTABLISHED,RELATED -j ACCEPT
+           $IPTABLES -A INPUT -i $INTIF --dst 192.168.1.1/32 -j REJECT
+           #reject packets destined for inside net
+           $IPTABLES -A FORWARD -i $INTIF --dst 192.168.0.0/24 -j REJECT
+           #stop leakage from me (except port 80 to configure AP)
+           $IPTABLES -A OUTPUT -o $INTIF -p tcp --dport 80 -j ACCEPT
+           #$IPTABLES -A OUTPUT -o $INTIF --src 192.168.1.1/32 -j REJECT
+           $IPTABLES -A OUTPUT -o $INTIF -j REJECT
+
+           #reject smtp
+           $IPTABLES -A FORWARD -i $INTIF -p tcp --dport 25 -j REJECT
+           #reject smb
+           $IPTABLES -A FORWARD -i $INTIF -p tcp --dport 139 -j REJECT
+           $IPTABLES -A FORWARD -i $INTIF -p udp --dport 137 -j REJECT
+           $IPTABLES -A FORWARD -i $INTIF -p udp --dport 138 -j REJECT
+           $IPTABLES -A FORWARD -i $INTIF -p udp --dport 135 -j REJECT
+
+           #handle dns
+           $IPTABLES -t nat -A PREROUTING -i $INTIF -p udp --dport 53 -j DNAT --to $OUTSIDEDNS
+
+           $IPTABLES -t nat -A PREROUTING -i $INTIF -j ACCEPT
+
+           $IPTABLES -A FORWARD -i $EXTIF -o $INTIF -m state \
+                --state ESTABLISHED,RELATED -j ACCEPT
+
+          $IPTABLES -t nat -A POSTROUTING -o $EXTIF -j MASQUERADE
+
+        #FINISHED SO TURN ON FORWARDING
+           echo "12000" > /proc/sys/net/ipv4/ip_conntrack_max
+           echo "1" > /proc/sys/net/ipv4/ip_forward
+           /sbin/modprobe ip_conntrack_ftp
+esac
+#--
+chmod 0755 /etc/init.d/wireless_ap_firewall
+
+#---------------------------------------------------------------------
+
+LOKKIT lokkit syntax
+
+783:tcp https:tcp 53:udp
+
+#---------------------------------------------------------------------
+
+#deny a certain IP
+/sbin/iptables -A INPUT --src 63.224.227.157 -j REJECT
+/sbin/iptables -A OUTPUT --dst 63.224.227.157 -j REJECT
+
+DENYIP=129.33.182.77
+/sbin/iptables -A INPUT --src $DENYIP -j REJECT
+/sbin/iptables -A OUTPUT --dst $DENYIP -j REJECT
+/sbin/iptables -L -n
+
+#---------------------------------------------------------------------
+
+common ethereal filters
+NOT ARP
+eth.type != 0x806
+IP src or dst not this IP
+ip.addr != 84.224.5.35
+TOGETHER
+eth.type != 0x806 || ip.addr != 84.224.5.35
+
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------

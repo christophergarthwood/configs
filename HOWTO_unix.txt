@@ -1,0 +1,486 @@
+PYTHON
+  Install Packages locally: --user
+
+    Path Configuration file
+	SITEDIR=$(python -m site --user-site)
+	PYTHON_DIR=python2.6
+	PYTHON_PATH=$PYTHON_PATH:/usr/lib/python2.6/site-packages/:~/.local/lib/python2.6/site-packages/
+	http://persagen.com/files/misc/Turning_vim_into_a_modern_Python_IDE.html
+
+MANDATORY NEW SYSTEM INSTALLS
+STIG
+ln -s ./STIGViewer-2.8.jar ./default.jar
+
+JAVA
+ln -s ${HOME}/Documents/apps/jdk8/bin/java ${HOME}/bin/java
+ln -s ${HOME}/Documents/apps/jdk8/bin/jar ${HOME}/bin/jar
+ln -s ${HOME}/Documents/apps/jdk8/bin/javac ${HOME}/bin/javac
+
+PERL
+ln -s /home/cwood/Documents/apps/perltidy/perltidy_complete.pl $HOME/bin/perltidy.pl
+ln -s $HOME/Documents/apps/nytprof/bin/flamegraph.pl $HOME/bin/flamegraph.pl
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofcalls $HOME/bin/ntyprofcalls
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofcg $HOME/bin/nytprofcg
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofcsv $HOME/bin/nytprofcsv
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofhtml $HOME/bin/nytprofhtml
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofmerge $HOME/bin/nytprofmerge
+ln -s $HOME/Documents/apps/nytprof/bin/nytprofpf $HOME/bin/nytprofpf
+
+FORTRAN
+ln -s /home/cwood/Documents/apps/fmake/fmake $HOME/bin/fmake
+ln -s /home/cwood/Documents/apps/ftnchek $HOME/bin/ftnchek
+
+BASH
+ln -s ${HOME}/Documents/apps/shellcheck-v0.5.0/shellcheck ${HOME}/bin/shellcheck
+
+DEPENDENCY CHAIN
+ln -s /home/cwood/Documents/apps/spack/bin/spack /home/cwood/bin/spack
+
+PYTHON
+ln -s /home/cwood/.local/bin/pip         /home/cwood/bin/pip
+pip install autopep8 --user
+ln -s /home/cwood/.local/bin/autopep8    /home/cwood/bin/autopep8
+pip install ansible --user
+ln -s /home/cwood/.local/bin/ansible     /home/cwood/bin/ansible
+pip install pycallgraph --user
+ln -s /home/cwood/.local/bin/pycallgraph /home/cwood/bin/pycallgraph
+#gprof2dot, downloaded and put in apps
+ln -s /home/cwood/Documents/apps/gprof2dot/gprof2dot.py /home/cwood/bin/gprof2dot.py
+#FORTRAN documentation tool
+pip install ford --user
+#FORTRAN formatter (make pretty)
+pip install fprettify --user
+
+VIM 
+ https://vim-adventures.com/
+ PLUGINS
+    1. https://www.cyberciti.biz/programming/vim-plug-a-beautiful-and-minimalist-vim-plugin-manager-for-unix-and-linux-users/
+	2. mkdir ~/.vim/autoload
+	3. cd ~/.vim/autoload
+	4. wget https://raw.gitusercontent.com/junegunn/vim-plu/master/plug.vim
+    5. Refer to https://vimawesome.com/ for more plugins.
+	6. Look at https://vimawesome.com/plugin/vim-templates-are-made-of for example templates.
+ PLUGIN USAGE
+   From vim commandline invoke ":PlugStatus"
+   SVN (https://github.com/juneedahamed/svnj.vim) 
+   		Plugin keyword is SVN\t.
+   Ansible (https://github.com/pearofducks/ansible-vim)
+   		Plugin keyword find content based on context (group_vars, host_vars, tasks, roles, etc.)
+   Git Gutter (https://github.com/airblade/vim-gitgutter)
+   	    You can explicitly turn vim-gitgutter off and on (defaults to on):
+		   turn off with :GitGutterDisable
+		   turn on with :GitGutterEnable
+		   toggle with :GitGutterToggle.
+	    You can turn the signs on and off (defaults to on):
+		   turn on with :GitGutterSignsEnable
+		   turn off with :GitGutterSignsDisable
+		   toggle with :GitGutterSignsToggle.
+	    And you can turn line highlighting on and off (defaults to off):
+		   turn on with :GitGutterLineHighlightsEnable
+		   turn off with :GitGutterLineHighlightsDisable
+		   toggle with :GitGutterLineHighlightsToggle.
+	Ident(https://github.com/nathanaelkane/vim-indent-guides)
+		:IndentGuidesEnable
+		:IndentGuidesDisable
+		:IndentGuidesToggle
+    Signify (https://github.com/mhinz/vim-signify)
+	    Understand how the plugin works: :h signify-modus-operandi
+	    Spare the plugin some work and read: :h g:signify_vcs_list
+    NERD Tree
+  		AutoStart ~ autocmd vimenter * NERDTree
+		OR
+		autocmd StdinReadPre * let s:std_in=1
+		autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+		Map to CTRL+N -> .vimrc -> map <C-n> :NERDTreeToggle<CR>
+     Neomake (Plug 'neomake/neomake')
+        Use with :Neomake on shell scripts with ShellCheck in the path.
+	VIMRC PLACEMENT
+		In Vim, your home directory is specified with $HOME. On Unix systems, this is your ~ directory. On Windows systems, the best way to find the value of $HOME is from within Vim, as follows. These commands are useful to see what directories your Vim is using:
+		:version
+		:echo expand('~')
+		:echo $HOME
+		:echo $VIM
+		:echo $VIMRUNTIME
+
+		Once you determine the HOME variable put the vimrc file within that directory.
+		If you would like to change your HOME variable, set HOME as an environment variable for either the system or user.
+		Computer > Properties > Advanced System Settings > Advanced > Environment Variables > User | System Variables.
+		Windows (both Native and Cygwin*) will use _gvimrc, .gvimrc, _vimrc and .vimrc in that order of priority. The gvim* files will be checked with the gvim process, while the console vim will only check the vim* files.
+
+GREP
+	#strips pattern, parts http into new lines and removes everything behind the final double-quote
+	cat guard-duty | grep downloads | sed s/http/\\\nhttp/g | sed s/\".*//g > ../guard.txt
+	#use \r while in vi
+
+SELINUX
+	$chcon -u system_u -t auditd_etc_t ./audit.rules
+
+UNIX ERROR CODES
+	http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+	/usr/include/asm/errno.h
+
+MEMORY DUMP
+	#memory dump
+	sudo dmidecode --type memory
+
+UNIX VERSIOn
+	#version of linux 
+	lsb_release -a
+    more /etc/redhat-release
+
+TCPDUMP
+	sudo tcpdump -i eth14 host 10.160.24.134 and port 443 -n -vvv -A
+	sudo tcpdump -i eth14 host 10.160.24.134 -n -vvv -A
+	sudo tcpdump -i lo port 8010 -n -vvv -A
+
+NETWORK ROUTES
+	#!/bin/sh
+	route del -net 10.0.0.0 netmask 255.0.0.0 dev eth0
+	route add -net 10.160.24.0 netmask 255.255.254.0 eth0
+	route add default gw 10.160.25.254
+	sudo route add -net 192.168.0.0 netmask 255.255.0.0 gw 10.160.24.187
+
+WGET
+	http://windev.anteon.com:8080/NMOSW/dod/isarch/database/list/listUserSQL/asXMLwget --http-user=dvignes --http-passwd=test3 
+
+WINDOWS 10 GOD MODE
+	#make folder with this title name
+	GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
+
+X WINDOW
+	startx -- :1 -bpp 24 vt8
+	xeyes -display :1
+
+	Run Multiple X Sessions Simultaneously
+	On most PCs, you can start more than one X session and switch between them with Ctrl-Alt-F7 and Ctrl-Alt-F8, for example. Why would you do this? Well, some X applications don't really need a full-blown window manager gobbling up your precious RAM and CPU. For example, VMware Workstation and Stellarium are two applications that I use (rarely simultaneously, by the way) that don't need anything but a display. I don't need cut and paste with Stellarium, and VMware is basically a display manager in itself. In addition, just playing with X in this way makes you understand the interrelationships between X, your window manager and your applications. 
+
+	Start your X engine (aka implicit xinit). You probably just use startx, and it reads your .xinitrc file and, doing what it's told, thereby launches X on the first available console, complete with window manager. This is probably display :0. 
+
+	Start your X2 engine (aka explicit xinit). From a terminal, you can launch another X server on your machine:
+
+	xinit /opt/vmware/workstation/bin/vmware
+	 ?-display :1 -- :1 &
+	The first argument taken by xinit is the path for the client that will be launched. It must be an absolute path starting at /. Everything after the -- is passed to the X server. Read the xinit(1) man page a bit for more fine examples. 
+
+	Fire off your local X server:
+	xinit /usr/bin/xterm -- :1 &
+	This yields a vanilla X session with merely an xterm runningno window manager. Now, you need to add permissions to this window session for the remote host. You can tunnel the connection through SSH if your network is insecure, but there's a distinct performance hit. If your network is secure, you can simply do xhost +remotehost and spray directly to your X server. 
+
+	For tunneled SSH: 
+	ssh -fY remotehost /usr/bin/wmaker
+	For spray directly:
+	xhost +remotehost
+	ssh -f remotehost /usr/bin/wmaker
+	 ?-display localmachine:1
+	The first option, if your remote SSH server supports it, uses a locally defined DISPLAY that then gets tunneled to your local side over SSH. The second option allows remotehost to send X data directly to your local display, then runs Window Maker there but displays it locally. Now, all your desktop actions are done on the remote machine, not locally. 
+
+STORAGE (TEMPORARY)
+Save file in /dev/shm (memory only), lose content after reboot.
+
+WHO IS ONLINE
+ #find out who else is logged in, especially before starting something like a shutdown
+ $who -au | grep -vi LOGIN |  sed -e /^$/d
+
+YUM
+	yum --exclude=openscada* --exclude=httpd* --exclude=mod_ssl* --exclude=kernel* --exclude=java* --exclude=maven*
+
+YUM USEFUL PACKAGES
+yum -y install epel-release
+yum -y groupinstall "X Window System"
+yum -y install lightdm
+yum -y install cinnamon
+yum -y install gcc ssh audit nmap ntop logwatch tcpdump sysstat iptraf strace htop syslog aide screen yum-plugin-priorities filezilla* *terminal* cups-pdf dconf-editor nano p7zip* unrar wget bluefish geany zip svn git vlc feh ristretto
+systemctl set-default graphic.target
+rm '/etc/systemd/system/default.target'
+ln -s /usr/lib/systemd/system/graphical.target /etc/systemd/system/default
+systemctl isolate graphical.target
+
+SHELL DECISIONS
+command1 && command2 
+
+command2 is executed if, and only if, command1 returns 
+an exit status of zero. 
+
+command1 || command2 
+
+command2 is executed if and only if command1 returns 
+a non-zero exit status.  
+
+The return status of AND and OR lists is the exit 
+status of the last command executed in the list. 
+
+[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$sname 
+#RETVAL is a system variable, -eq is testing equality
+
+VIRTUALBOX RESOLUTION ADJUSTMENT
+#from windows environment
+VBoxManage.exe setextradata global GUI/MaxGuestResolution 1920,1080
+
+VIRTUALBOX MOUNT WINDOWS
+#from Linux box
+sudo mount -f vboxsf christopher.wood.AD /mount/cwood
+
+CYGWIN / MS WINDOWS 10
+#Deleting a particular hard file to remove (especially Windows reserved words)
+#this works...confirmed
+del \\?\c:\path_to_file\lpt1
+#take control of all files, own them and then nuke
+takeown /f "c:\target" /r /d Y
+icacls "c:\target" /T /Q /C /reset
+rd "c:\target" /s /q
+
+SHELL - RECORD SESSION
+#save all content printed on terminal to file
+mkfifo hardcopy
+script hardcopy
+
+SHELL - INTERACTIVE?
+// Is this Shell Interactive?
+[ -z "$PS1" ] && echo "Noop" || echo "Yes"
+
+HPC EASYBUILD
+#This tools / capability makes installation on HPC platforms far easier
+Reference: http://easybuild.readthedocs.io/en/latest/Installation.html
+# pick an installation prefix to install EasyBuild to (change this to your liking)
+EASYBUILD_PREFIX=$HOME/.local/easybuild
+
+# download script
+curl -O https://raw.githubusercontent.com/easybuilders/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
+
+# bootstrap EasyBuild
+python bootstrap_eb.py $EASYBUILD_PREFIX
+
+# update $MODULEPATH, and load the EasyBuild module
+module use $EASYBUILD_PREFIX/modules/all
+module load EasyBuild
+[[INFO]] EasyBuild module installed: /p/home/cwood/.local/easybuild/modules/all/EasyBuild/3.4.1
+
+[[INFO]] Bootstrapping EasyBuild completed!
+
+[[INFO]] EasyBuild v3.4.1 was installed to /p/home/cwood/.local/easybuild, so make sure your $MODULEPATH includes /p/home/cwood/.local/easybuild/modules/all
+
+[[INFO]] Run 'module load EasyBuild', and run 'eb --help' to get help on using EasyBuild.
+[[INFO]] Set $EASYBUILD_MODULES_TOOL to 'EnvironmentModulesC' to use the same modules tool as was used now.
+
+[[INFO]] By default, EasyBuild will install software to $HOME/.local/easybuild.
+[[INFO]] To install software with EasyBuild to /p/home/cwood/.local/easybuild, make sure $EASYBUILD_INSTALLPATH is set accordingly.
+[[INFO]] See http://easybuild.readthedocs.org/en/latest/Configuration.html for details on configuring EasyBuild.
+
+REDIRECT | LOGGING
+Reference:http://www.cubicrace.com/2016/03/efficient-logging-mechnism-in-shell.html
+Reference:http://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
+#Add to the top of your script
+	exec 1> >(tee -a YOURLOGFILE) 2>&1
+#or
+	exec 1> >(logger -s -t $(basename $0)) 2>&1
+#or
+#Only problem is the script below will get output out of sync since it's using two different processes to log
+#!/bin/bash
+
+TOTAL direction: ./test_msgs.sh &> ./output.txt
+
+exec 1> >(logger -s -t $(basename $0) 2>&1)
+exec 2> >(logger -s -t $(basename $0))
+echo "writing to stdout"
+echo "writing to stderr" >&2
+
+BASH VARIABLES
+Reference:https://stackoverflow.com/questions/673055/correct-bash-and-shell-script-variable-capitalization/42290320#42290320
+Use all caps and underscores for exported variables and constants. Use a common prefix whenever applicable so that related variables stand out.
+  Examples:
+  Exported variables with a common prefix: JOB_HOME JOB_LOG JOB_TEMP JOB_RUN_CONTROL
+  Constants: PI MAX_FILES OK ERROR WARNING
+
+Use "snake case" (all lowercase and underscores) for all variables that are scoped to a single script or a block.
+  Examples: input_file first_value max_amount num_errors
+
+Mixed case when local variable has some relationship with an environment variable, like: old_IFS old_HOME
+
+Use a leading underscore for "private" variables and functions. This is especially relevant if you ever write a shell library where functions within a library file or across files need to share variables, without ever clashing with anything that might be similarly named in the main code.
+  Examples: _debug _debug_level _current_log_file
+
+Never use camel case. This will make sure we don't run into bugs caused by case typos.
+  Examples: inputArray thisLooksBAD, numRecordsProcessed, veryInconsistent_style
+
+BASH BEST PRACTICES
+#let script exit if a command fails
+set -o errexit 
+OR
+set -e
+#let script exit if an unsed variable is used
+set -o nounset
+OR
+set -u
+#use = for string comparisons
+#use $(command) instead of backticks
+#double quote "${my_var}" variables and curly brace for local vars
+#add || true to commands that allow you to fail
+#set xtrace to for debugging
+set -o xtrace
+OR
+set -x
+#!/usr/bin/env bash is more portable then #!/bin/bash
+Use :- if you want to test variables that could be undeclared. For instance: if [ "${NAME:-}" = "Kevin" ] will set $NAME to be empty if it's not declared. You can also set it to noname like so if [ "${NAME:-noname}" = "Kevin" ]
+
+HISTORY
+Reference: https://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/
+Display timestamp using HISTTIMEFORMAT
+  export HISTTIMEFORMAT='%F %T '
+Search the history using Control+R
+Repeat previous command quickly using 4 different methods
+  Use the up arrow to view the previous command and press enter to execute it.
+  Type !! and press enter from the command line
+  Type !-1 and press enter from the command line.
+  Press Control+P will display the previous command, press enter to execute it
+Repeat command from History
+  !#
+Execute previous command that starts with a specific word
+  !ps
+Control the total number of lines in the history using HISTSIZE
+  HISTSIZE=450
+  HISTFILESIZE=450
+Change the history file name using HISTFILE
+  HISTFILE=$HOME/.audit/session.`date +'%Y%m%d-%H%M%S%N'`
+Eliminate the continuous repeated entry from history using HISTCONTROL
+  export HISTCONTROL=erasedups
+Force history not to remember a particular command using HISTCONTROL
+  export HISTCONTROL=ignorespace
+Clear all the previous history using option -c
+  history -c
+Disable the usage of history using HISTSIZE
+  export HISTSIZE=0
+Ignore specific commands from the history using HISTIGNORE
+  export HISTIGNORE="pwd:ls:ls -ltr:"
+
+SHELL DIFFERENCES
+  Reference: http://hyperpolyglot.org/unix-shells#functions
+
+SHELL TEMPLATE
+  Reference: https://www.uxora.com/unix/shell-script/18-shell-script-template
+  Reference: http://teaching.idallen.com/cst8177/13w/notes/000_script_style.html
+  Reference: https://natelandau.com/boilerplate-shell-script-template/
+ 
+CODE REFERENCE (RECIPES)
+  Reference: https://github.com/ActiveState/code
+
+SUBVERSION LOG
+ #show descending values, last 10 only
+ svn log -r HEAD:1 -l 10
+
+SUBVERSION on DSRC
+  module load costinit
+  module load subversion
+
+GIT LOG
+ #Reference: https://www.atlassian.com/git/tutorials/git-log
+ git log --graph --oneline --decorate
+ #limit output
+ git log --graph --oneline --decorate -10
+
+Reference for Best Practices: https://www.dune-project.org/doc/guides/git_best_practices/
+
+GIT SSL ISSUES
+
+http.slCAPath or http.sslCAInfo. Adam Spiers's answer gives some great examples. This is the most secure solution to the question.
+To disable TLS/SSL verification for a single git command
+
+try passing -c to git with the proper config variable, or use Flow's answer:
+
+git -c http.sslVerify=false clone https://example.com/path/to/git
+
+To disable SSL verification for a specific repository
+
+If the repository is completely under your control, you can try:
+
+git config http.sslVerify false
+
+There are quite a few SSL configuration options in git. From the man page of git config:
+http.sslVerify
+Whether to verify the SSL certificate when fetching or pushing over HTTPS.
+Can be overridden by the GIT_SSL_NO_VERIFY environment variable.
+
+http.sslCAInfo
+File containing the certificates to verify the peer with when fetching or pushing
+over HTTPS. Can be overridden by the GIT_SSL_CAINFO environment variable.
+
+http.sslCAPath
+Path containing files with the CA certificates to verify the peer with when
+fetching or pushing over HTTPS.
+Can be overridden by the GIT_SSL_CAPATH environment variable.
+
+A few other useful SSL configuration options:
+
+http.sslCert
+File containing the SSL certificate when fetching or pushing over HTTPS.
+Can be overridden by the GIT_SSL_CERT environment variable.
+
+http.sslKey
+File containing the SSL private key when fetching or pushing over HTTPS.
+Can be overridden by the GIT_SSL_KEY environment variable.
+
+http.sslCertPasswordProtected
+Enable git's password prompt for the SSL certificate. Otherwise OpenSSL will
+prompt the user, possibly many times, if the certificate or private key is encrypted.
+Can be overridden by the GIT_SSL_CERT_PASSWORD_PROTECTED environment variable.
+
+COMPILER INSIGHT IN EXECUTABLE / BINARY / LIBRARY / LIBRARIES
+objdump --full-contents --section=.comment <yourprogram>
+ldd <yourprogram>
+ldd -v <yourprogram>
+ldd -u <yourprogram> #show unused libraries
+objdump -p <yourprogram>
+readelf -d <yourprogram>
+strace -e trace=open,openat <yourprogram>
+$ pidof <yourprogram>
+$ lsof -p <yourprogram_pid> |grep mem
+
+
+SHOPT | GLOBBING
+https://www.linuxjournal.com/content/bash-extended-globbing
+
+HARDWARE / CPUINFO
+cat /proc/cpuinfo
+$ cat /proc/cpuinfo | grep 'vendor' | uniq		#view vendor name
+$ cat /proc/cpuinfo | grep 'model name' | uniq		#display model name
+$ cat /proc/cpuinfo | grep processor | wc -l		#count the number of processing units
+$ cat /proc/cpuinfo | grep 'core id'			#show individual cores	
+nproc #number of cpus
+lscpu
+Running 32 or 64 bit? getconf LONG_BIT
+
+FILE EXTENSIONS
+#single column list of files, reverse order of string, cut first element out (extension), sort uniquely and reverse string (which is now only the extension) again
+ls -1 | rev | cut -d'.' -f 1 | unique -u |  rev
+
+HPC MODULES
+#show all modules in a sorted single column
+module list 2>&1 |  cut -c-150 | cut -c5-150 | sort
+
+STRACE | TRACK EXECUTABLE
+#example of watching a wget and seeing what the address is reaching out to.
+strace -f -e trace=network wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz > 2>&1 | grep sin_addr
+
+JULIAN DATE 
+date +%j -d 1/10/2016       #given the date
+date +%j                    #for today
+
+VIM SEARCH AND REPLACE
+#All spaces in a file replaced with a caret (delimiter)
+:%s![^ ]\zs \+!^!g
+
+SUM DATAFILE of NUMBERS
+awk '{s+=$1} END {print s}' mydatafile
+
+CPU UTILIZATION / NUMBER OF CORES / CORE ASSIGNMENT
+lscpu
+
+PROCESS CONTROL
+To start a new process which should execute only in one core, you can use taskset command.
+
+taskset -c 0 executable
+
+To monitor the existing process's CPU affinity, you can use this command:
+
+taskset -cp $(pgrep -f executable)
+
+note that the executable identity you will pass to this command can be './executable' if you started it that way.

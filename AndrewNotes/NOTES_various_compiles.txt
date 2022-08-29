@@ -1,0 +1,879 @@
+
+#---------------------------------------------------------------------
+GUILE
+
+>net_db.c:85: conflicting types for 'inet_aton'
+>/usr/include/arpa/inet.h:69: previous declaration of 'inet_aton'
+>make[1]: *** [net_db.lo] Error 1
+
+
+Fixed It - 
+
+All I had to do was to remove the declarations of inet_aton from the
+files in the directory libguile - it turned out only 2 files needed to
+be changed - inet_aton.c and net_db.c
+
+
+delete:
+vi ./libguile/inet_aton.c
+int inet_aton (const char *cp, struct in_addr *addr);
+
+vi ./libguile/net_db.c
+extern int inet_aton ();
+
+#---------------------------------------------------------------------
+
+mozilla from source
+   (this takes an unbelievable amount of space to compile: ~1.5GB)
+
+./configure --enable-toolkit-gtk --disable-mailnews --disable-ldap \
+  --enable-strip --prefix=/usr/local/mozilla --enable-crypto
+
+gmake -f client.mk
+
+To rebuild without pulling the tree, gmake -f client.mk build
+To pull or update the tree, gmake -f client.mk checkout
+
+cd dist/bin
+./mozilla
+
+cp -pr ./dist /usr/local/mozilla
+
+executable is then "/usr/local/mozilla/bin/mozilla"
+
+WITH --enable-crypto it bombed when started....
+
+ALWAYS BACK UP YOUR BOOKMARKS!!!
+
+#--
+cvs checkout:
+export CVSROOT=:pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot
+cvs login
+CVS password: anonymous
+cvs checkout mozilla/client.mk
+cd mozilla
+make -f client.mk checkout
+
+#---------------------------------------------------------------------
+
+PXElinux
+http://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-1.67.tar.gz
+
+tar xzvf syslinux-1.67.tar.gz && cd syslinux-1.67
+cp pxelinux.0 /tftpboot/
+mkdir /tftpboot/pxelinux.cfg
+vi /tftpboot/pxelinux.cfg/default
+#--
+default b57smb1.boot
+#append 
+ipappend 1
+#--
+
+tftp-hpa-0.*
+./configure && make && make install
+vi /etc/init.d/tftpd 
+#--
+#!/bin/bash
+# Starts tftpd (tftpd-hpa)
+# chkconfig: 2345 80 30
+# description: tftpd
+ethIF="eth0"
+ethADDR=`/sbin/ifconfig $ethIF | grep "inet addr" | sed -e 's/:/ /g' - | awk '{print $3}' -`
+case "$1" in
+  start)
+        echo 'Starting tftpd: '
+        /usr/sbin/in.tftpd -l -vv -a $ethADDR -s /tftpboot
+        ;;
+  stop)
+        echo 'Shutting down tftpd: '
+        killall in.tftpd
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+  *)
+        echo "Usage: /etc/init.d/tftpd {start|stop|restart}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/tftpd 
+mkdir /tftpboot
+
+#---------------------------------------------------------------------
+
+nfs-utils
+
+for diskless machines (with tmp as shmem device)
+./configure --enable-nfsv3 --enable-secure-statd --with-statedir=/tmp    
+
+for server
+./configure --enable-nfsv3 --enable-secure-statd --enable-rquotad
+
+#---------------------------------------------------------------------
+
+Sylpheed
+
+http://sylpheed.good-day.net/sylpheed/
+
+./configure --enable-gpgme --enable-ssl
+
+#---------------------------------------------------------------------
+
+DOSEMU:
+tar xzvf dosemu-1.0.2.tgz 
+gunzip patch-1.0.2.1.gz 
+cd dosemu-1.0.2
+patch -p1 < ../patch-1.0.2.1 
+make pristine
+make
+mkdir ~/dosemu-freedos
+mkdir ~/dosemu-freedos/bin
+cp -pd ./bin/* ~/dosemu-freedos/bin
+
+
+
+binary way:
+mkdir ~/dosemu-test/
+cd ~/dosemu-test/
+wget ftp://ftp.dosemu.org/dosemu/dosemu-1.0.2-bin.tgz
+wget ftp://ftp.dosemu.org/dosemu/dosemu-freedos-bin.tgz
+tar xzvf dosemu-1.0.2-bin.tgz 
+tar xzvf dosemu-freedos-bin.tgz 
+cd dosemu
+
+./xdosemu
+(the directory used as c:\ is ./freedos/ )
+
+dosemu/conf
+
+#---------------------------------------------------------------------
+pkg_cnf stuff
+
+vi /usr/lib/pkgconfig/libart-2.0.pc
+#--
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libart-2.0
+Description: libart-2.0
+Version: 2.3.8
+Requires:
+Libs: -L${libdir} -lart_lgpl -lm
+Cflags:
+#--
+
+#---------------------------------------------------------------------
+
+nethack:
+
+cd ./sys/unix
+sh setup.sh
+cd ../..
+vi ./src/Makefile
+comment WINTTYLIB=-ltermlib
+uncomment WINTTYLIB = -lncurses
+make
+
+if no yacc (which yacc) ln -s /usr/local/bin/bison /usr/local/bin/yacc
+
+make install
+
+
+#nethack extras:
+hearse (bones files exchange):
+http://www.krollmark.com/hearse/
+http://www.argon.org/~roderick/hearse/
+
+#nethack summary pages
+http://www.nicolaas.net/erebus/
+
+#public nethack server
+http://antisymmetric.com/nethack/
+
+#also see slashem.sourceforge.net
+
+vi ~/.nethackrc
+#--
+OPTIONS=character:Wizard
+OPTIONS=gender:male
+OPTIONS=pettype:none
+OPTIONS=race:elf
+                                                                                
+OPTIONS=autodig
+OPTIONS=showexp
+OPTIONS=!autopickup
+OPTIONS=!mail
+#--
+#http://www.nethack.org/v343/Guidebook.html#_TOCentry_39
+OPTIONS=showexp,showscore,time,color,!autopickup
+OPTIONS=autodig,fruit:slime mold,boulder:0
+
+OPTIONS=showrace,showexp,showscore,time,color,!autopickup
+OPTIONS=autodig,fruit:blueberry,boulder:0
+OPTIONS=msg_window:full,number_pad:1,showdmg,showweight
+
+OPTIONS=showexp,showscore,time
+OPTIONS=autopickup,color,number_pad,!cmdassist
+OPTIONS=catname:jess,dogname:gaspode,horsename:horsefoo
+OPTIONS=pickup_types:$"?+!=/
+OPTIONS=pickup_burden:unencumbered,fruit:bag of crisps
+OPTIONS=autodig
+OPTIONS=decgraphics,BOULDER=0
+
+OPTIONS=name:KubilaiKhan
+
+OPTIONS=!autopickup,color,IBMgraphics,number_pad,time,windowtype:tty
+OPTIONS=!mail,showexp,catname:Script,dogname:Yardstick
+OPTIONS=fruit:baby,horsename:Gluestick
+#--
+
+#---------------------------------------------------------------------
+
+tmake (trolltech/qt stuff)
+
+export TMAKEPATH=~/downloads/tmake-1.8/lib/linux-g++
+export PATH=$PATH:~/downloads/tmake-1.8/bin
+
+#now to use tmake (really just a perl script)
+tmake xxdiff.pro > Makefile
+make
+
+#---------------------------------------------------------------------
+
+xdiff
+
+vi Makefile
+CFLAGS= $(DEFS) -I/usr/local/include/Dt
+LPATHS= -L/usr/local/lib/X11 -L/usr/X11R6/lib
+LINK=   -lXm -lXt -lX11
+
+#---------------------------------------------------------------------
+
+rgrep (compile jed but install only rgrep)
+cd ~downloads/jed-*/
+./configure
+make
+make rgrep
+strip ./src/objs/rgrep
+su
+cp ./src/objs/rgrep /usr/local/bin/rgrep
+cp ./doc/manual/rgrep.1 /usr/local/man/man1/rgrep.1
+
+#---------------------------------------------------------------------
+
+gnome auto-install
+as root (and xlogo works - so X display is ok)
+lynx -source http://go-gnome.com/ | sh
+
+#---------------------------------------------------------------------
+
+OpenOffice binary install
+
+mkdir OO && cd OO/
+tar xzvf OOo_1.0.0_LinuxIntel_install.tar.gz
+cd install
+#as root
+./install
+#installs in /usr/local/OpenOffice.org1.0/
+
+#as user,run 
+/usr/local/OpenOffice.org1.0/setup
+#choose workstation install, uses ~2MB in home directory for settings
+
+#main programs
+/usr/local/OpenOffice.org1.0/program/swriter  #wordprocessor
+/usr/local/OpenOffice.org1.0/program/simpress #presentations/slides
+/usr/local/OpenOffice.org1.0/program/scalc    #spreadsheet
+/usr/local/OpenOffice.org1.0/program/smath    #equation writer
+/usr/local/OpenOffice.org1.0/program/sdraw    #amazing drawing prog
+
+
+#---------------------------------------------------------------------
+
+vim/VIM
+
+not so much a compile
+global rc on mandrake is /usr/share/vim/vimrc
+comment out this (with a " ):
+set autoindent
+
+#---------------------------------------------------------------------
+
+mirror:
+http://sunsite.org.uk/packages/mirror/mirror.tar.gz
+mkdir mirror && mv mirror.tar.gz ./mirror && cd ./mirror
+tar xzvf mirror.tar.gz
+
+perl install.pl here
+vi mirror.defaults
+#--
+package=defaults
+	name_mappings=s:\.\./:__/:g
+        local_dir=/xtra/mirror/
+	remote_password=tstacct543@yahoo.com
+        do_deletes=false
+        timeout=300
+#--
+mkdir -p /xtra/mirror/
+chmod 0777 /xtra/mirror/
+
+vi packages/mirror.cs.wisc.edu
+#--one directory (and down) per package, no way to double up - but you can use regex
+package=mirror.cs.wisc.edu
+        comment=comment
+        site=mirror.cs.wisc.edu
+        remote_dir=/pub/mirrors/linux/redhat/updates/
+        local_dir+mirror.cs.wisc.edu/pub/mirrors/linux/redhat/updates/
+	get_patt=(7\.3/|8\.0/)
+#--
+
+#test
+./mirror -n packages/mirror.cs.wisc.edu
+#real
+./mirror -d packages/mirror.cs.wisc.edu
+#real without debug
+./mirror packages/mirror.cs.wisc.edu
+
+
+
+
+#--
+security fix:
+http://sunsite.org.uk/packages/mirror/security_note.txt
+
+A simple fix to overcome this problem is to add the following
+to your mirror.defaults (and to any package that overrides this
+setting):
+
+name_mappings=s:\.\./:__/:g
+
+This should convert names like:
+    " ../rot"
+to
+    " __/rot"
+#--
+
+#---------------------------------------------------------------------
+
+checkinstall
+(adds "configure;make;make install" programs to the rpm/deb/etc database
+  so they can be uninstalled easily)
+
+http://asic-linux.com.mx/~izto/checkinstall/
+
+tar xzvf checkinstall-1*.tgz && cd checkinstall-*/
+make
+su
+make install
+ln -s /usr/local/sbin/checkinstall /usr/bin/
+checkinstall -Ry --install=yes #Rpm and yes to defaults (default name and docs)
+
+vi /usr/local/lib/checkinstall/checkinstallrc
+#--
+INSTYPE="R"
+ACCEPT_DEFAULT=1
+INSTALL=1
+#--
+
+#for FC4, apply this patch to checkinstall-1.6.0beta4
+#make install normally, then apply patch to installed bin
+vi checkinstall-fc4.patch
+#--
+--- checkinstall-1.6.0beta4/checkinstall        2004-12-01 16:36:38.000000000 -0500
++++ checkinstall        2005-06-17 01:38:03.000000000 -0400
+@@ -2107,9 +2107,9 @@
+ # fixed.
+ 
+ if ( echo $DIRECTORIO_FUENTE | grep " " &> /dev/null ); then
+-   BROOTPATH=$BUILD_DIR
+-else
+    BROOTPATH="${DIRECTORIO_FUENTE}/buildroot"
++else
++   BROOTPATH=$BUILD_DIR
+ fi
+ 
+ # Here comes the .spec file:
+@@ -2119,7 +2119,7 @@
+ Name:      $NAME
+ Version:   $VERSION
+ Release:   $RELEASE
+-Copyright: $LICENSE
++License: $LICENSE
+ Packager:  checkinstall-$CHECKINSTALL_VERSION
+ Group:     $PKG_GROUP          
+ BuildRoot: $BROOTPATH
+@@ -2203,7 +2203,7 @@
+ 
+ mkdir "${TMP_DIR}/$PKG_BASENAME"
+ cd $TMP_DIR
+-$TAR -cz "$PKG_BASENAME" -f "${RPMSOURCEDIR}/SOURCES/${PKG_BASENAME}.tgz"
++$TAR -cz -f "${RPMSOURCEDIR}/SOURCES/${PKG_BASENAME}.tgz" "$PKG_BASENAME"
+ rm -rf "${TMP_DIR}/$PKG_BASENAME"
+ cd "$DIRECTORIO_FUENTE"
+#--
+cd /usr/local/sbin
+patch -p1 < checkinstall-fc4.patch
+
+#---------------------------------------------------------------------
+
+CUBE (FPS) :
+
+http://wouter.fov120.com/cube/
+mkdir cube 
+cd cube 
+unzip
+../cube_downloaded_file.zip
+chmod +x cube_unix
+cd bin_unix
+chmod +x linux_client
+chmod +x linux_server
+vi autoexec.cfg
+#change name
+sh cube_unix   #play game
+
+#load custom map
+#~ map my_custom_map
+#maps at:http://members.shaw.ca/pushplay/cube/
+
+NOTE: If you download the 10-20-2002 version of the game, there is a nasty bug in it that causes lockups
+when joining multiplayer games. You can find a newer Linux client binary (the source is on the same site) at
+http://tunes.org/~eihrul. Download cube_linux_clients_2002_10_28.tar.gz and decompress it in the bin_unix
+directory.
+
+#---------------------------------------------------------------------
+
+arping
+(The normal arping really isnt arping you know if it gives _unknown host_ errors)
+http://www.habets.pp.se/synscan/programs.php?prog=arping
+ftp://ftp.habets.pp.se/pub/synscan/arping-1.05.tar.gz
+
+requires libnet:
+http://freshmeat.net/redir/second-libnet/34005/url_homepage/libnet
+http://www.packetfactory.net/libnet/dist/libnet.tar.gz
+tar xzvf libnet.tar.gz && cd Libnet-*/
+./configure && make
+checkinstall -Ry
+
+tar xzvf arping-*.tar.gz && cd arping-*/
+vi arping-2/arping.c
+/* #include "config.h" */
+
+make arping2
+su
+cp ./arping /usr/local/bin/arping
+/usr/local/bin/arping -i eth0 00:A0:CC:5F:0C:34
+
+#---------------------------------------------------------------------
+
+SNMP:
+
+#--------------
+GUI-snmp walker (requires mysql... arrgghh):
+http://www.gxsnmp.org/
+http://www.gxsnmp.org/release/gxsnmp-0.0.16.tar.gz
+./configure && make
+checkinstall -Ry
+
+cd database/tables
+cat *.table | mysql -u <db user> --password="<db password>" \
+-h <db host> <gxsnmp database>
+
+  Now when run the application open up the properties dialog and tell gxsnmp
+how to find your database, there are minimal defaults, but they are probably
+wrong for your setup. <Configure->Properties>. 
+
+needs:
+http://www.ibr.cs.tu-bs.de/projects/libsmi/
+ftp://ftp.ibr.cs.tu-bs.de/pub/local/libsmi/libsmi-0.4.1.tar.gz
+./configure && make
+checkinstall -Ry
+#--------------
+
+or use snmpwalk
+snmpwalk 192.168.0.5 public   #dumps all vars
+snmpwalk 192.168.0.5 public .1.3.6.1.2.1.1.3
+#    system.sysUpTime.0 = Timeticks: (2478283275) 286 days, 20:07:12.75
+snmpwalk 192.168.0.5 public system.sysUpTime.0
+#    system.sysUpTime.0 = Timeticks: (2478287668) 286 days, 20:07:56.68
+
+#--------------
+
+mbrowse:
+http://goldplated.atlcartel.com/mbrowse.html
+http://goldplated.atlcartel.com/mbrowse-0.2.3.tar.gz
+./configure && make
+checkinstall -Ry
+mbrowse # to run
+#if you get "name does not exist"-ish stuff,
+# add .0 to the object identifier field
+
+#download new MIBs for HP stuff from:
+http://www.hp.com/rnd/software/MIBs.htm
+cd /usr/local/share/mibs/
+tar xZvf ~/downloads/mibs-sept02.tar.Z 
+chmod 0644 *mib
+
+#---------------------------------------------------------------------
+
+whois replacement
+generic Whois
+http://whois.fqdn.org/gwhois/
+http://whois.fqdn.org/gwhois/gwhois_20030220-1.tar.gz
+
+mkdir /etc/gwhois
+cp gwhois /usr/local/bin/
+cp pattern /etc/gwhois
+cp gwhois.1 /usr/man/man1
+mv /usr/bin/whois /usr/bin/whoisRHorig
+ln -s /usr/local/bin/gwhois /usr/bin/whois
+
+#---------------------------------------------------------------------
+
+grub install:
+grub-install /dev/hda
+
+grub compile by hand:
+ftp://alpha.gnu.org/gnu/grub/grub-0.97.tar.gz
+./configure --prefix=/usr
+make
+make install
+
+mkdir -p /boot/grub/
+cp ./docs/menu.lst /boot/grub/
+
+ls -la /boot/grub/menu.lst
+ls -la /usr/sbin/grub-install
+
+/usr/sbin/grub-install --recheck /dev/hdc
+
+sample /etc/grub.conf
+#--
+# grub.conf generated by anaconda
+#
+# Note that you do not have to rerun grub after making changes to this file
+# NOTICE:  You have a /boot partition.  This means that
+#          all kernel and initrd paths are relative to /boot/, eg.
+#          root (hd0,0)
+#          kernel /vmlinuz-version ro root=/dev/sda3
+#          initrd /initrd-version.img
+#boot=/dev/sda
+default=1
+timeout=5
+splashimage=(hd0,0)/grub/splash.xpm.gz
+hiddenmenu
+title Fedora Core (2.6.14-1.1644_FC4)
+        root (hd0,0)
+        kernel /vmlinuz-2.6.14-1.1644_FC4 ro root=/dev/sda3 rhgb quiet
+        initrd /initrd-2.6.14-1.1644_FC4.img
+#--
+
+
+#---------------------------------------------------------------------
+
+xlockmore: xlock replacement
+www.tux.org/~bagleyd/xlockmore.html
+
+./configure && make
+make install #checkinstalls fine too
+
+#possibly
+./configure --enable-unstable --enable-use-mb --disable-setuid
+./configure --enable-vtlock  #requires setuid to lock virt terms 
+#---------------------------------------------------------------------
+
+VMWARE:
+Get vmware-any-any-updateXX.tar.gz from
+http://platan.vc.cvut.cz/ftp/pub/vmware/.
+
+#install vmware
+#*requires* kernel source for running kernel symlinked to /usr/src/linux
+# note for kernel rpms - use kernel-source-XX.rpm rather than kernel-XX.src.rpm
+# also: cp /usr/src/linux-2.4.22-1.2135.nptl/configs/kernel-2.4.22-i686.config \
+#      /usr/src/linux-2.4.22-1.2135.nptl/.config
+cd vmware-distrib
+./vmware-install.pl #as root
+
+#update
+cd vmware-any-any-update*/
+./runme.pl #as root
+
+#start vmware as normal user with /usr/bin/vmware
+
+#uninstall with /usr/bin/vmware-uninstall.pl
+
+#FC4-T2:
+cp -rp /dev/vm* /etc/udev/devices
+vmware-config.pl 
+export LD_ASSUME_KERNEL=2.4.20 LD_LIBRARY_PATH=/lib/obsolete/linuxthreads
+vmware-config.pl 
+vmware
+
+#---------------------------------------------------------------------
+
+Apache::MP3
+#resample requires lame
+
+http://www.cpan.org/modules/by-module/MP3/MP3-Info-1.02.tar.gz
+http://www.cpan.org/modules/by-module/Locale/Locale-Maketext-1.08.tar.gz #included in FC1
+
+http://search.cpan.org/CPAN/authors/id/L/LD/LDS/Apache-MP3-3.05.tar.gz
+tar xzvf Apache-MP3-3.05.tar.gz && cd Apache-MP3-*/
+
+perl Makefile.PL
+ignore:
+  Warning: prerequisite Apache 1.14 not found.
+  Warning: prerequisite Audio::Wav 0.02 not found.
+  Warning: prerequisite Ogg::Vorbis 0.02 not found.
+make
+
+RH:
+vi /etc/httpd/conf.d/perl.conf
+uncomment Alias and <Directory /var/www/perl> to </Directory> lines
+
+#http://www.apachemp3.com/docs/mp3.html#installation
+vi /etc/httpd/conf/httpd.conf
+add:
+#--
+AddType audio/mpeg mp3 MP3
+AddType audio/playlist m3u M3U
+AND at end:
+<Location /songs>
+	SetHandler perl-script
+	PerlHandler Apache::MP3::Resample
+	PerlSetVar  MP3Encoder '/usr/local/bin/lame --mp3input %b - <%f'
+	PerlSetVar  ResamplePresets 'Low     => -b16,\
+				Medium  => -b56,\
+				High    => -b96,\
+				Hi Fi   => -b128'
+	PerlSetVar  AllowDownload no
+</Location>
+#--
+
+cp -r ./apache_mp3 /var/www/html/  #from Apache-MP3-3.05 src dir
+
+mkdir /var/www/html/songs
+OR
+ln -s /mnt/music/ /var/www/html/songs
+  where /mnt/music/ is an nfsmount of music dir
+
+vi /etc/httpd/conf/startup.pl
+#--
+use MP3::Info;
+use Apache::MP3;
+#--
+
+#now fix/patch code:
+cp /usr/lib/perl5/site_perl/5.8.1/Apache/MP3.pm /usr/lib/perl5/site_perl/5.8.1/Apache/MP3.pmORIG
+vi /usr/lib/perl5/site_perl/5.8.1/Apache/MP3.pm
+Apache::Constants --> Apache::Const
+my $user = $r->connection->user;  -->  my $user = $r->user;
+sub handler ($$) { --> sub handler : method {
+comment out all of:
+  unless ($self->r->path_info){
+    #Issue an external redirect if the dir isn't tailed with a '/'
+    my $uri = $self->r->uri;
+    my $query = $self->r->args;
+    $query = "?" . $query if defined $query;
+    $self->r->header_out(Location => "$uri/$query");
+    return REDIRECT;
+  }
+$r->send_http_header('audio/mpegurl'); --> $r->send_http_header('audio/x-mpegurl');
+comment out:
+  $r->print("#EXTM3U$CRLF");
+  $r->print('#EXTINF:' , $data->{seconds} , ',');
+  print $description;
+  print $CRLF;
+  $r->print('#EXTINF:' , $data->{seconds} ,
+       ',', $data->{title},
+       ' - ',$data->{artist},
+       ' (',$data->{album},')',
+       $CRLF);
+
+cp /usr/lib/perl5/site_perl/5.8.1/Apache/MP3/Resample.pm /usr/lib/perl5/site_perl/5.8.1/Apache/MP3/Resample.pmORIG
+vi /usr/lib/perl5/site_perl/5.8.1/Apache/MP3/Resample.pm
+use Apache::Constants --> use Apache::Const
+
+vi /usr/lib/perl5/site_perl/5.8.1/Apache/MP3/Playlist.pm
+use Apache::Constants --> use Apache::Const
+
+#----------
+#some basic testing of lame resampling
+#this is good
+lame --mp3input --resample 22.05 --vbr-new -B 64 testO.mp3 testR3.mp3
+#basic to 64kbps (take off -h to save encoding cpu)
+lame --mp3input --resample 22.05 -b 64 -h testO.mp3 testR3.mp3
+
+#---------------------------------------------------------------------
+
+hddtemp
+
+http://coredump.free.fr/linux/hddtemp-0.3-beta11.tar.gz
+http://coredump.free.fr/linux/hddtemp.db
+
+tar xzvf hddtemp-0.3-beta11.tar.gz && cd hddtemp-*/
+./configure
+make
+checkinstall -Ry --install=yes
+cp ../hddtemp.db /usr/share/misc/hddtemp.db
+
+#test
+/usr/local/sbin/hddtemp /dev/hda  #as root
+
+#---------------------------------------------------------------------
+
+lm_sensors
+(already installed on FC, but not configured)
+
+sensors-detect  #as root
+#accept defaults
+#spits out additions to
+#/etc/modules.conf
+#/etc/rc.local  #or any rc-ish file
+#spits out /etc/sysconfig/lm_sensors
+#?#Copy prog/init/lm_sensors.init to /etc/rc.d/init.d/lm_sensors
+#?#for initialization at boot time.
+
+sensors -f   #to run
+
+#---------------------------------------------------------------------
+
+clamav antivirus:
+www.clamav.net
+
+rpm -ivh clamav-0.70rc-1.i386.rpm 
+#adds clamav user
+
+cp /etc/clamav.conf /etc/clamav.conf.orig
+vi /etc/clamav.conf
+#--
+LocalSocket /var/run/clamav/clamd.sock
+#TCPSocket 3310
+#--
+/etc/init.d/clamd start
+
+#update virus definition database
+freshclam
+#or: /etc/init.d/freshclam start #to start autoupdating
+
+#scan a files or directory (-r for recursive)
+clamscan
+
+#---------------------------------------------------------------------
+
+gringotts (encrypted notes) gtk
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/
+./configure && make #checkinstall -Ry --install=yes
+ #needs libGringotts
+ http://devel.pluto.linux.it/projects/libGringotts/index.php?page=downloads
+ ./configure && make #checkinstall -Ry --install=yes
+   #needs libmcrypt, libmhash
+   http://sourceforge.net/projects/mcrypt
+   http://unc.dl.sourceforge.net/sourceforge/mcrypt/libmcrypt-2.5.7.tar.gz
+      ./configure && make #checkinstall -Ry --install=yes
+   http://mhash.sourceforge.net/
+   http://unc.dl.sourceforge.net/sourceforge/mhash/mhash-0.9.1.tar.gz
+      ./configure && make #checkinstall -Ry --install=yes
+
+   (do NOT use dag.wieers.com rpm packages - libgringotts will not configure)
+
+
+#in FC4/gtk something
+make errors out at
+undefined reference to `GTK_OPTION_MENU'
+vi ./src/gringotts.c
+replace a few GTK_OPTION_MENU with GTK_COMBO_BOX
+make works. The exe gives a few invalid cast, but
+works ok except won't bring up a grg from command-line -
+must do file-open.
+
+#---------------------------------------------------------------------
+
+grip lame options (default is good):
+/usr/local/bin/lame
+-h -b %b %w %m  (CBR at %b bitrate input output)
+
+#---------------------------------------------------------------------
+
+TCPDUMP
+wget http://www.tcpdump.org/beta/libpcap-0.9.1-096.tar.gz
+wget http://www.tcpdump.org/beta/libpcap-0.9.1-096.tar.gz.asc
+
+wget http://www.tcpdump.org/beta/tcpdump-3.9.1-096.tar.gz
+wget http://www.tcpdump.org/beta/tcpdump-3.9.1-096.tar.gz.asc
+
+gpg --keyserver wwwkeys.us.pgp.net --recv-keys 89E917F3
+gpg --verify libpcap-0.9.1-096.tar.gz.asc libpcap-0.9.1-096.tar.gz
+gpg --verify tcpdump-3.9.1-096.tar.gz.asc tcpdump-3.9.1-096.tar.gz
+#Primary key fingerprint: 0227 54EB 4C30 9185 FD31  33A3 464D 3CEB 89E9 17F3
+
+tar xzvf libpcap-*.tar.gz && cd libpcap*/
+./configure && make
+make install
+
+tar xzvf tcpdump-*.tar.gz && cd ./tcpdump*/
+./configure && make
+make install
+
+#capture headers (68 bytes) in 640M chunks saved to out,out.1,..., drop priv to user lp
+/usr/sbin/tcpdump -Z lp -C 640 -w out
+#same listening only for a certain host (dest or src)
+/usr/sbin/tcpdump -Z lp -C 640 -w out host 64.79.238.174
+
+vi tcpdump.hour.sh
+#--
+#!/bin/sh
+sleep 5 #sleep enough to close ssh window
+#drop to user lp, 640M files, max 4 files, then overwrite first one
+/usr/sbin/tcpdump -Z lp -C 640 -W 4 -w out host 64.79.238.174 > ./out.log 2>&1 &
+CPID=$!
+sleep 600 #in seconds
+#sleep 3600 #sleep an hour
+kill $!
+#--
+
+#---------------------------------------------------------------------
+
+bittorrent problems:
+"ImportError: No module named BitTorrent.download"
+
+export PYTHONPATH=/usr/lib/python2.2/site-packages
+OR
+export PYTHONPATH=/usr/lib/python2.3/site-packages
+#---------------------------------------------------------------------
+
+wine howtos, resources, games, etc:
+http://frankscorner.org
+  games,apps, Cedega from CVS, Wine utilities
+http://appdb.winehq.org/
+  links to Sidenet Wine conf util: Installs IE6 and WMP7 automatically
+
+Wine 20050524 with Sidenet, native DirectX dlls from the Microsoft installer and the DirectX9 patch.
+
+#---------------------------------------------------------------------
+
+CUPS
+
+to copy a cups config (of same-ish version) to another machine, copy:
+/etc/cups/cupsd.conf
+/etc/cups/lpoptions
+/etc/cups/printers.conf
+
+-rw-r-----    1 root sys    22082 Jan 31 17:03 cupsd.conf
+-rw-r--r--    1 root root     117 Feb  3 17:23 lpoptions
+-rw-r-----    1 root sys     2918 Feb  3 17:23 printers.conf
+
+chown root:sys cupsd.conf printers.conf
+chown root:root lpoptions
+
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+

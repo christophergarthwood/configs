@@ -1,0 +1,682 @@
+MYSQL
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+This is done with (DO BOTH the first is the local user and the second is remote - but same hostname as server):
+/usr/local/bin/mysqladmin -u root -p password 'new-password'
+/usr/local/bin/mysqladmin -u root -h scotland -p password 'new-password' See the manual for more instructions. 
+
+No my.cnf is created to begin with, cp a /usr/local/share/mysql/my-??????.cnf
+to /etc/my.cnf and restart mysqld or it might be /usr/local/etc/ ? or better yet the data dir
+default: /var/db/mysql/my.cnf 
+
+IN MY.CNF:
+[mysqld]
+COMMENT OUT
+log-bin
+server-id = 1
+SO NO REPLICATION FILES (HUGE, AND NOT NEEDED) GET CREATED
+
+#---------------
+adduser -M mysql   does both the groupadd and useradd below (on rh)
+
+it looks like /usr/local/ is the prefix if none is given - making everything very messy unless
+	you have a decent /etc/my.cnf to put the datadir somewhere else...
+#--------------------
+The basic commands you must execute to install a MySQL source distribution are: 
+
+groupadd mysql
+useradd -c "MySQL User" -M -s /bin/false -d /var/lib/mysql -g mysql mysql
+gunzip < mysql-VERSION.tar.gz | tar -xvf -
+cd mysql-VERSION
+./configure --enable-assembler --with-unix-socket-path=/var/lib/mysql/mysql.sock
+make
+make install
+
+vi /etc/ld.so.conf
+/usr/local/lib/mysql
+
+/sbin/ldconfig
+##???## scripts/mysql_install_db
+
+cp support-files/my-medium.cnf /etc/my.cnf
+vi /etc/my.cnf
+[mysqld]
+skip-networking
+
+export myname=`hostname --fqdn`
+
+/usr/local/bin/safe_mysqld --user=mysql &
+/usr/local/bin/mysqladmin -u root -p password 'it5something#9s'
+ HIT ENTER AT THE PASSWORD PROMPT (since there is no password right now)
+
+#this one will fail if skip-networking is on
+/usr/local/bin/mysqladmin -u root -h $myname -p password 'it5something#9s'
+ HIT ENTER AT THE PASSWORD PROMPT (since there is no password right now)
+
+chmod 0755 /var/lib/mysql/           (users have to get to the mysql.sock socket)
+
+add a user (as: mysql --user=root -p mysql):
+root-equiv user:
+GRANT ALL PRIVILEGES ON *.* TO monty@localhost IDENTIFIED BY 'some_pass' WITH GRANT OPTION;
+
+root-equiv user (NO password):
+GRANT ALL PRIVILEGES ON *.* TO monty@localhost WITH GRANT OPTION;
+
+select-only on a db:
+GRANT SELECT on db.* TO monty@localhost;
+
+private workspace (with grant to give to others):
+CREATE DATABASE new_database;
+GRANT ALL ON new_database.* TO new_user@localhost WITH GRANT;
+
+remote user:
+GRANT ALL PRIVILEGES on db.* to david@'192.168.0.0/255.255.255.0'
+  IDENTIFIED BY 'some_pass';
+
+just a user NO privileges:
+GRANT USAGE ON *.* TO dummy@localhost;
+
+grant select on existing tables (remote user):
+GRANT SELECT on db.* TO monty@'192.168.0.0/255.255.255.0' IDENTIFIED BY 'some_pass';
+
+grant changing one table (remote user):
+GRANT INSERT,UPDATE on db.table TO monty@'192.168.0.0/255.255.255.0' IDENTIFIED BY 'some_pass';
+
+#--
+I wanted to create a use who can
+
+1) login with a password either locally or from within our local 10.*.*.* network
+
+2) do anything they want to their own database
+
+3) see what other databases are on the server, but not do anything to them (to facilitate requests for additional access).
+
+This seemed to do the trick: (first 2 may be a 4.0 deal)
+GRANT SHOW DATABASES ON *.* TO hubert@localhost IDENTIFIED BY 'password';
+GRANT SHOW DATABASES ON *.* TO hubert@'10.%' IDENTIFIED BY 'password';
+GRANT ALL ON hubertsdb.* TO hubert;
+
+#or
+GRANT ALL ON USER.* TO user@'192.168.0.%' IDENTIFIED BY 'pass';
+#--
+
+#SINGLE COMPANY LOGON
+GRANT ALL ON XYZ.* TO XYZ@'192.168.0.%' IDENTIFIED BY 'XYZ';
+
+#-------------------------------------------
+change a password with
+mysqladmin -u jeffrey password biscuit
+#-------------------------------------------
+
+To upgrade an existing default RH install:
+
+mysql user and group already exist.
+
+./configure --prefix=/usr --datadir=/var/lib/mysql \
+--localstatedir=/var/lib/mysql --enable-local-infile \
+--enable-assembler --with-mysqld-user=mysql --with-unix-socket-path=/var/lib/mysql/mysql.sock
+
+make
+su
+make install
+
+vi /etc/my.cnf
+[mysqld]
+skip-networking
+
+for problems check:
+less /var/log/mysqld.log
+
+default (for RH) datadir is /var/lib/mysql
+if ls -la /var/lib/mysql/mysql/
+is empty run:
+/usr/bin/mysql_install_db 
+
+then:
+/etc/init.d/mysqld start
+ps -ef | grep sql
+root     24105     1  0 04:01 pts/2    00:00:00 /bin/sh /usr/bin/safe_mysqld --d
+mysql    24132 24105  2 04:01 pts/2    00:00:00 /usr/libexec/mysqld --defaults-f
+mysql    24134 24132  0 04:01 pts/2    00:00:00 /usr/libexec/mysqld --defaults-f
+mysql    24135 24134  0 04:01 pts/2    00:00:00 /usr/libexec/mysqld --defaults-f
+
+#-------------------------------------------
+#-------------------------------------------
+
+vi /etc/my.cnf
+#--
+# This is for large system with memory = 512M where the system runs mainly
+# MySQL.
+#
+# The following options will be passed to all MySQL clients
+[client]
+#password       = your_password
+port            = 3306
+socket          = /var/lib/mysql/mysql.sock
+
+[mysql.server]
+user=mysql
+basedir=/var/lib/mysql
+
+# The MySQL server
+[mysqld]
+user		= mysql
+port            = 3306
+socket          = /var/lib/mysql/mysql.sock
+datadir         = /var/lib/mysql
+skip-locking
+skip-networking
+set-variable    = key_buffer=256M
+set-variable    = max_allowed_packet=1M
+set-variable    = table_cache=256
+set-variable    = sort_buffer=1M
+set-variable    = record_buffer=1M
+set-variable    = myisam_sort_buffer_size=64M
+set-variable    = thread_cache=8
+set-variable    = thread_concurrency=2
+log-bin
+server-id       = 1
+
+# Point the following paths to different dedicated disks
+#tmpdir         = /tmp/         
+#log-update     = /path-to-dedicated-directory/hostname
+
+[mysqldump]
+quick
+set-variable    = max_allowed_packet=16M
+
+[mysql]
+no-auto-rehash
+# Remove the next comment character if you are not familiar with SQL
+#safe-updates
+
+[isamchk]
+set-variable    = key_buffer=128M
+set-variable    = sort_buffer=128M
+set-variable    = read_buffer=2M
+set-variable    = write_buffer=2M
+
+[myisamchk]
+set-variable    = key_buffer=128M
+set-variable    = sort_buffer=128M
+set-variable    = read_buffer=2M
+set-variable    = write_buffer=2M
+
+[mysqlhotcopy]
+interactive-timeout
+#---
+
+vi /etc/init.d/mysql
+#--
+#!/bin/sh
+# Copyright Abandoned 1996 TCX DataKonsult AB & Monty Program KB & Detron HB
+# This file is public domain and comes with NO WARRANTY of any kind
+
+# Mysql daemon start/stop script.
+
+# Usually this is put in /etc/init.d (at least on machines SYSV R4
+# based systems) and linked to /etc/rc3.d/S99mysql. When this is done
+# the mysql server will be started when the machine is started.
+
+# Comments to support chkconfig on RedHat Linux
+# chkconfig: 2345 90 90
+# description: A very fast and reliable SQL database engine.
+
+PATH=/usr/local/bin/:/sbin:/usr/sbin:/bin:/usr/bin
+export PATH
+
+mode=$1
+
+myname=`hostname`
+
+case "$mode" in
+  'start')
+    # Start daemon
+
+    if test -x /usr/local/bin/safe_mysqld
+    then
+      # Give extra arguments to mysqld with the my.cnf file. This script may
+      # be overwritten at next upgrade.
+      /usr/local/bin/safe_mysqld --user=mysql &
+    else
+      echo "Can't execute /usr/local/bin/safe_mysqld"
+    fi
+    ;;
+
+  'stop')
+    # Stop daemon. We use a signal here to avoid having to know the
+    # root password.
+    if test -f "/var/lib/mysql/$myname.pid"
+    then
+      mysqld_pid=`cat /var/lib/mysql/$myname.pid`
+      echo "Killing mysqld with pid $mysqld_pid"
+      kill $mysqld_pid
+      # mysqld should remove the pid_file when it exits.
+    else
+      echo "No mysqld pid file found. Looked for /var/lib/mysql/$myname.pid."
+    fi
+    ;;
+
+  *)
+    # usage
+    echo "usage: $0 start|stop"
+    exit 1
+    ;;
+esac
+#--
+
+
+#---------------------------------------------------------------------------------------------------
+
+IMPORTDBF SCRIPT (use like importdbf.pl abc.dbf abc_database abc_table create)
+
+http://www.peregrinehw.com/downloads/perl/
+tar xzvf KAMXbase1.2.1.tar.gz
+cd KAMXbase1.2.1
+perl Makefile.PL 
+make install
+cp importdbf.pl /usr/local/bin
+
+slow - but creates table - doesn't check for things like reserved words, just dies
+
+#---------------------------------------------------------------------------------------------------
+
+dbf2mysql
+http://www.mysql.com/Downloads/Contrib/dbf2mysql-1.14.tar.gz
+wget http://mirror.sit.wisc.edu/mysql/Downloads/Contrib/dbf2mysql-1.14.tar.gz
+
+vi Makefile
+change
+# Set this to your MySQL installation-path
+MYSQLINC=-I/usr/include/mysql
+MYSQLLIB=-L/usr/lib/mysql
+
+probably:
+/usr/local/include/mysql   AND /usr/local/lib/mysql
+/usr/local/mysql/include/mysql   AND /usr/local/mysql/lib/mysql
+
+make
+make install
+puts dbf2mysql mysql2dbf in /usr/local/bin
+
+probably need
+/usr/local/lib/mysql  in /etc/ld.so.conf as well
+
+SOME OPTIONS:
+-n  allow NULL fields:
+    'NOT NULL' will be not added in table creation statement.
+-s  substitute:
+    Takes a list of fieldname/newfieldname pairs. Primary use is to avoid
+    conflicts between fieldnames and mySQL reserved keywords. When the new
+    fieldname is empty, the field is skipped in both the CREATE-clause and
+    the INSERT-clauses, in common words: it will not be present in the
+    mySQL-table
+
+        example:
+                -s ORDER=HORDER,REMARKS=,STAT1=STATUS1
+-d  database:
+    Select the database to insert into. Default is 'test'
+
+-t  table:
+    Select the table to insert into. Default is 'test'
+
+-c  create:
+    Create table if it not exists. If the table already exists, drop it and
+    build a new one. The default is to insert all data into the named table.
+    If -cc is specified then no records will be inserted.
+
+-p  primary:
+    Select the primary key. You have to give the exact
+    field-name.
+-q  "quick" mode. Inserts data via temporary file using 'LOAD DATA INFILE'
+    mySQL statement. This increased insertion speed on my PC 2-2.5 times.
+    Also note that during whole 'LOAD DATA' affected table is locked.
+
+-r  Trim trailing and leading whitspaces from CHAR type fields data
+
+
+
+dbf2mysql -vvv -c -n -q -r -t MY_TABLE -s COMMENT=COMMNT,DESC=DESCRIP -d MY_DB /mnt/cdrom/abc.dbf
+#screws up NULLS - actually put the string in
+
+mysql2dbf -vv -d MY_DB -t MY_TABLE dbf-file
+#has an error in creating code - change MY_TABLE to "MY_TABLE "
+
+creates table, fast
+
+#---------------------------------------------------------------------------------------------------
+
+also check out (free but win32 only):
+http://www.dbtools.com.br/download.php
+has lots of import/export wizards...
+
+#---------------------------------------------------------------------------------------------------
+
+perl DBD
+MYSQL PERL DBI 
+
+use DBI();
+
+my $mysql_host=$ENV{"MYSQL_HOST"};
+my $mysql_passwd=$ENV{"MYSQL_PASSWD"};
+my $mysql_database=$ENV{"MYSQL_DATABASE"};
+my $mysql_uname=$ENV{"MYSQL_UNAME"};
+        if ($mysql_uname eq "") { $mysql_uname=$ENV{"USER"}; }
+
+my $dbh = DBI->connect("DBI:mysql:database=$mysql_database;".
+ "host=$mysql_host;mysql_socket=/var/lib/mysql/mysql.sock",
+ "$mysql_uname","$mysql_passwd",{'RaiseError' => 1});
+
+my $early_date = $dbh->selectrow_array("SELECT min(date) FROM $etable where sym='$sym' ");
+
+my $sqlstatement="SELECT DISTINCT STORE from $f_datatable";
+my $ary_ref = $dbh->selectcol_arrayref($sqlstatement);
+my @storearr = @$ary_ref;
+
+        $sqlstatement="INSERT INTO $f_outtable (storenum) values ($ii)";
+        $dbh->do($sqlstatement);
+
+   my $sth = $dbh->prepare("SELECT symbol FROM fin.mdnload");
+   $sth->execute();
+   my $numRows = $sth->rows;
+   while (my $ref = $sth->fetchrow_hashref()) {
+      my $stock = $ref->{'symbol'};
+   }
+
+
+#----
+
+
+
+On Thu, 25 Oct 2001 16:22:52 GMT, Ben Kennedy <bkennedy99@Home.com> wrote:
+> Hello all - I am working with some large datasets stored in MySQL - I need
+> to iterate over all rows in a table, but currently a "SELECT * FROM table"
+> attempts to cache the entire result set on the client side (my process
+> baloons to fill all available memory).  
+
+Use the docs, Luke!  This is controllable.  From the DBD::mysql manual
+page: 
+
+STATEMENT HANDLES
+     The statement handles of DBD::mysql and DBD::mSQL support a
+     number of attributes. You access these by using, for
+     example,
+
+       my $numFields = $sth->{'NUM_OF_FIELDS'};
+
+     Note, that most attributes are valid only after a
+     successfull execute.  An "undef" value will returned in that
+-->  case. The most important exception is the "mysql_use_result"
+-->  attribute: This forces the driver to use mysql_use_result
+-->  rather than mysql_store_result. The former is faster and
+     less memory consuming, but tends to block other processes.
+     (That's why mysql_store_result is the default.)
+
+     To set the "mysql_use_result" attribute, use either of the
+     following:
+
+       my $sth = $dbh->prepare("QUERY", { "mysql_use_result" => 1});
+
+     or
+
+       my $sth = $dbh->prepare("QUERY");
+       $sth->{"mysql_use_result"} = 1;
+
+(Note the warning about interfering with other client processes.)  
+
+What they are talking about here, is using the mysql_use_result()
+function instead of the mysql_store_result() function.  The former
+allows you to iterate over the selected set on the server; that latter
+(the default) retrieves the entire selected set on the client before
+allowing you to iterating over it.  
+
+See the mysql manual: 8.4.3.209 and 8.4.3.217 in the current manual.
+The mysql manual repeats the warning that DBD::mysql has: 
+
+  8.4.3.217 mysql_use_result()
+
+  MYSQL_RES *mysql_use_result(MYSQL *mysql) 
+  ...
+
+  This reads the result of a query directly from the server without
+  storing it in a temporary table or local buffer, which is somewhat
+  faster and uses much less memory than mysql_store_result(). The client
+  will only allocate memory for the current row and a communication
+  buffer that may grow up to max_allowed_packet bytes. 
+
+  On the other hand, you shouldn't use mysql_use_result() if you are
+  doing a lot of processing for each row on the client side, or if the
+  output is sent to a screen on which the user may type a ^S (stop
+  scroll). This will tie up the server and prevent other threads from
+  updating any tables from which the data is being fetched. 
+
+-- 
+Garry Williams
+#---
+
+can't to ANYTHING else to that table while mysql_use_result=1 (updates,etc)
+So...
+#find total number to loop over (mysql has no cursors, so we have to fake)
+my $tot_rows = $dbh->selectrow_array("SELECT count(*) FROM $f_tablename");
+my $incr = 500;         #controls how much memory is used
+
+for ($ii=0;$ii<=$tot_rows;$ii=$ii+$incr) {
+        $statement="SELECT * FROM $f_tablename ORDER BY something LIMIT $ii,$incr ";
+        $sth = $dbh->prepare($statement);
+        $sth->execute();
+	while (my $ref = $sth->fetchrow_hashref()) {
+		#crap,crap,etc
+	}
+}
+
+
+#---------------------------------------------------------------------------------------------------
+
+client only:
+./configure --with-unix-socket-path=/var/lib/mysql/mysql.sock --without-server \
+  --without-docs --without-bench --enable-assembler
+
+(PPC has/had problems with --enable-assembler)
+
+make && make install
+
+vi /etc/ld.so.conf
+add
+	/usr/local/lib/mysql
+/sbin/ldconfig
+
+#---------------------------------------------------------------------------------------------------
+
+benchmarks to get an idea of expectable performance:
+
+http://osdb.sourceforge.net/index.php?page=make
+
+#---------------------------------------------------------------------------------------------------
+
+local variables:
+select @min_price:=min(price),@max_price:=max(price) from shop;
+select * from shop where price=@min_price or price=@max_price;
+
+#-------------------------------------------
+Meanwhile, you can often rewrite the query without a sub-select: 
+
+SELECT * FROM table1 WHERE id IN (SELECT id FROM table2);
+
+This can be re-written as: 
+
+SELECT table1.* FROM table1,table2 WHERE table1.id=table2.id;
+
+The queries: 
+
+SELECT * FROM table1 WHERE id NOT IN (SELECT id FROM table2);
+SELECT * FROM table1 WHERE NOT EXISTS (SELECT id FROM table2
+                                       WHERE table1.id=table2.id);
+
+Can be rewritten as: 
+
+SELECT table1.* FROM table1 LEFT JOIN table2 ON table1.id=table2.id
+                                       WHERE table2.id IS NULL;
+
+#-------------------------------------------
+create temp table as select (this session only)
+CREATE TEMPORARY TABLE temptabA8 select S8,count(S8) AS cnt from Av where YEAR(DATE)=2001 group by S8;
+#-------------------------------------------
+
+##verifying privileges (GRANTS/REVOKES)
+#show users (USERS)
+SELECT Host,User FROM mysql.user;
+
+#verify a specific user
+SELECT Host,User FROM mysql.user WHERE User='username';
++---------------------------+----------+
+| Host                      | User     |
++---------------------------+----------+
+| 11.11.111.0/255.255.255.0 | username |
++---------------------------+----------+
+SHOW GRANTS for username@"11.11.111.0/255.255.255.0";
++-------------------------------------------------------------------------------------------------------+
+| Grants for username@64.79.238.0/255.255.255.0                                                         |
++-------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'username'@'11.11.111.0/255.255.255.0' IDENTIFIED BY PASSWORD '5b2643a80bc4d07c'|
+| GRANT ALL PRIVILEGES ON database1.* TO 'username'@'11.11.111.0/255.255.255.0'                         |
++-------------------------------------------------------------------------------------------------------+
+
+to use revoke copy one of the above line, change grant to revoke AND to to from
+REVOKE ALL PRIVILEGES ON database1.* FROM 'username'@'11.11.111.0/255.255.255.0';
+
+if you have privilege problems:
+  check that the files (maybe in /var/lib/mysql/[db]) are mysql:mysql rw-r--r-- !!
+  the errors are not apparent.
+
+
+
+#-------------------------------------------
+myODBC to MS Access: tables need primary keys AND timestamps for update/insert from access
+(primary key cannot be big int - access has issues)
+
+ODBC create table Query
+
+SELECT WORK.HFRECNUM, WORK.CODEC, WORK.PROJECTEDMILES INTO
+[ODBC;dsn=eoil_main].TEMPC
+FROM [WORK]
+WHERE WORK.GROUP >=2 AND WORK.GROUP <7;
+
+SELECT * INTO [ODBC;dsn=DSNNAME].NEWTABLE FROM TABLE1;
+
+#--quick make a table nice for access
+ALTER TABLE ACCOUNTTYPE ADD COLUMN LINENUMBER INT  NOT NULL PRIMARY KEY AUTO_INCREMENT;
+ALTER TABLE ACCOUNTTYPE ADD COLUMN LASTUPDATE TIMESTAMP;
+#--
+
+#-------------------------------------------
+show create table temptabs;   GIVES create table statement
+#-------------------------------------------
+
+SELECT a,b,a+b INTO OUTFILE "/tmp/result.text"
+     FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+     LINES TERMINATED BY "\n"
+     FROM test_table;
+
+#-------------------------------------------
+
+logging connections and queries
+vi /etc/my.cnf
+#--
+[mysqld]
+log=/var/log/mysql_query.log
+#--
+touch /var/log/mysql_query.log
+chown mysql /var/log/mysql_query.log
+chmod 0640 /var/log/mysql_query.log
+
+#make sure to rotate log
+vi /etc/logrotate.d/mysqld
+#--
+/var/log/mysql_query.log {
+    missingok
+    create 0640 mysql mysql
+    prerotate
+        [ -e /var/lock/subsys/mysqld ] && /bin/kill -HUP `cat /var/run/mysqld/mysqld.pid  2> /dev/null ` || /bin/true
+    endscript
+    postrotate
+        [ -e /var/lock/subsys/mysqld ] && /bin/kill -HUP `cat /var/run/mysqld/mysqld.pid  2> /dev/null ` || /bin/true
+    endscript
+}
+#--
+
+/etc/init.d/mysqld restart
+
+#-------------------------------------------
+
+use mytop for troubleshooting:
+http://jeremy.zawodny.com/mysql/mytop/
+
+#optimizing
+(1) LOOK FOR QUERIES THAT ARE RETURNING TOO MUCH INFO
+(2) LOOK AGAIN
+(3) then look at config
+(4) then, and only then look at hardware
+
+http://www.databasejournal.com/features/mysql/article.php/10897_2013631_2
+http://www.databasejournal.com/features/mysql/article.php/1382791
+https://panel.dreamhost.com/kbase/index.cgi?area=2868
+
+Use  --log-slow-queries[=file_name] to get slow queries, use with
+  --log-long-format to also get queries that are not using indexes
+
+Look for queries where some of the following criteria are met:
+A) "Rows_examined" is more than 2000
+B) "Rows_examined" is less than 2000 but that query is being run 20 times a second.
+C) "Rows_examined" is three times bigger than "Rows_sent"
+
+also use the perl script "mysql_slow_log_parser" from:
+http://retards.org/projects/mysql/
+
+#---
+mysql> SHOW VARIABLES;
+mysql> SHOW STATUS;
+outputs current server settings
+#same as (from command prompt)
+mysqladmin variables
+mysqladmin extended-status
+mysqladmin version
+
+When tuning a MySQL server, the two most important variables to
+  use are key_buffer_size and table_cache.
+
+#-------------------------------------------
+
+#POPULATE INT FIELD WITH NICE ID:  #SLOW - VERY SLOW
+#!/usr/bin/perl
+
+use DBI();
+use strict;
+
+my $mysql_host=$ENV{"MYSQL_HOST"};
+my $mysql_passwd=$ENV{"MYSQL_PASSWD"};
+my $mysql_database=$ENV{"MYSQL_DATABASE"};
+my $mysql_uname=$ENV{"MYSQL_UNAME"};
+        if ($mysql_uname eq "") { $mysql_uname=$ENV{"USER"}; }
+
+my $dbh = DBI->connect("DBI:mysql:database=$mysql_database;".
+ "host=$mysql_host;mysql_socket=/var/lib/mysql/mysql.sock",
+ "$mysql_uname","$mysql_passwd",{'RaiseError' => 1});
+
+#| rowid      | int(11)     | YES  |     | NULL    |       | (all NULLs)
+my $numrows = $dbh->selectrow_array("SELECT count(*) FROM GOLDBANK");
+
+for (my $ii=1;$ii<=$numrows;$ii++) {
+    $dbh->do("UPDATE THISTABLE set ROWID=".$ii." WHERE ROWID is NULL LIMIT 1");
+}
+
+#-------------------------------------------
+
+MULTI-TABLE deletes (mysql 4.0.2+):
+
+DELETE t1,t2 FROM t1,t2,t3 WHERE t1.id=t2.id AND t2.id=t3.id
+DELETE FROM t1,t2 USING t1,t2,t3 WHERE t1.id=t2.id AND t2.id=t3.id
+
+#-------------------------------------------
+#-------------------------------------------
+#-------------------------------------------
+#-------------------------------------------

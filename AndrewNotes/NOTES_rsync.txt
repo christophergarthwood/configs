@@ -1,0 +1,184 @@
+
+#---------------------------------------------------------------------------
+make sure ssh is in path:
+ln -s /usr/local/bin/scp /usr/bin/scp
+ln -s /usr/local/bin/ssh /usr/bin/ssh
+
+rsync -e ssh -rlpgt --delete norway:/usr/local/special_dir/ /usr/local/special_dir/
+
+or if root
+rsync -e ssh -rolpgt --delete norway:/usr/local/special_dir/ /usr/local/special_dir/
+  to keep ownership
+
+#---------------------------------------------------------------------------
+
+rsync thru ssh
+rsync -avz -e "ssh -1" me@norway.dentarthurdent.org:~/mine ~/
+#this will make a directory called mine (if does not exist) and recursively
+#copy everything from norway into it.
+#If the directory exists - files with the same name will be overwritten,
+#others will be left alone.
+
+I mirror a directory between my "old" and "new" ftp sites with the command
+ rsync -az -e ssh --delete ~ftp/pub/samba/ nimbus:"~ftp/pub/tridge/samba"
+this is launched from cron every few hours.
+
+#to download copy of website from www.dentarthurdent.org
+rsync --delete -avz -e ssh me@www.dentarthurdent.org:/dir/www ~/bak/
+#order of options above is important - errors out if order is wrong
+
+#to upload copy TO www.dentarthurdent.org (to replace the live site) in /var/www
+rsync --delete -avz -e ssh ~/bak/www me@www.dentarthurdent.com:/dir/
+
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+http://www.mikerubel.org/computers/rsync_snapshots/
+
+This document describes a method for generating automatic rotating 
+"snapshot"-style backups on a Unix-based system, with
+specific examples drawn from the author's GNU/Linux 
+experience. Snapshot backups are a feature of some high-end industrial file
+servers; they create the illusion of multiple full (up to 
+ownership/permission) backups per day without the space or processing
+overhead. All of the snapshots are read-only, and are 
+accessible directly by users as special system directories. It is often
+possible to store several hours, days, and even weeks' worth of 
+snapshots with slightly more than 2x storage. This method, while not as
+space-efficient as some of the proprietary technologies 
+(which, using special copy-on-write filesystems, can operate on slightly
+more than 1x storage), makes use of only standard file 
+utilities and the common rsync program, which is installed by default on most
+Linux distributions. Properly configured, the method can 
+also protect against hard disk failure, root compromises, or even back up a
+network of heterogeneous desktops automatically. 
+
+#---------------------------------------------------------------------------
+
+QUICK TUTORIAL:
+Make sure you can ssh as root from machine1 (has good data) to machine2 (has large hard drive)
+#(on machine1) ssh root@machine2
+
+test as root:
+
+#ON MACHINE1
+#create test file and directory
+cd ~
+mkdir rsynctest
+cd rsynctest
+touch myfile.txt
+
+#ON MACHINE2
+#create backup directory
+mkdir /backupdir
+
+#ON MACHINE1
+rsync -e ssh -azv /root/rsynctest machine2:/backupdir
+
+#ON MACHINE2
+ls -laR /backupdir
+
+#The trailing slash (or not) MATTERS on the src directory but not on the dest (/backupdir)
+#later on add --delete so that files deleted on machine1 will also get deleted on machine2
+
+#you should be able to backup /dev with this - the "a" option *should* handle it, and
+# --exclude=/proc should handle proc. I would stick to just normal dirs until I tested
+#it though ;)
+
+#---------------------------------------------------------------------------
+
+#TO MAKE A GOOD FULL BACKUP OF MACHINE1 TO MACHINE2
+#make sure no CDs,nfs,smb,etc are mounted on machine1 (or add them to exclude)
+#on machine 1 as root
+rsync -e ssh -azv --exclude=/proc --exclude=/sys --exclude=lost+found / 192.168.0.240:/backupdir
+
+#later add --delete 
+rsync -e ssh -azv --delete --delete-excluded --exclude=/proc --exclude=/sys --exclude=lost+found / 192.168.0.240:/backupdir
+#generates lots of io load for a few minutes, then lots of cpu load while transferring
+#it_s ok to kill it at anytime and restart it later (or "renice 20 rsyncPID")
+
+#10 gigs from a laptop system ~3 hours
+
+#----
+
+#FOR A QUICK BACKUP OF HD1 TO HD2 ON A SINGLE MACHINE
+mount /dev/hdb1 /mnt/backupdrive
+rsync -av --delete --exclude=/proc \
+  --exclude=/sys \
+  --exclude=/dev --exclude=/mnt \
+  --exclude=lost+found \
+  / /mnt/backupdrive
+umount /mnt/backupdrive
+
+#---------------------------------------------------------------------------
+
+#automated ssh backup as root of machine1 to machine2
+#on machine1 as root create ssh key
+ssh-keygen -b 4096 -t dsa #make passphrase empty
+
+#get machine1 /root/.ssh/id_dsa.pub to machine2 /root/.ssh/id_dsa_pub.machine1
+#on machine2
+cat /root/.ssh/id_dsa_pub.machine1 >> /root/.ssh/authorized_keys2
+
+#test ssh from machine1 to machine2. should not be asked for password
+
+#on machine2, vi /root/.ssh/authorized_keys2
+# add at the very beginning of the line - all on one line
+command="/root/ssh-wrapper",from="::ffff:192.168.0.machine1",
+no-pty,no-X11-forwarding,no-port-forwarding,no-agent-forwarding
+ssh-dss AAAAB3NzaC1kc3MA...  #ssh key info
+#IN FC4-ISH SSHD THE FROM MUST BE IN IP6 FORMAT (?)
+#   OLD:from="192.168.0.machine1",
+#   NEW:from="::ffff:192.168.0.machine1",
+
+#NOW I NEED TO FIND OUT WHAT THE REAL COMMAND IS SO I USE ssh-wrapper
+#on machine 2, vi /root/ssh-wrapper
+#--
+#!/bin/sh
+echo "$SSH_ORIGINAL_COMMAND" >> /root/ssh-wrapper.out
+exec $SSH_ORIGINAL_COMMAND
+#--
+chmod 0700 /root/ssh-wrapper
+
+#test backing up just the /root/ directory
+#on machine 1 as root
+rsync -e ssh -azv --exclude=/proc --exclude=/sys --exclude=lost+found /root/ machine2.dentarthurdent.com:/backup/machine1
+
+#look at command on machine2
+less /root/ssh-wrapper.out
+#should be something like: rsync --server -vlogDtprz . /backup/machine1
+#the . for present dir doesn't change, since the client side change dir is handled
+#   by the ssh process (so even for backing up multiple dirs it still is just .)
+
+#on machine2 /root/.ssh/authorized_keys2 replace 
+#command="/root/ssh-wrapper" with
+#command="rsync --server -vlogDtprz . /backup/machine1"
+
+#retest backing up the /root dir
+
+#should work with cronned command of:
+rsync -e ssh -azv --delete --delete-excluded --exclude=/proc --exclude=/sys --exclude=lost+found \
+  / machine2.dentarthurdent.com:/backup/machine1
+
+#so to make a nice cut-n-paste of the cron:
+vi /root/backmeup.sh
+#--
+#!/bin/sh
+df -kl  #nice too have in the cron output email
+touch /etc/backup.touch #nice file to list on the backup server
+#make sure the dir /backup/myname exists on backupmachine
+nice -19 /usr/bin/rsync -e ssh -azv --delete --delete-excluded \
+  --exclude=/proc --exclude=/sys --exclude=lost+found \
+  / backupmachine.dentarthurdent.com:/backup/myname
+#--
+chmod 0700 /root/backmeup.sh
+
+vi /etc/crontab
+#--
+13 02 * * 1-5   root /root/backmeup.sh
+#13 02 * * 1-5   root /root/backmeup.sh > /dev/null #silent version
+#--
+
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+
+

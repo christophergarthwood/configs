@@ -1,0 +1,618 @@
+dns/named/bind
+#------------------
+
+ftp://ftp.isc.org/isc/bind9/9.2.0rc5/bind-9.2.0rc5.tar.gz
+
+./configure --with-openssl=../openssl-0.9.6b
+make
+
+su
+make install
+
+mkdir /var/named
+groupadd named
+useradd -c NAMEDuser -d /var/named -M -s /bin/false -g named named
+chown named:named /var/named
+
+(for pid file location)
+mkdir -p /var/run/named
+chown named:named /var/run/named
+
+interesting files
+
+BINARIES
+/usr/local/sbin/
+
+CONFS
+/etc/named.conf 
+
+DATA
+/var/named/
+
+#---------------------------------------------
+files to create:
+
+/etc/named.conf
+
+/var/named/localhost.zone
+/var/named/named.local
+/var/named/named.ca
+
+/var/named/pdb.dentarthurdent.org
+/var/named/pdb.0.168.192.in-addr.arpa
+
+#---------------------------------------------
+#------------------
+vi /etc/named.conf
+#------------------
+acl safenets { 127.0.0.1/32; 192.168.0.0/24;};
+options {
+        directory "/var/named";
+        pid-file "/var/run/named/named.pid";
+	allow-transfer { safenets; };
+	allow-recursion { safenets; };
+        allow-update { localhost; };
+};
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+zone "localhost" IN {
+        type master;
+        file "localhost.zone";
+        allow-update { none; };
+};
+zone "0.0.127.in-addr.arpa" IN {
+        type master;
+        file "named.local";
+        allow-update { none; };
+};
+
+zone "dentarthurdent.org" IN {
+        type master;
+        file "pdb.dentarthurdent.org";
+};
+
+zone "0.168.192.in-addr.arpa" IN {
+        type master;
+        file "pdb.0.168.192.in-addr.arpa";
+};
+#--------------------
+rndc-confgen -a
+chown named:named /etc/rndc.key
+#--------------------
+vi /var/named/localhost.zone
+#--------------------
+$TTL    86400
+$ORIGIN localhost.
+@ 1D IN SOA @ root ( 42 3H 15M 1W 1D ) 
+  1D IN NS        @
+  1D IN A         127.0.0.1
+#--------------------
+vi /var/named/named.local
+#--------------------
+$TTL    86400
+@ IN SOA localhost. root.localhost. ( 42 3H 15M 1W 1D )
+        IN      NS      localhost.
+1       IN      PTR     localhost.
+#--------------------
+dig . ns > /var/named/named.ca
+#or grab the one off the end of these notes
+#--------------------
+vi /var/named/pdb.dentarthurdent.org
+#--------------------
+$TTL    86400
+$ORIGIN dentarthurdent.org.
+@ IN SOA magrathea.dentarthurdent.org. my3133tMa1L.yahoo.com. (
+                                        2001091401      ; serial 
+                                        3H              ; refresh
+                                        45M             ; retry
+                                        1W              ; expiry
+                                        1D )            ; minimum
+        IN NS   magrathea.dentarthurdent.org.
+        IN      MX      0 smtp.dentarthurdent.org.
+
+magrathea  IN A    192.168.0.99
+www     IN CNAME        magrathea
+smtp    IN CNAME        magrathea
+#--------------------
+vi /var/named/pdb.0.168.192.in-addr.arpa
+#--------------------
+$TTL 1D
+$ORIGIN 0.168.192.in-addr.arpa.
+@  IN SOA  magrathea.dentarthurdent.org. my3133tMa1L.yahoo.com. (
+                                2001080660 ; serial
+                                3H              ; refresh
+                                45M             ; retry
+                                1W              ; expiry
+                                1D )            ; minimum
+                        NS      magrathea.dentarthurdent.org.
+99  PTR     magrathea.dentarthurdent.org.
+#--------------------
+#--------------------------------------------------------------------
+
+#-------------------
+vi /var/named.fake.root
+#-------------------
+$TTL 40
+.      IN SOA  magrathea.dentarthurdent.org. root.localhost. (
+                                40      ; serial
+                                40      ; refresh
+                                40      ; retry
+                                40      ; expire
+                                40      ; minimum
+                                )
+                        NS      magrathea.dentarthurdent.org.
+magrathea.dentarthurdent.org.  A       127.0.0.1
+
+#------------------------------------------------------------
+#------------------------------------------------------------
+#------------------------------------------------------------
+vi /etc/init.d/named
+#--------------
+#!/bin/bash
+# chkconfig: 2345 80 30
+# description: DNS Daemon
+case "$1" in
+  start)
+        echo 'Starting named: '
+        /usr/local/sbin/named -u named
+        ;;
+  stop)
+        echo 'Shutting down named: '
+        killall named
+        ;;
+  *)
+        echo "Usage: /etc/init.d/named {start|stop}"
+        exit 1
+esac
+#------------------------------
+chmod 0755 /etc/init.d/named
+#-------------------
+
+IF LUNKWILL IS STUCK TO OLD IP, BUT HAS NEW IP FROM DHCP
+
+nsupdate
+> update delete lunkwill.dentarthurdent.org A
+> update add lunkwill.dentarthurdent.org 3600 A 192.168.0.226
+>
+
+nsupdate
+update delete lunkwill.dentarthurdent.org A
+update add lunkwill.dentarthurdent.org 3600 A 192.168.0.226
+
+nsupdate
+update delete lunkwill.dentarthurdent.org A
+update add lunkwill.dentarthurdent.org 3600 A 192.168.0.225
+
+#---------------------------------------------
+
+notes,blurbs,tips:
+The localhost access control list [ACL] is predefined to be all of the IP
+addresses of the host that runs the name server, plus the loopback address.
+
+serial
+ serial number of this file. Secondaries will check this number to
+ determine if the file has n updated. So every time you modify this file, sure
+ to increase this number, otherwise no secondary will notice the update. The
+ convention is to use yyyymmddnn, where yyyy is the year, mm is the month, dd
+ is the day, and nn is revision number in the same day.
+refresh
+ number of seconds that secondary should check with primary for
+ possible update.
+retry
+ number of seconds. If a secondary fails to municate with the
+ primary, then after retry seconds, if should try again.
+expire
+ number of seconds in which information about this domain should be
+ considered expired and discarded.
+minimum
+ number in seconds. Used as default Time To Live for RR in this file
+ which does not explicitly specify one.
+
+useful options in named.conf:
+options {
+        listen-on {127.0.0.1;};
+
+	forward first;
+	forwarders {192.168.0.1;};
+
+	max-cache-size 10M;
+};
+
+Running the rndc-confgen program will conveniently create a rndc.conf file for
+you, and also display the corresponding controls statement that you need to
+add to named.conf. Alternatively, you can run rndc-confgen -a to set up a
+rndc.key file and not modify named.conf at all.
+
+rndc listens on 127.0.0.1 port 953 by default
+
+
+#---------------------------------------------
+
+#---------------------------------------------
+
+From: Mathias Koerber (mathias@staff.singnet.com.sg)
+Subject: Re: How often is it suggested to restart Bind8 ?
+Newsgroups: mailing.unix.bind-users
+View: Complete Thread (13 articles) | Original Format
+Date: 2000/02/10
+
+On Thu, 10 Feb 2000, Lawrence Chan wrote:
+
+| >
+| > You could have a cron job that checks whether named is running and restarts
+| > it if necessary, or you could run it in a loop in a script:
+| >
+| > while /bin/true; do
+| > named -d
+| > done
+
+A cronjob with
+	ndc start 
+will do fine, as it will refuse starting a second copy if the first
+one is still active.
+
+Similarly, an entry in /etc/inittab
+	nm:345:respawn:/usr/sbin/named -f
+should do the trick..
+
+| >
+| > The -d option is necessary to prevent it from backgrounding itself (which
+| > would cause the loop to try spawning named continuously).
+| >
+| > --
+| > Barry Margolin, barmar@bbnplanet.com
+| > GTE Internetworking, Powered by BBN, Burlington, MA
+| > *** DON'T SEND TECHNICAL QUESTIONS DIRECTLY TO ME, post them to newsgroups.
+| > Please DON'T copy followups to me -- I'll assume it wasn't posted to the group.
+| 
+| Is there a default value for such cache size set when installing Bind and if so,
+| how large?  Surely, this sounds like a disaster waiting to happen if one has
+| limited memory and without some sort of cron job.  Is this problem applicable to
+| all Bind versions or is it just to Bind 8 onward?
+
+When one has limited memory, one should NOT run a large cache! BIND simply does
+not like to have parts of its data segment paged out to disk. It has to access
+all pages every now and then (the maintenance cycle), and it will tax the system
+a lot if it has to get all those pages from disk.
+
+If you have any sizeable operation, use a separate machine for a caching nameserver
+(and only for that), and make sure it has sufficient memory (128MB should be OK,
+I use 256MB to have some spare. My named processes usually settle around 80-100MB
+after a week, and grow to 120MB when it's really busy).
+
+If your OS allows preventing a process from being paged out, that may be a good idea,
+though it will be hell on othe rprocesses that may need memory.
+
+| 
+| Lawrence Chan
+| 
+| 
+
+Mathias Koerber | Tel: +65 / 471 9820    |   mathias@staff.singnet.com.sg
+SingNet NOC	  | Fax: +65 / 475 3273    |            mathias@koerber.org
+Q'town Tel. Exch. | PGP: Keyid: 768/25E082BD, finger mathias@singnet.com.sg
+2 Stirling Rd     |      1A 8B FC D4 93 F1 9A FC BD 98 A3 1A 0E 73 01 65
+S'pore 148943     | Disclaimer: I speak only for myself
+* Eifersucht ist eine Leidenschaft, die mit Eifer sucht, was Leiden schafft 
+
+
+#---------------------------------------------
+
+named-checkconf /etc/named.conf
+named-checkzone /var/named/pdb.dentarthurdent.org
+
+#---------------------------------------------
+
+Add-in:
+
+BIND 9.2.0 has a number of new features over 9.1, including: 
+
+The size of the cache can now be limited using the "max-cache-size" option. 
+
+The BIND 9 Administrator Reference Manual is also available in PDF format. 
+http://www.nominum.com/resources/documentation/Bv9ARM.pdf
+
+Besides, there are some good security points you should be doing anyway on the
+server. Unless you must have it, turn off recursion:
+
+                    acl safenets { 127.0.0.1/32; your.internal.ips/??;}
+
+                    options {
+                      allow-transfer { safenets; };
+                      allow-recursion { safenets; };
+                    }
+
+                    between that, a solid chroot, and a solid setuid, you'll
+have beaten 99% of the bind problems you'll have.
+
+
+          Why I LOVE Red Hat Network (Score:3, Informative)
+          by mcrbids on Tuesday November 12, @02:54PM (#4653351)
+          (User #148650 Info | http://www.effortlessis.com/)
+          Knowing that this might be a vulnerability issue, I immediately
+logged into my main servers and typed, in each, "up2date -du
+--tmpdir=/home/tmpdir".
+
+          Before I even realized that this doesn't apply to me, (I'm using
+Bind 9) all the updates had been downloaded and applied.
+
+          And, I guess, in a week or so, I'll get an email from Red Hat
+letting me know that I should be running up2date again...
+
+          -Ben
+
+#----
+multiple authoritative nameservers in pdb.mydomain.com:
+	IN	NS	ns2.mydomain.com.
+	IN	NS	ns1.mydomain.com.
+are given out in random order for each request??
+#----
+
+
+
+
+
+
+#---------------------------------------------
+
+root (possibly old)
+#--------------------
+vi /var/named/named.ca
+#--------------------
+.                       84628   IN      NS      J.ROOT-SERVERS.NET.
+.                       84628   IN      NS      K.ROOT-SERVERS.NET.
+.                       84628   IN      NS      L.ROOT-SERVERS.NET.
+.                       84628   IN      NS      M.ROOT-SERVERS.NET.
+.                       84628   IN      NS      A.ROOT-SERVERS.NET.
+.                       84628   IN      NS      B.ROOT-SERVERS.NET.
+.                       84628   IN      NS      C.ROOT-SERVERS.NET.
+.                       84628   IN      NS      D.ROOT-SERVERS.NET.
+.                       84628   IN      NS      E.ROOT-SERVERS.NET.
+.                       84628   IN      NS      F.ROOT-SERVERS.NET.
+.                       84628   IN      NS      G.ROOT-SERVERS.NET.
+.                       84628   IN      NS      H.ROOT-SERVERS.NET.
+.                       84628   IN      NS      I.ROOT-SERVERS.NET.
+A.ROOT-SERVERS.NET.     171028  IN      A       198.41.0.4
+B.ROOT-SERVERS.NET.     171028  IN      A       128.9.0.107
+C.ROOT-SERVERS.NET.     171028  IN      A       192.33.4.12
+D.ROOT-SERVERS.NET.     171028  IN      A       128.8.10.90
+E.ROOT-SERVERS.NET.     171028  IN      A       192.203.230.10
+F.ROOT-SERVERS.NET.     171028  IN      A       192.5.5.241
+G.ROOT-SERVERS.NET.     171028  IN      A       192.112.36.4
+H.ROOT-SERVERS.NET.     171028  IN      A       128.63.2.53
+I.ROOT-SERVERS.NET.     171028  IN      A       192.36.148.17
+J.ROOT-SERVERS.NET.     171028  IN      A       192.58.128.30
+K.ROOT-SERVERS.NET.     171028  IN      A       193.0.14.129
+L.ROOT-SERVERS.NET.     171028  IN      A       198.32.64.12
+M.ROOT-SERVERS.NET.     171028  IN      A       202.12.27.33
+#--------------------
+
+#---------------------------------------------
+
+mkrdns:
+#mkrdns automates the tedious procedure of editing
+#both forward and reverse zones when making changes to your zones
+wget http://www.mkrdns.org/ftp/pub/felicity/mkrdns/mkrdns-latest.gz
+#version 3.3: 474ffb39d1eb615d0e9d8a7d52a27953  mkrdns-latest.gz
+#possibly: gunzip mkrdns-latest.gz && mv mkrdns-latest mkrdns.pl
+#  && chmod 0755 ./mkrdns.pl 
+
+perldoc ./mkrdns.pl
+
+./mkrdns.pl -extension test -debug
+less /var/named/pdb.0.168.192.in-addr.arpa.test
+
+chmod 0600 /var/named/pdb.0.168.192.in-addr.arpa.test
+chown named:named /var/named/pdb.0.168.192.in-addr.arpa.test
+
+#---------------------------------------------
+
+utils included in normal bind distrib:
+cd ./bind-9.2.2rc1/contrib/nslint-2.1a3
+./configure
+make
+su
+./nslint
+
+
+#---------------------------------------------
+
+Best Practices:
+
+Common DNS Operational and Configuration Errors
+ftp://ftp.rfc-editor.org/in-notes/rfc1912.txt
+
+   Make sure your PTR and A records match.  For every IP address, there
+   should be a matching PTR record in the in-addr.arpa domain.  If a
+   host is multi-homed, (more than one IP address) make sure that all IP
+   addresses have a corresponding PTR record (not just the first one).
+   Failure to have matching PTR and A records can cause loss of Internet
+   services similar to not being registered in the DNS at all.  Also,
+   PTR records must point back to a valid A record, not a alias defined
+   by a CNAME.  It is highly recommended that you use some software
+   which automates this checking, or generate your DNS data from a
+   database which automatically creates consistent data.
+
+   Glue records are A records that are associated with NS records to
+   provide "bootstrapping" information to the nameserver.  For example:
+
+           podunk.xx.      in      ns      ns1.podunk.xx.
+                           in      ns      ns2.podunk.xx.
+           ns1.podunk.xx.  in      a       1.2.3.4
+           ns2.podunk.xx.  in      a       1.2.3.5
+
+   Here, the A records are referred to as "Glue records".
+   If your nameserver is multi-homed (has more than one IP address), you
+   must list all of its addresses in the glue to avoid cache
+   inconsistency due to differing TTL values, causing some lookups to
+   not find all addresses for your nameserver.
+
+
+   A CNAME record is not allowed to coexist with any other data.  In
+   other words, if suzy.podunk.xx is an alias for sue.podunk.xx, you
+   can't also have an MX record for suzy.podunk.edu, or an A record, or
+   even a TXT record.  Especially do not try to combine CNAMEs and NS
+   records like this!:
+           podunk.xx.      IN      NS      ns1
+                           IN      NS      ns2
+                           IN      CNAME   mary
+           mary            IN      A       1.2.3.4
+   This is often attempted by inexperienced administrators as an obvious
+   way to allow your domain name to also be a host.  However, DNS
+   servers like BIND will see the CNAME and refuse to add any other
+   resources for that name.  Since no other records are allowed to
+   coexist with a CNAME, the NS entries are ignored.  Therefore all the
+   hosts in the podunk.xx domain are ignored as well!
+   If you want to have your domain also be a host, do the following:
+           podunk.xx.      IN      NS      ns1
+                           IN      NS      ns2
+                           IN      A       1.2.3.4
+           mary            IN      A       1.2.3.4
+   Don't use CNAMEs in combination with RRs which point to other names
+   like MX, CNAME, PTR and NS.  (PTR is an exception if you want to
+   implement classless in-addr delegation.)  For example, this is
+   strongly discouraged:
+           podunk.xx.      IN      MX      mailhost
+           mailhost        IN      CNAME   mary
+           mary            IN      A       1.2.3.4
+   [RFC 1034] in section 3.6.2 says this should not be done, and [RFC
+   974] explicitly states that MX records shall not point to an alias
+   defined by a CNAME.  This results in unnecessary indirection in
+   accessing the data, and DNS resolvers and servers need to work more
+   to get the answer.  If you really want to do this, you can accomplish
+   the same thing by using a preprocessor such as m4 on your host files.
+   Having NS records pointing to a CNAME is bad and may conflict badly
+   with current BIND servers.  In fact, current BIND implementations
+   will ignore such records, possibly leading to a lame delegation.
+   There is a certain amount of security checking done in BIND to
+   prevent spoofing DNS NS records.  Also, older BIND servers reportedly
+   will get caught in an infinite query loop trying to figure out the
+   address for the aliased nameserver, causing a continuous stream of
+   DNS requests to be sent.
+
+   You are required to have at least two nameservers for every domain,
+   though more is preferred.  Have secondaries outside your network.  If
+   the secondary isn't under your control, periodically check up on them
+   and make sure they're getting current zone data from you.  Queries to
+   their nameserver about your hosts should always result in an
+   "authoritative" response.  If not, this is called a "lame
+   delegation".  A lame delegations exists when a nameserver is
+   delegated responsibility for providing nameservice for a zone (via NS
+   records) but is not performing nameservice for that zone (usually
+   because it is not set up as a primary or secondary for the zone).
+   The "classic" lame delegation can be illustrated in this example:
+           podunk.xx.      IN      NS      ns1.podunk.xx.
+                           IN      NS      ns0.widget.com.
+   "podunk.xx" is a new domain which has recently been created, and
+   "ns1.podunk.xx" has been set up to perform nameservice for the zone.
+   They haven't quite finished everything yet and haven't made sure that
+   the hostmaster at "ns0.widget.com" has set up to be a proper
+   secondary, and thus has no information about the podunk.xx domain,
+   even though the DNS says it is supposed to.  Various things can
+   happen depending on which nameserver is used.  At best, extra DNS
+   traffic will result from a lame delegation.  At worst, you can get
+   unresolved hosts and bounced e-mail.
+
+   Remember you don't need to repeat the name of the host when you are
+   defining multiple records for one host.  Be sure also to keep all
+   records associated with a host together in the file.  It will make
+   things more straightforward when it comes time to remove or rename a
+   host.
+
+#---------------------------------------------
+
+JAVA DNS project:
+http://www.xbill.org/dnsjava/
+http://tools.arlut.utexas.edu/gash2/
+JAVA NAMING AND DIRECTORY INTERFACETM (JNDI)
+http://java.sun.com/products/jndi/
+
+bindconf
+http://www.redhat.com/docs/manuals/linux/RHL-7.1-Manual/custom-guide/bindconf.html
+
+http://www.aaronfaby.com/software/linux/bindconf-1.0.1.tar.gz
+BIND Zone Wizard 1.0.1 - Command line BIND zone creation utility. 
+
+Dlint (zone checker)
+http://www.domtools.com/dlint/
+http://www.domtools.com/dns/dlint.shtml
+http://www.domtools.com/dlint/nph-dlint.cgi   #online checker
+
+dnsutl
+http://www.canb.auug.org.au/~millerp/dnsutl/dnsutl.html
+
+
+#---------------------------------------------
+
+Multiple PTRs are certainly legal; see rfc2181:
+
+10.2. PTR records
+
+   Confusion about canonical names has lead to a belief that a PTR
+   record should have exactly one RR in its RRSet.  This is incorrect,
+   the relevant section of RFC1034 (section 3.6.2) indicates that the
+   value of a PTR record should be a canonical name.  That is, it should
+   not be an alias.  There is no implication in that section that only
+   one PTR record is permitted for a name.  No such restriction should
+   be inferred.
+
+http://groups.google.com/groups?q=multiple+ptr+RR&hl=en&lr=&ie=UTF-8&scoring=d&selm=akk21q%242uv8%241%40FreeBSD.csie.NCTU.edu.tw&rnum=12
+
+????
+The consensus on the BIND users list / newsgroup is that multiple PTRs
+are legal, but almost always unnecessary, and more likely to cause
+problems than to solve them in actual practice.
+ 
+I try to use a unique IP address for any service where it's good
+practice to have proper reverse DNS (a mail server or DNS server, for
+example). I've seen plenty of cases where this isn't possible, however,
+and things worked just fine.
+
+????
+
+#---------------------------------------------
+
+slave example:
+zone "hfdirect.com" {
+        type slave;
+        file "sdb.hfdirect.com";
+        masters { 64.79.238.72; };
+        allow-transfer { none; };
+};
+
+#allow-update is not applicable to slave zones
+
+#---------------------------------------------
+
+good reference (but for netbsd):
+http://www.muine.org/~hoang/dns.html
+
+dns checker:
+www.dnsstuff.com
+www.DNSreport.com
+
+#---------------------------------------------
+Check the SOA line(s) in your db.data files. They should look something like:
+@  IN SOA dns.server. email.address. 5 10800 1800 604800 86400
+#---------------------------------------------
+
+cheesy RELOAD
+
+[root@france named]# ps -ef | grep named
+named      493     1  0  2003 ?        12:01:16 /usr/local/sbin/named -u named
+
+[root@france named]# kill -HUP 493
+
+[root@france named]# ps -ef | grep named
+named      493     1  0  2003 ?        12:01:16 /usr/local/sbin/named -u named
+
+[root@france named]# tail /var/log/messages
+
+
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+

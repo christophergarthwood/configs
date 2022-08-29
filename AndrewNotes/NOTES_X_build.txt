@@ -1,0 +1,281 @@
+
+#-----------------------------------------------------------
+
+binary releases
+
+mkdir ~/downloads/Xtemp
+cd ~/downloads/Xtemp
+export DLloc=http://ncart.scs.ryerson.ca/pub/XFree86/4.2.0/binaries
+export DLarch=Linux-ix86-glibc22
+wget ftp://ftp.xfree86.org/pub/XFree86/4.2.0/binaries/$DLarch/Xinstall.sh
+wget $DLloc/$DLarch/extract
+wget $DLloc/$DLarch/Xbin.tgz
+wget $DLloc/$DLarch/Xlib.tgz
+wget $DLloc/$DLarch/Xman.tgz
+wget $DLloc/$DLarch/Xdoc.tgz
+wget $DLloc/$DLarch/Xfnts.tgz
+wget $DLloc/$DLarch/Xfenc.tgz
+wget $DLloc/$DLarch/Xetc.tgz
+wget $DLloc/$DLarch/Xvar.tgz
+wget $DLloc/$DLarch/Xxserv.tgz
+wget $DLloc/$DLarch/Xmod.tgz
+
+wget $DLloc/$DLarch/Xfsrv.tgz
+wget $DLloc/$DLarch/Xnest.tgz
+wget $DLloc/$DLarch/Xprog.tgz
+wget $DLloc/$DLarch/Xprt.tgz
+wget $DLloc/$DLarch/Xvfb.tgz
+wget $DLloc/$DLarch/Xf100.tgz
+wget $DLloc/$DLarch/Xfcyr.tgz
+wget $DLloc/$DLarch/Xfscl.tgz
+wget $DLloc/$DLarch/Xhtml.tgz
+
+ftp://phyppro1.phy.bnl.gov/pub/XFree86/
+http://ncart.scs.ryerson.ca/pub/XFree86/
+ftp://ftp.xfree86.org/pub/XFree86/
+
+(backup old X install ~100MB) cp -pr /usr/X11R6 /usr/OLDX11R6
+(backup old X conf) cp -pr /etc/X11 /etc/OLDX11
+sh Xinstall.sh
+
+#configure
+/usr/X11R6/bin/XFree86 -configure
+  (looks like it errors out but really just ends)
+
+writes new config to /root/XF86Config.new
+
+test with:
+XFree86 -xf86config /root/XF86Config.new
+
+then:
+cp /root/XF86Config.new /etc/X11/XF86Config
+
+vi /etc/X11/XF86Config
+Change in Section "Screen", and the (DefaultDepth 16) section
+  Modes to have only the res you want 
+
+startx to test
+\rm -r /usr/OLDX11R6
+\rm -r /etc/OLDX11
+
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+CVS
+
+export CVSROOT=:pserver:anoncvs@anoncvs.xfree86.org:/cvs
+cvs login
+CVS password: anoncvs
+
+To check out the latest 4.x version run:
+   cd ~/downloads/
+   cvs checkout xc
+
+To update a checked out tree:
+   cd ~/downloads/
+   cvs update xc
+
+#-----------------------------------------------------------
+
+cd ~/downloads/xc
+
+cd ./config/cf
+less site.def	#has some configs
+
+make sure bison is found (which bison) or install
+make sure flex is found (which flex) or install (in non-gnu dir on gnu mirrors)
+
+make sure ncurses is set up ok
+   for mandrakePPC 8.0
+   	cd /lib
+	ln -s ./libncurses.so.5.2 ./libncurses.so
+
+	cd ./ncurses-5.2
+	cp ./include/curses.h /usr/include/
+	cp ./include/curses.h /usr/include/ncurses.h
+	cp ./include/term.h /usr/include/
+	cp ./include/termcap.h /usr/include/
+	cp ./include/unctrl.h /usr/include/
+	#or copy them from another machine
+	#scp n9n@magrathea:/usr/include/curses.h /usr/include
+	#scp n9n@magrathea:/usr/include/ncurses.h /usr/include
+	#scp n9n@magrathea:/usr/include/term.h /usr/include
+	#scp n9n@magrathea:/usr/include/termcap.h /usr/include
+	#scp n9n@magrathea:/usr/include/unctrl.h /usr/include
+	#mkdir /usr/include/ncurses
+	#ln -s /usr/include/unctrl.h /usr/include/ncurses/unctrl.h
+	#ln -s /usr/include/ncurses.h /usr/include/ncurses/ncurses.h
+	#ln -s /usr/include/ncurses.h /usr/include/ncurses/curses.h
+	#scp n9n@magrathea:/usr/include/ncurses/ncurses_dll.h /usr/include/ncurses
+
+for mandrakePPC 8.2 I also had to create these dirs or make install would fail
+	mkdir /usr/X11R6/lib/X11/fonts/truetype
+	mkdir /usr/X11R6/lib/X11/fonts/TrueType
+
+cd ~/downloads/xc
+make World >& world.log
+
+#keep old copy in /tmp (~ 60MB bz2_ed)
+tar cjvf /tmp/oldX11.tar.bz2 /usr/X11R6 /etc/X11      
+
+make install >& install.log
+make install.man >& man.log
+/sbin/ldconfig
+make clean
+
+puts stuff in
+/usr/X11R6/
+/etc/X11/
+
+make sure /etc/ld.so.conf has /usr/X11R6/lib in it
+
+#-----------------------------------------------------------
+MandrakePPC 8.0 imac
+/etc/X11/XF86Config-4
+#---
+
+Section "Files"
+    RgbPath	"/usr/X11R6/lib/X11/rgb"
+    #FontPath   "unix/:-1"
+    FontPath   "/usr/X11R6/lib/X11/fonts/misc"
+    FontPath   "/usr/X11R6/lib/X11/fonts/cyrillic"
+    FontPath   "/usr/X11R6/lib/X11/fonts/100dpi/:unscaled"
+    FontPath   "/usr/X11R6/lib/X11/fonts/75dpi/:unscaled"
+    FontPath   "/usr/X11R6/lib/X11/fonts/Type1"
+    FontPath   "/usr/X11R6/lib/X11/fonts/Speedo"
+    FontPath   "/usr/X11R6/lib/X11/fonts/100dpi"
+    FontPath   "/usr/X11R6/lib/X11/fonts/75dpi"
+EndSection
+Section "ServerFlags"
+EndSection
+Section "InputDevice"
+    Identifier "Keyboard1"
+    Driver      "Keyboard"
+    Option "AutoRepeat"  "250 30"
+    Option "XkbRules" "xfree86"
+    Option "XkbModel" "macintosh"
+    Option "XkbLayout" "ma"
+EndSection
+Section "InputDevice"
+    Identifier  "Mouse1"
+    Driver      "mouse"
+    Option "Protocol"    "IMPS/2"
+    Option "Device"      "/dev/usbmouse"
+    Option "ZAxisMapping" "4 5"
+EndSection
+Section "Module"
+    Load	"dbe"
+    SubSection	"extmod"
+    EndSubSection
+    Load	"type1"
+    Load	"freetype"
+EndSection
+Section "Monitor"
+    Identifier "Apple|iMac/PowerBook 1024x768"
+    UseModes   "Mac Modes"
+    VendorName "Apple"
+    ModelName  "Unknown"
+    HorizSync  30.0-70.0
+    VertRefresh 50.0-160.0
+EndSection
+Section "Modes"
+    Identifier "Mac Modes"    
+    Modeline "1024x768"   78.525 1024 1049 1145 1312   768  769  772  800 +hsync +vsync
+    Modeline "800x600"    62.357  800  821  901 1040   600  601  604  632 +hsync +vsync
+    Modeline "640x480"    49.886  640  661  725  832   480  481  484  514 +hsync +vsync
+EndSection
+Section "Device"
+    Identifier "Generic VGA"
+    Driver     "vga"
+EndSection
+Section "Device"
+    Identifier  "ATI Rage 128"
+    VendorName  "Unknown"
+    BoardName   "Unknown"
+    Driver      "r128"
+    Option      "UseFBDev"
+    Option      "DPMS"
+EndSection
+Section "Screen"
+    Identifier "screen1"
+    Device      "ATI Rage 128"
+    Monitor     "Apple|iMac/PowerBook 1024x768"
+    DefaultColorDepth 15
+    Subsection "Display"
+        Depth       8
+        Modes       "1024x768" "800x600" "640x480"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       15
+        Modes       "1024x768" "800x600" "640x480"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       16
+        Modes       "1024x768" "800x600" "640x480"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       24
+        Modes       "1024x768" "800x600" "640x480"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       32
+        Modes       "1024x768" "800x600" "640x480"
+        ViewPort    0 0
+    EndSubsection
+EndSection
+Section "ServerLayout"
+    Identifier "layout1"
+    Screen     "screen1"
+    InputDevice "Mouse1" "CorePointer"
+    InputDevice "Keyboard1" "CoreKeyboard"
+EndSection
+#---
+
+#-----------------------------------------------------------
+
+Mandrake startx looks at /etc/sysconfig/desktop
+just put "Gnome" there
+
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+gnu mirrors
+
+http://metalab.unc.edu/pub/gnu/
+ftp.cis.ohio-state.edu/mirror/gnu/
+aeneas.mit.edu/pub/gnu/
+gnu.ms.uky.edu/pub/mirrors/gnu/
+ftp.ece.cornell.edu/pub/mirrors/gnu/
+#-----------------------------------------------------------
+
+nice -n -10 /usr/bin/X11/X
+
+#-----------------------------------------------------------
+
+X uses the highest desktop resolution is can find in the selected Screen/Display
+section.
+
+So
+Section "Screen"
+ DefaultColorDepth 16
+ Subsection "Display"
+        Depth       16
+        Modes       "800x600" "1024x768" "640x480"
+        ViewPort    0 0
+  EndSubsection
+
+will give a screen resolution of 800x600, but a "virtual desktop"
+resolution of 1024x768.
+
+Modes       "800x600" "640x480"
+gives both screen and desktop res at 800x600.
+
+Apparently NO way to dynamically change the desktop resolution.
+
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+#-----------------------------------------------------------

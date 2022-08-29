@@ -1,0 +1,51 @@
+
+cd /usr/prots/comms/hylafax
+make install
+
+cd /usr/ports/print/ghostscript6/
+make install
+
+Don't forget to run faxmodem(1M) (if you have a send-only environment)
+or configure init to run faxgetty on ttyd0.
+
+ I run HylaFAX on 4.2-STABLE and those files are for Linux.
+ Once you've installed Hylafax and run faxaddmodem, you need to make sure that: 
+  
+ o You edit /etc/ttys to setup faxgetty to listen on a tty and you do that by adding these lines. 
+  
+ #Necessary for HYLAFAX modem setup
+ cuaa0  "/usr/local/sbin/faxmodem"
+ cuaa0  "/usr/local/sbin/faxgetty"      dialup  on 
+  
+ If your modem is on COM2 , change cuaa0 to cuaa1
+  
+ Next make sure HylaFAX is started at system startup time:
+  
+ o cd /usr/local/etc/rc.d
+ mv hylafax.sh.sample hylafax.sh
+ chmod +x hylafax.sh
+  
+ Of course I am assuming that your config.cuaaX (where X=0,1 depending on your COM port) is already configured.
+  
+ The rest that you see on that page is Linux-centric stuff.
+  
+ I use Hylafax mostly for sendout for www.tpc.int
+  
+ maybe you should look at www.cybercomm.nl/~hylafax/setup.html and read through /~hylafax/setup-advanced.html 
+  
+
+scotland# find / -name faxrcvd -print
+/var/spool/fax/bin/faxrcvd
+
+
+
+
+
+
+
+
+
+
+
+
+

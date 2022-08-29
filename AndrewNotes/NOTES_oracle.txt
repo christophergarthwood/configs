@@ -1,0 +1,541 @@
+
+#---------------------------------------
+
+I think this is Oracle  9.0.1.0.0
+
+Downgrade binutils:
+rpm -Uvh --force --nodeps binutils-2.10.0.18-1.i386.rpm
+
+follow instructions:
+adduser
+mkdir
+vi /etc/profile
+
+as oracle:
+~n9n/dump/oracle9_2_0/Disk1/runInstaller
+
+Select Oracle 9i Database
+
+UNIX Group Name: oinstall
+
+as root:
+/tmp/orainstRoot.sh
+
+Database Identification:
+Global Database Name: tmach.dentarthurdent.com    #first name is limited to 8 chars
+SID: data1                                        #SID is limited to 8 chars
+
+Database Character Set
+Use the default character set
+
+Choose JDK Home Directory
+/usr/java/j2sdk1.4.0_01
+
+Error::
+Error in writing from /opt/oracle/product/9.2.0/oem_webstage/emwebsite_de.html to file
+/opt/oracle/product/9.2.0/oem_webstage/emwebsite_de.html_instanTpFl
+Ignore
+
+Error::
+Error in invoking target install of makefile /opt/oracle/product/9.2.0/plsql/lib/ins_plsql.mk
+Error in invoking target relink of makefile /opt/oracle/product/9.2.0/precomp/lib/ins.precomp.mk
+target install network/lib/ins_net_client.mk
+target install sqlplus/lib/ins_sqlplus.mk
+...
+
+as root:
+/opt/oracle/product/9.2.0/root.sh
+
+Oracle Universal Installer: Configuration Tools pops up
+Oracle Database Configuration Assistant automagically
+(There is nothing you have to do, it just needs to run)
+
+ERROR:
+/opt/oracle/product/9.2.0/bin/lsnrctl: cannot execute
+
+Oracle Database Configuration Assistant kicks up a summary and
+Exit button when done
+
+Upgrade binutils:
+rpm -Uvh --force --nodeps ./binutils-2.13.90.0.2-2.i386.rpm
+
+Check:
+as oracle:
+[oracle@localhost oracle]$ sqlplus /nolog
+SQL> connect / as sysdba
+Connected to an idle instance.
+QL> startup
+ORA-03113: end-of-file on communication channel
+
+#------------------------------------------------------------------------------------
+
+Client:
+
+Administrator (628MB)
+really quick install
+
+#------------------------------------------------------------------------------------
+Oracle9i Database Release 2 Enterprise/Standard Edition for Intel Linux (9.2)
+
+clean old test install out:
+
+rm -rf /opt/oracle && rm -rf /var/opt/oracle
+
+as oracle:
+~n9n/dump/oracle9_2_0/Disk1/runInstaller
+
+File Locations:
+
+Name: ORA_HOME
+Path: /opt/oracle/product/9.2.0
+
+Select a product to install:
+Oracle 9i Database 9.2.0.1.0
+
+Global Database Name: tmach.dentathurdent.com
+SID: tdb1
+
+Directory for Database Files: /opt/oracle/oradata
+
+1 Error:
+... mk
+
+as root:
+/opt/oracle/product/9.2.0/root.sh
+#Changes /etc/oratab file
+
+Error:
+Database Configuration Assistant: Error
+ORA-27123: unable to attach to shared memory segment
+
+#--
+The following information is available in:
+/opt/oracle/product/9.2.0/Apache/Apache/setupinfo.txt
+-----------------------------------------
+The HTTP Server can be accessed using the following URLs:
+
+Non SSL Mode:
+http://localhost:7777
+
+SSL mode (executed at install time):
+http://localhost:7778
+https://localhost:4443
+#--
+
+Oracle9i Client 9.2.0.1.0
+Administrator (857MB)
+   Oracle DBA Studio
+
+as oracle:
+/opt/oracle/product/9.2.0/bin/oemapp dbastudio
+
+Add Management Server:
+localhost
+
+login: sysman
+password: oem_temp
+
+#--
+startup:
+as oracle:
+/opt/oracle/product/9.2.0/bin/dbstart   ???
+
+[oracle@localhost oracle]$ sqlplus /nolog
+SQL> connect / as sysdba
+SQL> startup
+
+#------------------------------------------------------------------------------------
+
+as root:
+rpm -i oraclerun9i-1.3-1.noarch.rpm
+
+from http://www.gurulabs.com/downloads.html
+provides
+/etc/init.d/oracle
+/etc/profile.d/oracle.csh
+/etc/profile.d/oracle.sh
+/etc/sysconfig/oracle
+/usr/share/doc/oraclerun9i-1.3/INSTALL
+
+#------------------------------------------------------------------------------------
+
+DEV LICENSE WAAAY STRIPPED DOWN TO THE STUFF THAT AFFECTS ME:
+ORACLE TECHNOLOGY NETWORK DEVELOPMENT LICENSE AGREEMENT
+License Rights
+We grant you a nonexclusive, nontransferable limited license to use the programs
+only for purposes of developing and prototyping your applications, and not for
+any other purpose.
+You may not:
+. use the programs for your own internal data processing or for any
+commercial or production purposes, or use the programs for any purpose
+except the development and prototyping of your applications;
+. use the applications you develop with the programs for any internal
+data processing or commercial or production purposes without securing
+an appropriate license from us;
+. make the programs available in any manner to any third party;
+. use the programs to provide third party training;
+. assign this agreement or give or transfer the programs or an interest
+in them to another individual or entity;
+. cause or permit reverse engineering or decompilation of the programs;
+. disclose results of any program benchmark tests without our prior consent; or,
+Last updated: 5/7/02
+
+#------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------
+The following information is available in:
+/opt/oracle/product/9.2.0/Apache/Apache/setupinfo.txt
+-----------------------------------------
+The HTTP Server can be accessed using the following URLs:
+
+Non SSL Mode:
+http://tmach:7777
+
+SSL mode (executed at install time):
+http://tmach:7778
+https://tmach:4443
+
+#---------------------------------
+
+To clean a trial install:
+rm -rf /opt/oracle/
+rm -rf /var/opt/oracle
+rm -rf /etc/oratab
+rm -rf /etc/oraInst.loc
+rm -rf /usr/local/bin/dbhome
+rm -rf /usr/local/bin/oraenv
+rm -rf /usr/local/bin/coraenv
+rm -rf /tmp/OraInstall2002-*
+
+and reboot or kill alot of processes owned by oracle
+
+#---------------------------------
+#------------------------------------------------------------------------------------
+http://www.puschitz.com/OracleOnLinux.shtml
+http://thomas.eibner.dk/oracle/basicdba/
+http://www.ss64.demon.co.uk/ora/
+http://www.idevelopment.info/data/Oracle/DBA_tips/Linux/LINUX_5.shtml
+#------------------------------------------------------------------------------------
+
+Oracle 9.2.0.1.0 on Redhat 8.0
+
+PREP:
+vi /etc/hosts
+127.0.0.1       tmach.dentarthurdent.com localhost.localdomain localhost
+
+vi /etc/sysconfig/network
+HOSTNAME=tmach.dentarthurdent.com
+
+#hostname tmach.dentarthurdent.com
+
+#ping `hostname`
+should ping 127.0.0.1
+
+#echo `expr 1024 \* 1024 \* 1024` > /proc/sys/kernel/shmmax
+
+#rpm -q gcc cpp glibc-devel kernel-headers binutils
+gcc-3.2-7
+cpp-3.2-7
+glibc-devel-2.2.93-5
+package kernel-headers is not installed
+binutils-2.13.90.0.2-2
+
+#Create Oracle User Accounts  as in puschitz.com 
+#Create Oracle Directories    as in puschitz.com
+
+vi /etc/profile    and stick in stuff from puschitz.com
+make sure ORACLE_SID  matches my SID (test)
+
+xhost +local:
+
+#su - oracle
+[oracle@tmach oracle]$ /xtra/dump/oracle9_2_0/Disk1/runInstaller
+
+Global Database Name: tmach.dentarthurdent.com
+SID: test
+
+Wait for the error:
+Error in invoking target install at makefile
+/opt/oracle/.../ctx/lib/ins_ctx.mk and:
+
+as root:
+vi /opt/oracle/.../ctx/lib/env_ctx.mk
+(from puschittz.com)
+Edit $ORACLE_HOME/ctx/lib/env_ctx.mk and go to "INSO_LINK =", add a
+"$(LDLIBFLAG)dl" to the line and save it.
+
+Here is the full line with the added "$(LDLIBFLAG)dl" flag:
+INSO_LINK = -L$(CTXLIB) $(LDLIBFLAG)m $(LDLIBFLAG)dl $(LDLIBFLAG)sc_ca
+$(LDLIBFLAG)sc_fa $(LDLIBFLAG)sc_ex $(LDLIBFLAG)sc_da $(LDLIBFLAG)sc_ut
+$(LDLIBFLAG)sc_ch $(LDLIBFLAG)sc_fi $(LLIBCTXHX) $(LDLIBFLAG)c
+-Wl,-rpath,$(CTXHOME)lib $(CORELIBS) $(COMPEOBJS)
+
+After that hit retry in the error popup.
+
+#---
+
+I had the Net Config Assistant hang a few times, and work a few times - when
+it worked it worked really fast (less than 2 minutes)
+The last time it hung, I let the other two assistants finish - did a retry on
+Net Config Assist, let it hang, pressed stop, then in another xterm as oracle:
+/opt/oracle/product/9.2.0/bin/lsnrctl stop
+then did another retry of Net Config Assist that succeeded
+
+#---
+
+After installing the database server, exit out of the universal installer
+before installing the client or the installer will error out.
+
+#---
+
+CHECK:
+as oracle:
+sqlplus /nolog
+SQL> connect / as sysdba
+Connected to an idle instance.
+SQL> startup
+ORACLE instance started.
+
+Total System Global Area  235999352 bytes
+Fixed Size                   450680 bytes
+Variable Size             201326592 bytes
+Database Buffers           33554432 bytes
+Redo Buffers                 667648 bytes
+Database mounted.
+Database opened.
+SQL>
+
+/opt/oracle/product/9.2.0/bin/lsnrctl start
+The command completed successfully
+
+#--
+CREATE TEST USER/ENVIROMENT
+(as oracle)$ sqlplus /nolog
+SQL> connect / as sysdba
+SQL> CREATE TABLESPACE test DATAFILE '/opt/oracle/oradata/tmach/test.dbf' SIZE 10M;
+OR
+CREATE TABLESPACE test DATAFILE '/opt/oracle/oradata/tmach/test.dbf'
+  SIZE 10M AUTOEXTEND ON NEXT 10M MAXSIZE 100M;
+
+CREATE USER test IDENTIFIED BY P2dajw2ASSWD DEFAULT TABLESPACE test TEMPORARY TABLESPACE temp;
+GRANT CREATE SESSION TO test;
+GRANT CREATE TABLE TO test;
+GRANT CREATE VIEW TO test;
+GRANT CREATE SEQUENCE TO test;
+ALTER USER test QUOTA unlimited ON test;
+
+DROP TEST USER
+SQL> DROP USER test CASCADE;
+
+sqlplus test/P2dajw2ASSWD
+
+#--
+PERL DBI
+http://www.cpan.org/modules/by-module/DBD/DBD-Oracle-1.12.tar.gz
+#--
+use strict;
+use DBI();
+my $dbh = DBI->connect( 'dbi:Oracle:tmach',
+                        'test',
+                        'P2dajw2ASSWD',
+                        {
+                          RaiseError => 1,
+                          AutoCommit => 0
+                        }
+                      ) || die "Database connection not made: $DBI::errstr";
+print "Connected.\n";
+$dbh->disconnect();
+#--
+#!/usr/bin/perl
+use strict;
+use DBI();
+my $dbh = DBI->connect( 'dbi:Oracle:tmach',
+                        'test', 'P2dajw2ASSWD',
+                        {
+                          RaiseError => 1, AutoCommit => 1
+                        }
+                      ) || die "Database connection not made: $DBI::errstr";
+print "Connected.\n";
+my $this_id = 0;
+#my $sql = qq{ CREATE TABLE TEMPTABLE1 ( id INTEGER NOT NULL,
+#                                       randchar VARCHAR2(8),
+#                                       randint INTEGER
+#                                     ) };
+#$dbh->do( $sql );
+#OR
+#CREATE TABLE TEMPTABLE1 ( id INTEGER NOT NULL,randchar VARCHAR2(8),randint
+INTEGER);
+my ($this_id,$this_randint,$this_randchar);
+for (my $ii=0;$ii<100;$ii++){
+        $this_id = $this_id+1;
+        $this_randint = int(rand(1000));
+        $this_randchar = `dd if=/dev/urandom bs=8 count=1 2>/dev/null|uuencode
+-m -|sed -n -e 2p|cut -c-7`;
+        print "ID $this_id  RANDINT $this_randint   RANDCHAR $this_randchar
+\n";
+        my $statement="INSERT INTO TEMPTABLE1 (id,randchar,randint) values".
+          "($this_id,'$this_randchar',$this_randint)";
+        $dbh->do($statement);
+}
+$dbh->disconnect();
+#SELECT * from TEMPTABLE1;
+#--
+
+
+#---------------------------------------
+
+#---------------------------------------
+OLD NOTES BELOW::::::::::
+#---------------------------------------
+
+http://otn.oracle.com/software/content.html
+http://otn.oracle.com/software/products/oracle9i/htdocs/linuxsoft.html
+docs:
+http://otn.oracle.com/docs/products/oracle9i/content.html
+
+http://www.tldp.org/HOWTO/Oracle-8-HOWTO.html
+
+#---------------------------------------
+Download the Complete Files
+  lnx_920_disk1.cpio.gz (553,607,967 bytes)
+  lnx_920_disk2.cpio.gz (588,817,480 bytes)
+  lnx_920_disk3.cpio.gz (442,135,815 bytes)
+
+  Directions to extract the files
+  1. Run "gunzip <filename>" on all the files. Eg. lnx_920_disk1.cpio.gz
+  2. Extract the cpio archives with the command "cpio -idmv < <filename>"
+Eg. cpio -idmv <lnx_920_disk1.cpio
+    Important Note: Some browsers will uncompress the files but leave the
+extension the same (gz) when downloading.  If the above steps do not work for
+you, try skipping step 1 and go directly to step 2 without changing the
+filename. Eg. "cpio -idmv <Linux9i_Disk1.cpio.gz"
+
+#---------------------------------------
+
+Oracle 9i: Linux 2.4.x glibc 2.2
+
+#---------------------------------------
+
+Oracle install:
+
+#prep
+the Oracle installer seems to be hard-coded
+to expect the JRE executable to be at
+/usr/local/jre/bin/jre   (a symlink to
+usr/local/jre will work)
+otherwise the install will work but
+Configuration Assistant tools will fail to install...
+
+#i_m leaving the sysconfig vars as default
+#rh to see what happens
+
+/usr/sbin/groupadd -r -f dba
+/usr/sbin/groupadd -r -f oper
+/usr/sbin/groupadd -r -f oinstall
+
+/usr/sbin/groupadd -r -f oracleapache
+
+/usr/sbin/useradd -c OracleInstall -g oinstall -G dba -M -r -d /tmp oracle
+/usr/sbin/useradd -c OracleApache -g oinstall -G oracleapache -M -r -d /tmp APACHE
+
+mkdir -p /var/opt/oracle
+chown oracle:dba /var/opt/oracle
+chmod 0755 /var/opt/oracle
+
+mkdir -p /opt/oracle
+chown oracle:dba /opt/oracle
+chmod 0755 /opt/oracle
+
+#ls -la /tmp/oracle/
+total 20
+drwxrwxr-x    5 oracle   dba          4096 07-25 21:04 .
+drwxrwxrwt   15 root     root         4096 07-25 21:04 ..
+drwxr-xr-x    7 oracle   dba          4096 06-14 16:28 Disk1
+drwxrwxr-x    3 oracle   dba          4096 05-13 21:38 Disk2
+drwxrwxr-x    3 oracle   dba          4096 05-13 21:38 Disk3
+
+xhost +localhost
+cd /tmp
+su - oracle
+xlogo  #has to display for oracle installer to work
+/tmp/oracle/Disk1/runInstaller
+#----
+#What would you like a the base directory?
+/opt/oracle
+#UNIX group name
+oinstall
+#execute /tmp/orainstRoot.sh as root
+#File locations
+#Destination
+#Name:
+OUIHome
+#PATH:
+/opt/oracle
+
+#Available Products (can only select one at a time)
+Oracle 9i Database 9.2.0.1.0
+#Installation type
+Enterprise Edition
+#Database configuration
+General Purpose
+#Database Identification
+#Global Database Name (max 8 char name+domain)
+testordb.dentarthurdent.com
+#SID (defaults to first 8 of global db name)
+#Database File Location (separate disk if possible)
+/opt/oracle/oradata
+#Database Character Set
+Use the default character set
+#Install
+#Install successful
+#Linking Oracle9i Database
+Error in invoking target install of makefile
+ /opt/oracle/ctx/lib/ins_ctx.mdk
+#Ignore
+#Link successful
+#execute /opt/oracle/root.sh as root
+Enter the full pathname of the local bin directory: [/usr/local/bin]:
+#   Copying dbhome to /usr/local/bin ...
+#   Copying oraenv to /usr/local/bin ...
+#   Copying coraenv to /usr/local/bin ...
+#   Creating /etc/oratab file...
+#Error one or more tool have failed
+#Oracle Net Configuration Assistant
+#Oracle Database Configuration Assistant
+#Agent Configuration Assistant
+#  jre was not found in /opt/oracle/oracle.swd.jre/bin/i386/native_threads/jre
+#Starting HTTP Server   ### Succeeded on retry
+#  No output available for this tool
+#Next
+#The HTTP Server can be accessed:
+# Non SSL http://localhost:7777
+# SSL mode http://localhost:7778 https://localhost:4443
+#Next Install
+#Exit
+
+#----
+
+#---------------------------------------
+
+#Post install
+
+#to create a database if you didn_t above:
+dbassist
+
+SYSTEM password. This defaults to 'MANAGER'
+(passwords are not case sensitive)
+SYS. It defaults to 'CHANGE_ON_INSTALL'
+
+#---------------------------------------
+
+oracle dump (import export)
+http://database.sarang.net/database/oracle/backup/import/exp_imp.html
+http://www.exzilla.net/docs/impExp/import_export_oracle_817.php
+
+#---------------------------------------
+#---------------------------------------
+#---------------------------------------
+
+
+
+
+

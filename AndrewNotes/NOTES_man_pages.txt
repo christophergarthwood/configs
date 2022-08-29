@@ -1,0 +1,16 @@
+If you want to read manual pages that aren't installed, you can type
+``nroff -man page |more'' where page is the filename of the
+unformatted manual page.  The filename of an unformatted manual page
+is the name of the manual page, followed by '.', followed by some
+number - 5 for documentation about files, and 8 for documentation
+about programs.   For example, to read the dhcp-options man page,
+you would type ``nroff -man common/dhcp-options.5 |more'', assuming
+your current working directory is the top level directory of the ISC
+DHCP Distribution.
+
+If you do not have the nroff command, you can type ``more catpage''
+where catpage is the filename of the catted man page.  Catted man
+pages names are the name of the manual page followed by ".cat"
+followed by 5 or 8, as with unformatted manual pages.
+
+

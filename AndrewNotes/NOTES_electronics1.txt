@@ -1,0 +1,148 @@
+http://slashdot.org/article.pl?sid=02/01/29/1747234
+
+ H/W Hacking 101 (Score:5, Informative)
+by YourMessageHere on Wednesday January 30, @12:44PM (#2925990)
+(User #536584 Info | http://www.lautman.com/) For the last several months I've been wading back into this myself, just for fun, having done alot during and shortly after college 20 years ago, but then drifting away. My suggestions:
+
+1. Suppliers
+
+Digikey [digikey.com] absolutely rules. Largest variety of everything electronic. Very easily-navigated site. No minimum order ($5 handling charge if your order is under $25).
+
+Jameco [jameco.com] is a good second choice. Especially good for lots of different cheap power supplies.
+
+With Radio Shack, this should be all you need for now.
+
+2. Learning Resources
+
+Someone already pointed you to the various cookbooks. TTL cookbooks are especially good places to start at your level.
+
+A great online resource used to be ePanorama.net [epanorama.net], but they're 404ing at the moment, so maybe they're gone for good and they'll be back.
+
+Circuits Archive [washington.edu] has lots of simple circuits you can peruse to see how stuff gets done at the lowest level, just like the cookbooks.
+
+3. Advice
+
+Stay away from FPGAs initially. I think you'll find the architecture and associated design process too big a piece to bite off at this point, and not worth the effort.
+
+Focus on TTL and learning what functions are available in various packages (track down an old "TTL Databook" from TI; they don't print them anymore but they're much handier for learning and browsing than online equivalents, which assume youknow what you're looking for). See this [cntc.ac.kr] for high-level descriptions and this [feld.cvut.cz] for pdfs of actual datasheets.
+
+When you're ready (which might be immediately) choose a microcontroller family to bone up on and stick with it. It's a huge waste of effort relearning architectures, instruction sets, and development tools for different families. For your purposes, either the PIC (from Microchip), 8051 (Intel et al.), or AVR (Atmel) will do fine (and they're all available from Digikey). I chose the AVR for the following reasons:
+
+a) Wide (enough) range of parts, from 8-pin to 64-pin, 1K ROM to 128K ROM, various arrangments of on-chip peripherals (including A/D).
+
+b) Cheap, from under $2/chip (single-piece) to under $30 for their fanciest.
+
+c) ALL members of the AVR family contain on-chip FLASH ROM for program storage and can be programmed in-system directly via your PC serial port. This makes a HUGE difference (compared to external ROMs or on-chip EPROM) during prototyping.
+
+Some people will suggest the BASIC Stamp from Parallax, which is a fine product which I've played with. My beef with it is it's expensive ($30 or so, I think) and all you really get for the money is a Basic intepreter. I think you'll find assembler for these chips so simple you don't need Basic. You can also get separate free Basic compilers for all of them.
+
+Good luck.
+
+[ Reply to This | Parent ]
+
+    * Re:H/W Hacking 101 by CharlieG (Score:3) Wednesday January 30, @01:28PM
+
+
+
+
+ Re:H/W Hacking 101 (Score:3, Informative)
+by CharlieG on Wednesday January 30, @01:28PM (#2926199)
+(User #34950 Info | http://www.thegallos.com/) I'll second almost all this post, and won't disagre with any of it
+
+I was an Electronics Tech for 10 years, while shifting a little more each year to programming. Here is how I'd start
+
+There are two books that USED to be available from Radioshack "Understanding DC Circuits" and "Understanding AC Circuts" - These will give you the basic theory (Note: DC is just the special case of AC)
+
+The Forrest Mimms notebooks are GREAT - BUY THEM - lot's of nice sample circuts in there
+
+"The Art Of Electronics" (see messages above) is the STANDARD College level into electronics book, and is VERY good (Get the Lab book too)
+
+The ARRL (Amateur radio Relay League) has some good books
+
+The other thing I'll add is that besides the old TI TTL Data Book (I HOPE I didn't lose mine in the move), if you can find the OLD RCA CMOS databook, and National Linear IC Databooks, you'll be doing yourself a BIG favor
+
+Oh, and I found THIS website yesterday - VERY nice
+
+http://my.integritynet.com.au/purdic/index.html [ Reply to This | Parent ] 
+
+#--------------------------------------------------------------------------------------------
+
+slimp3
+Display: Noritake 40x2 VFD 
+                        CPU: Microchip PIC16F877 microcontroller 
+                        Ethernet controller: Crystal CS8900A 10Mbps embedded Ethernet chip 
+                        DMA controller: proprietary logic, Xilinx XC95144XL 
+                        MP3 decoder: Micronas MAS3507D 
+                        DAC: Crystal CS4334, 16-bit 44Khz 
+                        Buffer RAM: 1Mb (8 seconds at 128Kbps) 
+                        ROM: Rewritable flash program memory, EEPROM configuration memory 
+                        IR: Standard 40Khz IR receiver 
+                        Power supply: comes with 5V 1600mA power supply, player uses 700ma (max) 
+
+
+
+#--------------------------------------------------------------------------------------------
+
+embedded linux:
+http://www.timesys.com/products/pentium/index.html
+#--------------------------------------------------------------------------------------------
+
+Building A Computer From Scratch?
+http://ask.slashdot.org/article.pl?sid=02/05/19/2211237
+
+A basic handbook of computer architecture is probably very necessary, so let me suggest the one that everyone's probably read: Hennessy & Patterson. [amazon.com]
+http://www.amazon.com/exec/obidos/ASIN/1558604286/qid=1021866923/sr=8-3/ref=sr_8_3/102-6070254-1872967
+
+
+ If you can find a copy, "Bebop Bytes Back" (found here [doone.com]) is a wonderful book. Despite the childish title, the book will walk you through designing a computer, from scratch. An included CD-ROM provides you with all sorts of routers, simulators, and so forth, including a few IMSAI simulators.
+
+Even if you don't actually build a computer, you'll feel like you've done when you make it through this book. Bebop To The Boolean Boogie and Designus Maximus Unleashed are also very good tutorials.
+
+These books aren't going to teach you how to build with off-the-shelf components. They're going to help you understand bus-level logic and so forth.
+
+From there, you may want to look into the How to Write Your Own Operating System [mega-tokyo.com] page, which will help you get something running on the ahrdware you put together.
+http://www.doone.com/bebop_bb.html
+http://www.mega-tokyo.com/os/os-faq.html
+
+ Go simple if you're building your first one.
+
+Use a 65816 or even a 6502.
+
+Another user suggested getting the C64 programmer's reference manual and looking at the schematic in the back. This would be a good start.
+
+ Bleh. Cheapest I've seen a 6502 is $7, and he'd need logic to do dram refresh. The z80 is $2 at jameco.com, and can do its own refresh.
+
+Then again, I guess that's moot nowdays... he almost certainly can find a few static 32k's for less than a buck (the cache ram off a 486 works nicely). In that case, 6502 asm is nicer than z80, I never did like the idea of io ports.
+
+Most modern IDE hard drives aren't easy to interface to an 8bit data bus. Go with a cheap Compact flash chip, which is ide-like and 8 bits wide. Cheap, can get them at walmart, and they have a crapload of storage for a 8bitter.
+Note: Don't listen to the morons that will try to push a Strongarm or something on you... that's an intermediate (or higher) level project.
+
+I would suggest that you look at sites like 6502.org [6502.org], www.coprolite.com [coprolite.com], Mark-8 [his.com], POD 6502 [hccnet.nl] or Grant Searle's collection of sites build your own UK101 [freeserve.co.uk], build your own ZX-80 [freeserve.co.uk] and build your own Jupiter Ace [freeserve.co.uk]... 
+http://www.6502.org/
+http://www.coprolite.com/
+http://www.his.com/~jlewczyk/mark8.html
+http://home.hccnet.nl/g.baltissen/pod6502.htm
+http://www.home-micros.freeserve.co.uk/uk101/uk101.html
+http://www.home-micros.freeserve.co.uk/zx80/zx80.html
+http://www.home-micros.freeserve.co.uk/JupiterAce/JupiterAce.html
+
+ "The Art of Electronics" by Horowitz and Hill and its companion book "Student Manual for the Art of Electronics" by Hayes and Horowitz.
+
+This will walk you through analog and digital circuit design and construction, and culminates with the building of a 68000 based fully functioning computer with I/O, buses, the works. 
+
+ I can't believe nobody's mentioned Doug Jones' Ultimate RISC yet. a 16-bit version can be built with about 50 chips or so (I'm working on one now), and they don't get any simpler than this one-instruction machine!
+
+#--------------------------------------------------------------------------------------------
+temp sensors:
+http://www.brianlane.com/digitemp.php
+#--------------------------------------------------------------------------------------------
+
+random cool links:
+http://www.bpesolutions.com/gadgets.ws/gadgetsmm.html
+#--------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
+
+

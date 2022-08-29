@@ -1,0 +1,341 @@
+
+http://nulllogic.cnc-london.net/webmail/
+
+#--------------
+What i really want is apache to only serve
+out null-wm to ssl:
+
+You set up a virtual host for this.  Look in httpd.conf for the following
+<VirtualHost _default_:443>
+
+#-------------
+
+wget http://prdownloads.sourceforge.net/nullwebmail/nullwebmail-0.5.9.tar.gz
+
+tar xzvf nullwebmail-0.5.9.tar.gz 
+cd nullwebmail-0.5.9
+
+vi config.h 
+#define NO_USER_HOSTS
+#define POP3_HOST       "pop3.dentarthurdent.com"
+#define SMTP_HOST       "smtp.dentarthurdent.com"
+
+#define COLOR_EDITFORM  "#E0E0E0"
+#define COLOR_FTEXT     "#F0F0F0"
+#define COLOR_LINKS     "#0000FF"
+#define COLOR_TRIM      "#FFFFFF"
+#define COLOR_TRIMTEXT  "#FFFFFF"
+
+
+(may want to vi Makefile and uncomment LDFLAGS = -static )
+make
+cp -a ./webmail.cgi /usr/local/apache/webmail/
+cp -a ./webmail /usr/local/apache/webmail/
+cd /usr/local/apache/webmail/
+mv webmail.cgi index.cgi
+
+
+#-------------
+
+httpd.conf_WEBMAIL
+
+##
+## httpd.conf -- Apache HTTP server configuration file
+##
+
+ServerType standalone
+ServerRoot "/usr/local/apache"
+PidFile /usr/local/apache/logs/httpd_WEBMAIL.pid
+ScoreBoardFile /usr/local/apache/logs/httpd_WEBMAIL.scoreboard
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 15
+MinSpareServers 2
+MaxSpareServers 5
+StartServers 2
+MaxClients 50
+MaxRequestsPerChild 0
+BindAddress 192.168.0.254
+
+LoadModule vhost_alias_module libexec/mod_vhost_alias.so
+LoadModule env_module         libexec/mod_env.so
+LoadModule define_module      libexec/mod_define.so
+LoadModule config_log_module  libexec/mod_log_config.so
+LoadModule mime_magic_module  libexec/mod_mime_magic.so
+LoadModule mime_module        libexec/mod_mime.so
+LoadModule negotiation_module libexec/mod_negotiation.so
+LoadModule status_module      libexec/mod_status.so
+LoadModule info_module        libexec/mod_info.so
+LoadModule includes_module    libexec/mod_include.so
+LoadModule autoindex_module   libexec/mod_autoindex.so
+LoadModule dir_module         libexec/mod_dir.so
+LoadModule cgi_module         libexec/mod_cgi.so
+LoadModule asis_module        libexec/mod_asis.so
+LoadModule imap_module        libexec/mod_imap.so
+LoadModule action_module      libexec/mod_actions.so
+LoadModule speling_module     libexec/mod_speling.so
+LoadModule userdir_module     libexec/mod_userdir.so
+LoadModule alias_module       libexec/mod_alias.so
+LoadModule rewrite_module     libexec/mod_rewrite.so
+LoadModule access_module      libexec/mod_access.so
+LoadModule auth_module        libexec/mod_auth.so
+LoadModule anon_auth_module   libexec/mod_auth_anon.so
+LoadModule digest_module      libexec/mod_digest.so
+LoadModule proxy_module       libexec/libproxy.so
+LoadModule cern_meta_module   libexec/mod_cern_meta.so
+LoadModule expires_module     libexec/mod_expires.so
+LoadModule headers_module     libexec/mod_headers.so
+LoadModule usertrack_module   libexec/mod_usertrack.so
+LoadModule unique_id_module   libexec/mod_unique_id.so
+LoadModule setenvif_module    libexec/mod_setenvif.so
+LoadModule ssl_module         libexec/libssl.so
+
+ClearModuleList
+AddModule mod_vhost_alias.c
+AddModule mod_env.c
+AddModule mod_define.c
+AddModule mod_log_config.c
+AddModule mod_mime_magic.c
+AddModule mod_mime.c
+AddModule mod_negotiation.c
+AddModule mod_status.c
+AddModule mod_info.c
+AddModule mod_include.c
+AddModule mod_autoindex.c
+AddModule mod_dir.c
+AddModule mod_cgi.c
+AddModule mod_asis.c
+AddModule mod_imap.c
+AddModule mod_actions.c
+AddModule mod_speling.c
+AddModule mod_userdir.c
+AddModule mod_alias.c
+AddModule mod_rewrite.c
+AddModule mod_access.c
+AddModule mod_auth.c
+AddModule mod_auth_anon.c
+AddModule mod_digest.c
+AddModule mod_proxy.c
+AddModule mod_cern_meta.c
+AddModule mod_expires.c
+AddModule mod_headers.c
+AddModule mod_usertrack.c
+AddModule mod_unique_id.c
+AddModule mod_so.c
+AddModule mod_setenvif.c
+AddModule mod_ssl.c
+
+Listen 443
+
+User nobody
+Group nobody
+
+ServerAdmin admin@dentarthurdent.com
+
+ServerName webmail.dentarthurdent.com
+DocumentRoot "/usr/local/apache/webmail"
+
+#<Directory />
+#    Options FollowSymLinks
+#    AllowOverride None
+#</Directory>
+
+DirectoryIndex index.cgi
+<Directory /usr/local/apache/webmail>
+   AddHandler cgi-script cgi
+   Options ExecCGI
+   DirectoryIndex index.cgi
+</Directory>
+
+<IfModule mod_userdir.c>
+    UserDir public_html
+</IfModule>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.html
+</IfModule>
+
+AccessFileName .htaccess
+
+<Files ~ "^\.ht">
+    Order allow,deny
+    Deny from all
+</Files>
+
+UseCanonicalName On
+
+<IfModule mod_mime.c>
+    TypesConfig /usr/local/apache/conf/mime.types
+</IfModule>
+
+DefaultType text/plain
+
+<IfModule mod_mime_magic.c>
+    MIMEMagicFile /usr/local/apache/conf/magic
+</IfModule>
+
+HostnameLookups Off
+
+ErrorLog /usr/local/apache/logs/error_log
+
+LogLevel warn
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+
+CustomLog /usr/local/apache/logs/access_log common
+
+ServerSignature On
+
+<IfModule mod_autoindex.c>
+    IndexOptions FancyIndexing
+
+    AddIconByEncoding (CMP,/icons/compressed.gif) x-compress x-gzip
+
+    AddIconByType (TXT,/icons/text.gif) text/*
+    AddIconByType (IMG,/icons/image2.gif) image/*
+    AddIconByType (SND,/icons/sound2.gif) audio/*
+    AddIconByType (VID,/icons/movie.gif) video/*
+
+    AddIcon /icons/binary.gif .bin .exe
+    AddIcon /icons/binhex.gif .hqx
+    AddIcon /icons/tar.gif .tar
+    AddIcon /icons/world2.gif .wrl .wrl.gz .vrml .vrm .iv
+    AddIcon /icons/compressed.gif .Z .z .tgz .gz .zip
+    AddIcon /icons/a.gif .ps .ai .eps
+    AddIcon /icons/layout.gif .html .shtml .htm .pdf
+    AddIcon /icons/text.gif .txt
+    AddIcon /icons/c.gif .c
+    AddIcon /icons/p.gif .pl .py
+    AddIcon /icons/f.gif .for
+    AddIcon /icons/dvi.gif .dvi
+    AddIcon /icons/uuencoded.gif .uu
+    AddIcon /icons/script.gif .conf .sh .shar .csh .ksh .tcl
+    AddIcon /icons/tex.gif .tex
+    AddIcon /icons/bomb.gif core
+
+    AddIcon /icons/back.gif ..
+    AddIcon /icons/hand.right.gif README
+    AddIcon /icons/folder.gif ^^DIRECTORY^^
+    AddIcon /icons/blank.gif ^^BLANKICON^^
+
+    DefaultIcon /icons/unknown.gif
+
+    ReadmeName README
+    HeaderName HEADER
+
+    IndexIgnore .??* *~ *# HEADER* README* RCS CVS *,v *,t
+
+</IfModule>
+
+<IfModule mod_mime.c>
+
+    AddEncoding x-compress Z
+    AddEncoding x-gzip gz tgz
+
+    AddLanguage da .dk
+    AddLanguage nl .nl
+    AddLanguage en .en
+    AddLanguage et .ee
+    AddLanguage fr .fr
+    AddLanguage de .de
+    AddLanguage el .el
+    AddLanguage he .he
+    AddCharset ISO-8859-8 .iso8859-8
+    AddLanguage it .it
+    AddLanguage ja .ja
+    AddCharset ISO-2022-JP .jis
+    AddLanguage kr .kr
+    AddCharset ISO-2022-KR .iso-kr
+    AddLanguage no .no
+    AddLanguage pl .po
+    AddCharset ISO-8859-2 .iso-pl
+    AddLanguage pt .pt
+    AddLanguage pt-br .pt-br
+    AddLanguage ltz .lu
+    AddLanguage ca .ca
+    AddLanguage es .es
+    AddLanguage sv .se
+    AddLanguage cz .cz
+    AddLanguage ru .ru
+    AddLanguage zh-tw .tw
+    AddLanguage tw .tw
+    AddCharset Big5         .Big5    .big5
+    AddCharset WINDOWS-1251 .cp-1251
+    AddCharset CP866        .cp866
+    AddCharset ISO-8859-5   .iso-ru
+    AddCharset KOI8-R       .koi8-r
+    AddCharset UCS-2        .ucs2
+    AddCharset UCS-4        .ucs4
+    AddCharset UTF-8        .utf8
+
+    <IfModule mod_negotiation.c>
+        LanguagePriority en da nl et fr de el it ja kr no pl pt pt-br ru ltz ca es sv tw
+    </IfModule>
+
+    AddType application/x-tar .tgz
+
+    # If you want to use server side includes, or CGI outside
+    # ScriptAliased directories, uncomment the following lines.
+    #
+    # To use CGI scripts:
+    #
+    AddHandler cgi-script .cgi
+
+</IfModule>
+
+<IfModule mod_setenvif.c>
+
+    BrowserMatch "Mozilla/2" nokeepalive
+    BrowserMatch "MSIE 4\.0b2;" nokeepalive downgrade-1.0 force-response-1.0
+    BrowserMatch "RealPlayer 4\.0" force-response-1.0
+    BrowserMatch "Java/1\.0" force-response-1.0
+    BrowserMatch "JDK/1\.0" force-response-1.0
+
+</IfModule>
+
+AddType application/x-x509-ca-cert .crt
+AddType application/x-pkcs7-crl    .crl
+
+SSLPassPhraseDialog  builtin
+SSLSessionCache         dbm:/usr/local/apache2/logs/ssl_scache
+SSLSessionCacheTimeout  300
+SSLMutex  file:/usr/local/apache2/logs/ssl_mutex
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLLog      /usr/local/apache2/logs/ssl_engine_log
+SSLLogLevel info
+
+#<IfDefine SSL>
+#SSLEngine on
+#SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL
+#SSLCertificateFile /usr/local/apache/conf/ssl.crt/server.crt
+#SSLCertificateKeyFile /usr/local/apache/conf/ssl.key/server.key
+#SetEnvIf User-Agent ".*MSIE.*" \
+#         nokeepalive ssl-unclean-shutdown \
+#         downgrade-1.0 force-response-1.0
+#CustomLog /usr/local/apache/logs/ssl_request_log \
+#          "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+#</IfDefine>
+
+SSLEngine on
+SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL
+SSLCertificateFile /usr/local/apache/conf/ssl.crt/server.crt
+SSLCertificateKeyFile /usr/local/apache/conf/ssl.key/server.key
+SetEnvIf User-Agent ".*MSIE.*" \
+         nokeepalive ssl-unclean-shutdown \
+         downgrade-1.0 force-response-1.0
+CustomLog /usr/local/apache/logs/ssl_request_log \
+          "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,281 @@
+
+#----------------------------------------------------------------
+
+http://user-mode-linux.sourceforge.net/UserModeLinux-HOWTO.html
+
+#--
+http://usermodelinux.org/
+http://umlbuilder.sourceforge.net/umlcustom.shtml
+http://gd.tuwien.ac.at/opsys/linux/gazette/issue90/weber.html
+http://www.nrh-up2date.org/howto/uml/
+http://linuxhacker.ru/uml/
+http://kernels.usermodelinux.org/    #recent kernels patches etc
+http://usermodelinux.co.uk/
+http://www.ultraviolet.org/mail-archives/uml.2003/
+
+http://article.gmane.org/gmane.linux.uml.user/1164
+http://homepage.ntlworld.com/ian.sharpe/isharpe/technote/uml_dmz.htm
+
+http://www.megahosted.com/~en/papers/uml-debian-mini.html  #good step-by-step
+
+http://www.stearns.org/uml/    #precompiled kernels available
+
+http://user-mode-linux.sourceforge.net/switches.html  #uml kernel line switches
+http://sourceforge.net/mailarchive/forum.php?forum=user-mode-linux-user   #mail archive
+
+#----------------------------------------------------------------
+
+Simple rpm driven install:
+
+homepage: http://user-mode-linux.sourceforge.net/dl-sf.html
+
+#need 2 things: (1) kernel and userland utils (2) rootfs
+
+#kernel and userland tools
+http://prdownloads.sourceforge.net/user-mode-linux/user_mode_linux-2.4.18.26um-0.i386.rpm
+#new
+http://unc.dl.sourceforge.net/sourceforge/user-mode-linux/user_mode_linux-2.4.19.5um-0.i386.rpm
+
+rpm -ivh ./user_mode_linux-2.4.18.26um-0.i386.rpm 
+installs:
+/usr/bin/jailtest
+/usr/bin/linux
+/usr/bin/tunctl
+/usr/bin/uml_mconsole
+/usr/bin/uml_moo
+/usr/bin/uml_net
+/usr/bin/uml_switch
+/usr/lib/uml/config
+/usr/lib/uml/modules-2.2.tar
+/usr/lib/uml/modules-2.4.tar
+/usr/lib/uml/port-helper
+
+#rootfs s
+http://prdownloads.sourceforge.net/user-mode-linux/root_fs_toms1.7.205.bz2
+http://prdownloads.sourceforge.net/user-mode-linux/root_fs.rh-7.2-full.pristine.20020312.bz2
+
+no install, just bunzip2 file
+
+#----------------------------------------------------------------
+
+By hand:
+
+patch to linus kernel:
+http://prdownloads.sourceforge.net/user-mode-linux/uml-patch-2.4.18-34.bz2
+
+DO NOT use /usr/sc/linux kernel, uml munges some stuff up
+
+cd /usr/src/uml/linux
+cat uml-patch-2.4.0-prerelease.bz2 | bunzip2 - | patch -p1
+make clean ARCH=um && make mrproper ARCH=um && make clean ARCH=um
+make menuconfig ARCH=um
+The defaults will give you a useful kernel.
+Finish with `make linux ARCH=um'
+The result is a file called `linux' in the top directory of your source tree.
+
+##by hand try with uml-patch-2.4.20-7
+#   has issues...
+cd ./linux-2.4.20/include/asm
+ln -s ../asm-i386 ./arch
+#gets rid of "asm/arch/posix_types.h: No such file"
+
+##CONFIG_X86_L1_CACHE_SHIFT
+make mrproper ARCH=um
+
+#----------------------------------------------------------------
+Booting the kernel is straightforward. Simply run 'linux': it will
+try to mount the file `root_fs' in the current directory. You do not
+need to run it as root. If your root filesystem is not named
+`root_fs', then you need to put a `ubd0=root_fs_whatever' switch on
+the linux command line.
+
+The kernel will boot up and present you with a login prompt.
+The prepackaged filesystems have a root account with password 'root'
+and a user account with password 'user'.
+
+root:root ?? for some
+#----------------------------------------------------------------
+
+UML RootFS Images
+
+This is a collection of some of my UML rootfs files. These are booted with something like:
+
+screen -S uml-lfs -d -m \
+        /root/linux-2.4.19-um21 \
+        ubd0=/root/rootfs_lfs-4.0 \
+        eth0=tuntap,uml-lfs \
+        mem=128M umid=uml-lfs \
+        con=null con0=fd:0,fd:1
+
+  LFS 4.0 - 89MB (http) 
+  LFS 4.0 - 89MB (ftp) 
+(when unpacked, these are 400mb sparse files) 
+
+http://download.ichilton.co.uk/uml/rootfs_lfs-4.0.bz2
+
+devfs=nomount
+#----------------------------------------------------------------
+
+TROUBLESHOOTING:
+
+> INIT: Id "c" respawning too fast: disabled for 5 minutes
+> INIT: no more processes left in this runlevel
+
+For /dev/tty? to work, you must be in X.
+
+http://user-mode-linux.sourceforge.net/run.html
+http://user-mode-linux.sourceforge.net/input.html
+
+test with:
+./linux init=/bin/bash
+(init agetty's are the problem here)
+
+#an old error is:
+"Kernel panic: outer trampoline didn't exit with SIGKILL"
+It means you are running an old uml kernel with a new host. Just
+go to http://www.stearns.org/uml/ and get a more recent uml kernel.
+
+#error:
+Mounting all filesystems (remount / rw)
+Child 3153 exited with signal 11   #3153 is just some number
+#--
+Yuri Pudgorodsky and Bill Stearns proved beyond any kind of doubt that this 
+was caused by the ptrace fix that went into test8.  Bill turned test8 into a 
+good host by backing out that fix.
+#--
+so - something about the host version (got this on 2.6.0-test7 host)
+
+
+howto:
+http://www.digitalinfra.co.jp/uml/jdike/UserModeLinux-HOWTO-13.html
+#----------------------------------------------------------------
+
+Management console:
+http://user-mode-linux.sourceforge.net/mconsole.html
+
+#ls -al ~/.uml/8P16EB/mconsole 
+#use umid=xyz to specify a name instead of a random string
+./uml_mconsole 8P16EB
+#gives a prompt:
+(8P16EB) 
+
+version  #shows UML kernel version
+
+#flush disk
+stop
+sysrq s
+go
+
+#note that mconsole halt and reboot do NOT sync the disk
+
+##
+make sure uml machine has /etc/inittab as:
+ca:12345:ctrlaltdel:/sbin/shutdown -h now
+
+#and then use
+ls -lart ~/.uml
+#to find uml session (will be last entry)
+mconsole XXX
+
+#----------------------------------------------------------------
+
+random clippings:
+
+This is the command line I use for running UML:
+
+./linux-2.4.20 ubd0=./root_fs_rh_9 mem=48M
+eth0=ethertap,tap1,,192.168.1.13 con=pty con0=fd:0,fd:1
+
+#----------------------------------------------------------------
+
+ALTERING IMAGE: ???
+you can just mount the root_fs images as loopbacks devices on the host
+and alter them (while uml is NOT running)
+
+mount -o loop ./root_fs /mnt/tmp/
+umount /mnt/tmp
+
+#---
+adding space
+in host:
+dd if=/dev/zero of=./new_fs count=300 bs=1M  #300M
+mkfs.ext3 -F ./new_fs
+mount -o loop ./new_fs /mnt/tmp/
+cp /tmp/dump/stuff.tar.bz2 /mnt/tmp/
+umount /mnt/tmp
+
+then boot uml with  
+ubd4=new_fs
+
+and
+mount /dev/ubd/4 /mnt/4
+inside UML
+
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+NETWORKING:
+
+HOST SCRIPT:
+vi /usr/local/bin/tuntap_setup.sh
+#--
+#!/bin/sh
+
+USERNAME=n9n
+#TAPIP=192.168.0.254
+#UMLIP=192.168.0.253
+TAPIP=64.79.238.242
+UMLIP=64.79.238.243
+TAP=tap0
+
+case "$1" in
+  start)
+        echo "Starting tap for UML: "
+        tunctl -u $USERNAME 
+        EXITCODE=$?
+        if [ $EXITCODE -eq 0 ]
+        then
+            echo "  UML tap device is $TAP "
+            ifconfig $TAP $TAPIP up
+            echo 1 > /proc/sys/net/ipv4/ip_forward
+            route add -host $UMLIP dev $TAP
+            echo 1 > /proc/sys/net/ipv4/conf/$TAP/proxy_arp
+            arp -Ds $UMLIP eth0 pub
+            chmod 666 /dev/net/tun
+            echo "Start UML with eth0=tuntap,$TAP"
+            echo "Configure UML with eth0 $UMLIP"
+        else
+            echo "TAP device error"
+            exit 1
+        fi
+        ;;
+  stop)
+        echo "Stopping tap for UML: "
+        echo 0 > /proc/sys/net/ipv4/ip_forward
+        echo 0 > /proc/sys/net/ipv4/conf/$TAP/proxy_arp
+        arp --delete $UMLIP -i eth0  #delete needs interface as well
+        tunctl -d tap0
+        chmod 600 /dev/net/tun
+        ;;
+  *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+esac
+#--
+chmod 0755 /usr/local/bin/tuntap_setup.sh
+
+THEN ON HOST, AS ROOT:
+tuntap_setup.sh start
+
+ON HOST, AS USER:
+./linux jail umid=THISUML eth0=tuntap,tap0
+
+TO SHUTDOWN:
+#killall linux #no sync, sloppy
+echo "cad" | uml_mconsole THISUML
+tuntap_setup.sh stop
+
+#----------------------------------------------------------------
+
+

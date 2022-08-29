@@ -1,0 +1,171 @@
+
+cygwin XFree86 server (windows Xserver)
+
+http://sources.redhat.com/cygwin/xfree/
+
+#---
+
+*really* good docs are at:
+http://xfree86.cygwin.com/docs/ug/
+http://xfree86.cygwin.com/docs/ug/cygwin-xfree-ug.html
+
+#---
+For a machine connected to the net:
+
+download http://cygwin.com/setup.exe
+run on a windows box
+select Install from internet
+select where to install (c:\cygwin is default)
+select UNIX text type and "install just for me"
+select a local package directory (like c:\temp\cygwin_packages)
+select either direct connection or use ie5 settings
+select a download site like ftp://ftp.nas.nasa.gov or ftp://ftp.sunsite.utk.edu
+big window to select packages comes up -
+        click next and the default packages are installed (bash,etc..)
+
+make sure to select (under net) openssl and openssh
+        (click twice on "skip" - you should get a version #)
+	and utils/bzip2 and text/less
+
+#---
+
+X is now available from the gui installer.
+
+#-------------old X install
+download windows X binaries from
+ftp://mirrors.rcn.net/pub/sourceware/cygwin/xfree/xc-4-binaries/4.1.0/
+into a directory like c:\temp\cygX
+
+start bash session
+cd c:/temp/cygX
+bunzip2 extract.exe.bz2
+cp extract.exe /bin     (/bin is mapped to something like c:\cygwin\bin)
+ls -la ./Xinstall*
+        if Xinstall.sh.txt is there: mv ./Xinstall.sh.txt ./Xinstall.sh
+./Xinstall.sh
+y
+select y for all optional components
+        except last two: Docs in japanese and docs in postscript
+y to new xterm (term type "xterm-r6" is the old version)
+y to install link
+
+cp startup-scripts.tgz /usr/X11R6/bin
+cd /usr/X11R6/bin
+tar -xzvf startup-scripts.tgz
+rm startup-scripts.tgz
+
+exit
+
+#-------------old X install
+
+Xwin.exe is the actual x server
+
+startxwin.bat starts the x server, a terminal, and window manager
+
+Drag a shorcut from c:\cygwin\usr\X11R6\bin\startxwin.bat to desktop
+
+press Alt-Tab to switch to MS windows, press Alt-F4 to quit XF86
+
+the window manager is twm -> click and drag on the upper-right
+symbol to resize windows
+
+#---
+the total c:\cygwin dir is 107 MB
+
+#---
+
+XDMCP (to get an X login screen on the windows PC)
+	THIS SESSION IS NOT ENCRYPTED!! KNOW THE CONSEQUENCES!!
+
+on the windows PC (in a bash window):
+/usr/X11R6/bin/XWin.exe -query remote_host_ip -from windows_pc_ip
+
+on the remote machine (make sure runlevel 5, X has to be running...):
+most OS's do not enable xdmcp by default
+FIGURE OUT WHICH display manager is running (xdm,gdm,kdm,...)
+ps -ef | grep -i -e "xdm" -e "gdm" -e "kdm"
+
+#---
+XDM on RH7.2
+cd /etc/X11/xdm
+vi xdm-config
+change last line to (note the ! to comment):
+! DisplayManager.requestPort:   0
+
+/etc/X11/xdm/Xaccess file is used to control access (denied by default)
+* means anybody can get a login window
+192.168.0.* restricts xdm to 192.168.0. IPs
+
+for no local server
+vi /etc/X11/Xservers
+#:0
+and run "/usr/X11R6/bin/xdm"
+
+#---
+GDM on RH7.2
+cd /etc/X11/gdm
+vi gdm.conf
+	(dont have to do the next 3 lines, i do)
+[security]
+AllowRoot=false
+AllowRemoteRoot=false
+
+[xdmcp]
+Enable=true
+
+supposedly gdm looks for both pam (/etc/pam.d/gdm) and
+	tcpwrappers (/etc/hosts.allow /etc/hosts.deny)
+easy enough to check... (put in only the hosts.deny and you chould get denied)
+vi /etc/hosts.deny
+gdm:all
+vi /etc/hosts.allow
+gdm:192.168.0.
+
+IF YOU ONLY WANT REMOTE SESSIONS:
+comment out all numbers under (in gdm.conf)
+[servers]
+and run "/usr/bin/gdm"
+
+#---
+
+
+#-------------------------
+
+xwinclip (to share the windows clipboard)
+
+download:
+http://www.msu.edu/~huntharo/xwin/xwinclip/xwinclip-Test03.exe.bz2
+
+cp xwinclip-Test03.exe.bz2 /usr/X11R6/bin
+cd /usr/X11R6/bin
+mv xwinclip.exe xwinclip.orig.exe
+bunzip2 xwinclip-Test03.exe.bz2
+mv xwinclip-Test03.exe xwinclip.exe
+
+To use xwinclip, modify your startxwin.bat file
+to start xwinclip.exe. On Windows NT/2000, add the
+"start /B xwinclip.exe" immediately after the
+"start /B XWin.exe" line. On Windows 95/98/Me, add the
+line "start xwinclip.exe" immediately after the "start XWin.exe" line.
+
+
+#---
+
+MAKING IT NICER LATER:
+twm global config file:
+c:\cygwin\etc\X11\twm\system.twmrc
+
+IN menu "defops" section
+""              f.nop
+"Xterm"         f.exec "exec xterm -sl 1000 -sb -rightbar -ms red -fg yellow -bg black &"
+"Xterm - White" f.exec "exec xterm -sl 1000 -sb -rightbar &"
+""              f.nop
+
+--
+
+
+
+
+#---
+
+

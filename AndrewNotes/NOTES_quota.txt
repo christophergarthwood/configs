@@ -1,0 +1,120 @@
+
+/etc/fstab
+/dev/hdc1               /xtra                   reiserfs  defaults,usrquota,grpquota      0 0
+
+#------ QUICK QUOTA ON BUT NO REAL QUOTAS ------------------
+touch /xtra/aquota.user
+touch /xtra/aquota.group
+chown root:root /xtra/aquota.user
+chown root:root /xtra/aquota.group
+chmod 0600 /xtra/aquota.user
+chmod 0600 /xtra/aquota.group
+
+[root@vogon ate]# /sbin/quotaoff -avug
+/dev/hdc1 [/xtra]: group quotas turned off
+/dev/hdc1 [/xtra]: user quotas turned off
+
+
+[root@vogon ate]# /sbin/quotacheck -avug
+[root@vogon ate]# /sbin/quotacheck -avug
+
+[root@vogon ate]# /sbin/quotaon -avug
+/dev/hdc1 [/xtra]: group quotas turned on
+/dev/hdc1 [/xtra]: user quotas turned on
+
+#----------------------------------------------
+
+/usr/sbin/edquota -u bob
+/usr/sbin/edquota -g games
+
+edquota -p bob `awk -F: '$3 > 499 {print $1}' /etc/passwd`
+   to populate all users (uid 500+) with a setup like bob's
+
+/usr/sbin/repquota  -a
+
+#---------------------------
+
+/usr/sbin/useradd -c UNTRUST -g notrust -m -n bob
+edquota -u -p proto_user bob   #where proto_user has the right quotas set
+
+
+#-------------
+5MB hard and soft limit/ 5000 inodes (just so all can't be used up...)
+Disk quotas for user bob (uid 5000):
+  Filesystem                   blocks       soft       hard     inodes     soft     hard
+  /dev/hdc1                        34       5000       5000         13     5000     5000
+
+
+
+#-------------
+http://groups.google.com/groups?hl=en&th=4b1e88fbf1f6b01c&rnum=14
+
+From: John Maier (jmaier@midamerica.net)
+ Subject: Disk quota 
+ Newsgroups: muc.lists.netbsd.users
+ Date: 2000-12-27 19:37:05 PST 
+
+
+I think I have disk quota figured out.  I want to clear up two things...
+
+1) If I set a group quota for a mount point, is it cumulative for the group
+for per user.
+
+i.e. I setup 20 users in the group 'foo'
+I edit fstab so /home has a quota and then 'edquota -q foo' and set the hard
+limit to 5120 blocks (5-Megs[correct?]).  I'm assuming that a block is
+1024-bytes, not the older 512-bytes.
+Will quota only allow 5-Megs total for those users in group 'foo' (under
+mount point /home) or 5-Megs per user assigned to group 'foo'?
+What happens if 'foo' is not a user's primary group but they are setup in
+/etc/group so that 'foo' is a secondary group?
+
+2) Is there a substantial performance hit for quota.
+
+The mind reels at the possibilities!
+
+John Maier
+Administrator
+Midamerica Internet Services
+573-446-8881
+http://www.midamerica.net
+ICQ# 38643380
+
+ From: John Maier (jmaier@midamerica.net)
+ Subject: Re: Disk quota 
+ Newsgroups: muc.lists.netbsd.users
+ Date: 2000-12-27 20:37:02 PST 
+
+
+Okay I'm going to answer my own questions here (found the
+/usr/share/doc/smm/04.quotoas)
+
+Group permission are cumulative for all users!
+To give each user a quota you should create a template and then you can
+"copy" quota information for each user from the template user.
+i.e. 'foobar' has been setup with permissions, 'goobar' hasen't.  So...
+'edquota -u -p foobar goobar'
+will copy foobar's limit levels to goobar.
+
+BTW quota blocks are 1K in size.
+
+As for CPU load(from 04.quotas):
+"Measurements have shown that the quota code uses a very small percentage of
+the system cpu time consumed in writing a new block to disc."
+
+Now new question: edquota can add quota for a user or group, but what
+happens if the user is removed?  How do I remove the non-existent user's
+information form the quota file(s)?  It seems to me that on large user
+systems these files could accumulate a lot of dead space.
+
+John Maier
+Administrator
+Midamerica Internet Services
+573-446-8881
+http://www.midamerica.net
+ICQ# 38643380
+
+#-------------------------
+
+
+

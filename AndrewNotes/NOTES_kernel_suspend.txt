@@ -1,0 +1,281 @@
+
+#------------------------------------------------------
+IMPORTANT NOTES:
+swsusp does not depend on APM or ACPI. They only let
+   swsusp turn the machine off after saving its image.
+   (ACPI does let you do things like call suspend when
+   the laptop lid is closed,etc)
+
+swsusp MUST have "resume=/dev/hdXX" (where XX is a swap partition)
+   on the kernel boot line or it will not work (and does not
+   give a nice error).
+
+swap partition is supposed to be atleast 30% larger than RAM.
+
+#------------------------------------------------------
+#------------------------------------------------------
+http://sourceforge.net/projects/swsusp
+
+download:
+patch-pre-2.4.21-pre4-swsusp18.gz
+suspend.sh
+
+[root@trillian linux-2.4.21-pre4]# zcat ~n9n/downloads/patch-pre-2.4.21-pre4-swsusp18.gz | patch -p1
+make mrproper
+make menuconfig
+	General setup
+		[*] Power Management support
+		[*] Software Suspend
+make dep && make bzImage && make modules && make modules_install
+cp ./arch/i386/boot/bzImage /boot/vmlinuz-swsusp 
+
+sh ./suspend.sh --install
+#Creating /usr/local/sbin/suspend   #old
+#OR
+#Creating /usr/sbin/hibernate
+#Creating file /etc/suspend.conf
+
+#find the swap partition (lists parts then exits)
+/sbin/fdisk -l
+#add the swap partition to grub
+#  resume=/dev/hdX99 #replace with swap part
+
+#reboot into swsusp enabled kernel
+
+#command to suspend
+/usr/local/sbin/suspend # old
+#OR
+/usr/sbin/hibernate  #for newer patch versions...
+
+#------------------------------------------------------
+#problems
+
+--force might not work first time - it overwrites
+suspend.conf, just run it again and it is good
+forever
+
+on one desktop my mouse would freeze on resuming (and
+then take the keyboard with it). Moving "gpm" from
+/etc/suspend.conf SWSUSP_RESTART_SERVICES to both
+SWSUSP_STOP_SERVICES_BEFORE_SUSPEND and
+SWSUSP_START_SERVICES_AFTER_RESUME fixed it.
+
+A desktop with a cdr had problems on resume with hdd
+(the cdr). I never investigated further. I might try
+to add hdd ide-scsi to /etc/suspend.conf _insertmods
+
+might want to add in hdparm -W 0 <hardrives> to be safe
+
+I did get an infinite restore/reboot/restore
+when I was seriously dinking with stuff. Edit
+the kernel boot line on lilo/grub startup and
+remove the resume= part. Then boot, and clean
+up the swap partition:
+/sbin/fdisk -l /dev/hda
+/sbin/mkswap /dev/hdX99  #replace with swap part
+
+then reboot into susp kernel
+#------------------------------------------------------
+
+#AUTO-SUSPEND IDEAS
+
+#suspend on ctrl-alt-del from console
+vi /etc/inittab
+ca::ctrlaltdel:/usr/sbin/hibernate --force
+
+#should probably make some kind of wrapper so I can run
+#   commands like "ssh-add -d" before suspending
+
+#perl daemon to suspend on low battery or lid shut
+vi /usr/local/bin/battery_watcher.pl
+#--
+#!/usr/bin/perl
+#MAKE SURE THESE EXIST AND SPIT OUT INFO (cat /proc...)
+#/proc/acpi/battery/BAT1/info
+#/proc/acpi/battery/BAT1/state
+#/proc/acpi/button/lid/LID/state
+
+use strict;
+use POSIX 'ceil';
+use POSIX 'setsid';
+
+$ENV{'PATH'} = '/sbin:/bin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin';
+delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+daemonize();
+
+#my $cutoffperc = 0.75;  #test
+#my $cutoffperc = 0.03;  #risky?
+my $cutoffperc = 0.10;  #safe
+
+$SIG{CHLD}="IGNORE";
+
+my $tickup = 0; #a counter of reads, reset at suspend
+my $ticksecs = 30; #time to sleep between reads
+
+#make sure I am up X seconds before I suspend again
+my $smootherticks = ceil( 180 / $ticksecs );
+
+my ($hold1,$hold2,$hold3);
+
+#get the battery info initially
+my $proc_battinfo = "/proc/acpi/battery/BAT1/info";
+open(PROC_BATTINFO,$proc_battinfo) || die "Error opening $proc_battinfo : $! \n";
+
+my ($designcap);
+while (<PROC_BATTINFO>) {
+	if (/design capacity:/) {
+		($hold1,$hold2,$designcap,$hold3)=split(/\s+/,$_);
+		print "DESIGNCAP $designcap \n";
+	}
+}
+close(PROC_BATTINFO);
+
+my $cutoffcap = $designcap * $cutoffperc;
+
+#now check the state
+my $proc_battstate = "/proc/acpi/battery/BAT1/state";
+
+my $prev_remcap = $designcap;
+my $capdirection=0;
+my ($remcap, $chargestate);
+
+while (true) {
+
+	if ($remcap) { $prev_remcap = $remcap; }
+
+	#get new data
+	open(PROC_BATTSTATE,$proc_battstate) || die "Error opening $proc_battstate : $! \n";
+	$tickup = $tickup+1;
+	while (<PROC_BATTSTATE>) {
+		if (/remaining capacity:/) {
+			($hold1,$hold2,$remcap,$hold3)=split(/\s+/,$_);
+		}
+		if (/charging state:/) {
+			($hold1,$hold2,$chargestate,$hold3)=split(/\s+/,$_);
+		}
+	}
+	close(PROC_BATTSTATE);
+
+	print "REMCAP $remcap STATE $chargestate CUTCAP $cutoffcap ".
+		"DIR $capdirection TICK $tickup SMOOTH $smootherticks\n";
+
+	#find direction of charging in case of flaky chargestate
+	if ($remcap < $prev_remcap) {
+		$capdirection = -1;
+	} elsif ($remcap > $prev_remcap) {
+		$capdirection = 1;
+	}
+
+	#determine if action is needed
+	if ( ($remcap <= $cutoffcap) &&
+		 ($chargestate ne "charging") &&
+		 ($capdirection == -1 ) &&
+		 ($tickup >= $smootherticks )
+	   )
+	{
+		#take action (suspend)
+		print "BATTERY LOW BATTERY LOW BATTERY LOW\n";
+		$tickup = 0;  #reset tickup before suspending
+
+		my $pid = fork();
+		if ($pid==0) {
+			system('sync;sync;sync;');
+			exec('/usr/sbin/hibernate --force');
+		} else {
+			sleep($ticksecs * 3);
+		}
+		
+	}
+
+	#extra stuff - suspend if the lid is closed
+	open(PROC_LIDSTATE,'/proc/acpi/button/lid/LID/state') ||
+		die "Error opening /proc/acpi/button/lid/LID/state : $! \n";
+	while (<PROC_LIDSTATE>) {
+		($hold1,$hold2)=split(/\s+/,$_);
+		if ($hold2 eq "closed") {
+			my $pid = fork();
+			if ($pid==0) {
+				system('sync;sync;sync;');
+				exec('/usr/sbin/hibernate --force');
+			} else {
+				sleep($ticksecs * 3);
+			}
+		}
+	}
+	close(PROC_LIDSTATE);
+	#end extra
+
+
+	if ($tickup>9999) {$tickup=100;} #dont let tickup go crazy
+	sleep($ticksecs);
+}
+print "END.\n";
+exit(0);
+#--------------
+sub daemonize {
+        chdir '/'               or die "Can't chdir to /: $!";
+        open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
+        open STDOUT, '>/dev/null'
+                or die "Can't write to /dev/null: $!";
+        defined(my $pid = fork) or die "Can't fork: $!";
+        exit if $pid;
+        setsid                  or die "Can't start a new session: $!";
+        open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+        return $pid;
+}
+#--
+chmod 0755 /usr/local/bin/battery_watcher.pl
+vi /etc/init.d/battery_watcher
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: battery_watcher
+RETVAL=0
+case "$1" in
+  start)
+        echo "Starting battery_watcher: "
+        /usr/local/bin/battery_watcher.pl
+        ;;
+  stop)
+        echo "Shutting down battery_watcher: "
+        killall battery_watcher.pl
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  status)
+        cat /proc/acpi/battery/*/info
+	cat /proc/acpi/battery/*/state
+        ;;
+  *)
+        echo "Usage: battery_watcher {start|stop|restart|status}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/battery_watcher
+
+#------------------------------------------------------
+
+#OLD OLD OLD OLD OLD OLD OLD
+http://falcon.sch.bme.hu/~seasons/linux/swsup.html
+
+http://fchabaud.free.fr/English/default.php3?COUNT=3&FILE0=Tricks&FILE1=Laptop&FILE2=Swsusp
+http://fchabaud.free.fr/English/Tricks/Laptop/Swsusp/Doc/Software-suspend-3.html#ss3.3
+
+http://fchabaud.free.fr/English/default.php3?COUNT=4&FILE0=Tricks&FILE1=Laptop&FILE2=Swsusp&FILE3=Doc
+
+#------------------------------------------------------
+
+If you need to activate swsusp at
+the lowest level login as root and use one of these command: 
+
+sysctl kernel.swsusp="1 0 0"       #did not work for me
+echo -n "1 0 0" > /proc/sys/kernel/swsusp       #worked for me
+
+#also sysreq-d did not work for me (I think it might be deprecated)
+
+#------------------------------------------------------
+#------------------------------------------------------
+

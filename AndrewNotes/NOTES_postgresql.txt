@@ -1,0 +1,252 @@
+
+#-------------------------------------------------------------------------------
+
+#get tar (contains base,doc,opt,and test) about 9M
+ftp5.us.postgresql.org
+ftp3.us.postgresql.org
+
+postgresql-7.2.1.tar.gz
+
+wget http://www.postgresql.org/ftpsite/v7.2.1/postgresql-7.2.1.tar.gz.md5
+wget ftp://ftp3.us.postgresql.org/pub/postgresql/latest/postgresql-7*.tar.gz*
+
+#MD5s should match
+cat postgresql-*.tar.gz.md5
+md5sum postgresql-*.tar.gz
+
+tar xzvf postgresql-*.tar.gz && cd postgres*/
+
+#default installs in /usr/local/pgsql/
+#we want man pages to be in a normal place instead of /usr/local/pgsql/man
+#default max number of connections is 32 (maxbackends)
+./configure --mandir=/usr/local/man --with-maxbackends=64 \
+  --with-perl --with-openssl=/usr/local/ssl \
+  --with-CXX --enable-syslog
+
+#also available --with-tcl --with-python --with-java --enable-odbc --with-pam --with-krb[4|5]
+
+make
+make install
+
+#change path to suit
+su - postgres
+initdb -D /var/lib/pgsql/data
+
+cp ./contrib/start-scripts/linux /etc/init.d/postgresql
+chmod 0755 /etc/init.d/postgresql
+vi /etc/init.d/postgresql
+#--
+prefix=/usr
+PGDATA="/var/lib/pgsql/data"
+#--
+
+#-------------------------------------------------------------------------------
+
+mirrors:
+www.us.postgres.org
+http://mirrors.sunsite.dk/postgresql/README.mirrors
+
+#-------------------------------------------------------------------------------
+
+#pronunciation
+http://www3.us.postgresql.org/postgresql.mp3
+
+#-------------------------------------------------------------------------------
+
+DOCS:
+http://www3.us.postgresql.org/docs/faq-english.html
+
+http://www3.us.postgresql.org/users-lounge/docs/#7.2   #PDFs
+
+http://archives.postgresql.org/pgsql-general/  #mailing list archives
+
+file:///usr/share/doc/postgresql-7.2.3/html/index.html  #on RH
+
+#-------------------------------------------------------------------------------
+
+RH locations,etc.
+
+/usr/bin/
+/usr/share/pgsql/jdbc7.1-1.2.jar
+/usr/share/pgsql/jdbc7.2dev-1.2.jar
+
+/usr/share/pgsql/contrib
+/usr/share/doc/postgresql-contrib-7.2.3/
+
+/var/lib/pgsql/data
+/etc/rc.d/init.d/postgresql
+
+/usr/share/pgsql/pg_hba.conf.sample
+/usr/share/pgsql/pg_ident.conf.sample
+/usr/share/pgsql/postgresql.conf.sample
+
+#-------------------------------------------------------------------------------
+
+JDBC:
+jdbc.postgresql.org
+http://jdbc.postgresql.org/download/devpgjdbc3.jar  #dev build
+
+http://jdbc.postgresql.org/doc.html   #docs
+http://www.fankhausers.com/postgresql/jdbc/  #faq
+
+#Because JDBC uses the network, and Java does not support Unix domain sockets,
+#you must run the backend with the -i flag. ie:
+#postmaster -i -S
+
+jikes -classpath $CLASSPATH:/usr/share/pgsql/jdbc7.1-1.2.jar TestPGjdbc.java 
+java -classpath $CLASSPATH:/usr/share/pgsql/jdbc7.1-1.2.jar TestPGjdbc
+
+
+
+#-------------------------------------------------------------------------------
+RH:
+passwd postgres    #kjbqkjbq
+
+/etc/init.d/postgresql start
+
+su - postgres
+psql -d template1 -U postgres -c "ALTER USER postgres WITH ENCRYPTED PASSWORD 'kjbqkjbq';"
+
+vi /var/lib/pgsql/data/postgresql.conf 
+#--
+tcpip_socket = true
+
+syslog = 2 # range 0-2, 0 is almost off
+syslog_facility = 'LOCAL0'
+syslog_ident = 'postgres'
+#--
+vi /var/lib/pgsql/data/pg_hba.conf 
+#--
+#require passwords all around
+local  all all md5
+host       all all         127.0.0.1     255.255.255.255    md5
+host       all all         192.168.0.0   255.255.255.0      md5
+#--
+vi /etc/syslog.conf
+#--
+# postgres,etc
+local0.*                                                /var/log/pgsql
+#--
+killall -HUP syslogd
+
+/etc/init.d/postgresql restart
+
+#create a powerful user (as postgres user)
+/usr/bin/createuser -P -E -d -a poweruser  #lkjhlkjh
+
+psql -U poweruser -d template1  #enter password
+CREATE DATABASE poweruser;
+psql -U poweruser #enter password, defaults to poweruser database
+
+CREATE TABLE testtab1 (
+	id int,
+	amount float,
+	name varchar(100)
+);
+\d
+
+#note - jdbc md5 is screwed on rh version download latest jar from jdbc.postgresql.org
+
+#-------------------------------------------------------------------------------
+
+TROUBLSHOOTING:
+
+initial startup:
+su #to root
+su - postgres
+postmaster
+postmaster -D /var/lib/pgsql/data
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+    * Set a password for the postgres user (this account was created by the
+    * server RPM) so that you can get into this user without going through
+    * root.
+    * SU to postgres.
+    * Set up the PostgreSQL "cluster" using: initdb -D /var/lib/pgsql/data.
+    * This creates the directory /var/lib/pgsql/data and sets up the
+    * PostgreSQL instance there.
+    * Set up appropriate network access permissions. Edit the
+    * /var/lib/pgsql/data/pg_hba.conf file to grant appropriate user & network
+    * permission. For example, "host all 192.168.1.0 255.255.255.0 trust"
+    * added as a line at the end of the file means let anyone from any machine
+    * from subnet 192.168.1.0 access any database being run on this server.
+    * Start the postmaster with: postmaster -i -D /var/lib/pgsql/data/ . The
+    * -i flag makes the server available using TCP, making use of the
+    * pg_hba.conf file described above. Alternatively, if you have version 7.1
+    * or later, you can edit the /var/lib/pgsql/data/postgresql.conf file to
+    * include a tcpip_socket = true line in it.
+    * Create a normal user account using the createuser command. For example,
+    * the create the user fred who is allowed to create databases and other
+    * user names: "createuser -d -a fred". Alternatively, just enter
+    * createuser and answer the questions as prompted.
+
+SU to the account of the database user you created (fred in the example)
+
+    * Create a database using createdb. To create a database called test1,
+    * use: "createdb test1".
+    * Query the new database. Use psql test1 and you should see a welcome
+    * message and the prompt
+      test1=# .
+
+I also recommend installing the postgresql-tk-<version>.rpm package and using
+the pgaccess application to perform database administration.
+
+Also, if you just execute as root /etc/rc.d/init.d/postgresql start , the
+initial databases will be created if necessary and the server started,
+elminating the need to run the initdb and postmaster commands above. 
+#-------------------------------------------------------------------------------
+
+OLD PAPER NOTES (from 1999, may not apply...):
+su postgres -
+createdb testdb
+createuser userid
+psql testdb
+
+su postgres -
+cd ~postgres
+vi pg_hba.conf
+
+\d sampletable --> describe sampletable
+
+insert into sampletable (fdate) values (1999.099::date);  #julian day-ish
+and for points
+ .... values ('3.23,4.23'::point);
+
+select * from sampletab where fdate='1999.161'::date;
+
+create table s2 (col1 float8[3]);
+select fname from sampletab1 where sampletab1.flong[1]>100;
+select sampletab1.fname[1:3] from sampletab1 where header_key=1010345;
+        |needs tablename  | numbering starts at 1
+
+create type float8array
+(input=array_in,output=array_out,internal_length=variable,element=float8); [UG p139]
+create table sampletab2 (id int4, narr float8array);
+insert into sampletab2 (id,narr) values (12, '{3.3,2.2}');  [UG p 185]
+
+create table sampletab2(id int4, narr float8[]);
+insert into sampletab2 (id,narr) values (2, '{2.2,3.3,4.4}');
+update sampletab2 set narr[3]=5.5 where id=2;
+update sampletab2 set narr[3:4]='{2.2,3.3}' where id=2;
+
+	values in array must exist -> therefore initialize to length wanted
+	insert into sampletab2 (id) values (6);
+	update sampletab2 set narr='{,,,,,,,,,}' where id=6;
+	OR
+	insert into sampletab2 (id,narr) values (6,'{,,,,,,,,,}');
+		zeros are default if no values are between commas
+
+composite primary keys:
+create table test2 (id1 int4, id2 int4, id3 int4, id4 int4,
+	primary key(id1,id2) );
+
+getting dump file of table:
+pg_dump -t table dbname > dump.sql
+psql < dump.sql
+
+
+nohup postmaster -i -o"-F" 2>&1 server.log &
+
+sql preprocessor: ecpg
+
+#-------------------------------------------------------------------------------

@@ -1,0 +1,65 @@
+
+#--------------------------------------------
+
+INSTALLING THEMES
+
+Sawfish themes
+For these themes, you need to use a terminal to
+change directory to ~/.sawfish/themes then run
+"tar zxf" on you theme. For example, for
+Sawfish-gorilla.tar.gz you need to do the following:
+
+cd ~/.sawfish/themes
+tar zxf <path-to>/Sawfish-gorilla.tar.gz
+
+of course you need to specify <path-to> as the
+directory where you downloaded Sawfish-gorilla.tar.gz
+to. Then all you need to do is open up the Gnome Control
+Center, goto the Sawfish Appearance page, and select
+it from the dropdown list.
+
+GTK themes
+GTK themes should be a lot easier to install, just a case of
+clicking the Install new theme... button in the Theme
+Selector page of the Control Center and selecting the theme
+file you downloaded.
+If this fails to make the theme appear in the list of
+Available themes, try using the terminal again to change
+directory to ~/.themes and run tar to unpack your theme
+there. For example, for the America theme:
+
+cd ~/.themes
+tar zxf <path-to>/America.tar.gz
+
+Again replacing <path-to> with the actual path to the downloaded file.
+
+You can of course use a gui program like file-roller to
+unpack your themes to the directory if you want. Basicly,
+sawfish themes need to be unpacked to ~/.sawfish and gtk
+themes to ~/.themes
+
+Nautilus Themes
+Basicly all you need to do is extract your Nautilus theme
+(tar zxf ) then in a Nautilus window, goto "Preferences"
+and click on "Edit Preferences...". In the window that
+appears, click on "Appearance" in the list on the left
+hand side of the window. Click the "Add New Theme..."
+button and select the directory where the theme you just
+extracted placed itself. This copies the theme to
+~/.nautilus/themes so you can now delete the extracted
+files/directories. Your new theme should now appear in
+the "Nautilus Themes" list (above the "Add New Theme..." button). 
+
+GDM Greeter themes
+tar tzvf gdm_greeter_theme.tar.gz
+should show a single directory, like "circles/"
+untar into /usr/share/gdm/themes/
+
+also gdmsetup has a "Install new theme" that will
+do the same thing (from a tar.gz or tgz file)
+
+#--------------------------------------------
+#--------------------------------------------
+#--------------------------------------------
+#--------------------------------------------
+#--------------------------------------------

@@ -1,0 +1,245 @@
+
+wget http://ftp1.sourceforge.net/courier/courier-imap-1.3.11.tar.gz
+
+(AS non-root, courier want you to do everything as non-root until make install)
+tar xzvf courier-imap-1.3.11.tar.gz 
+
+cd courier-imap-1.3.11
+
+--------------------------------------------------
+README:
+
+                   # Start the authdaemond process
+
+     NOTE
+
+     You MUST run the configure script as normal user, not root. Did you
+     extract  the  tarball  as root? It won't work. Remove the extracted
+     source  code. Log in as a normal user. Extract the source code as a
+     normal user, then run configure. You will do everything as a normal
+     user,  except  for  the  final  step  of  installing  the  compiled
+     software.
+
+   WARNING:  set  your  umask  to 022 before running make install or make
+   install-strip.
+   You  should  try  make  install-strip  first. Use make install if make
+   install-strip fails.
+   After   installation,   you   will   need   to  review  the  files  in
+   /usr/lib/courier-imap/etc  and  make  any  changes you deem necessary,
+   Use the following command to start the Courier-IMAP server:
+
+$ /usr/lib/courier-imap/libexec/imapd.rc start
+
+   This  assumes that Courier-IMAP is installed in /usr/lib/courier-imap.
+   Use the following command to stop Courier-IMAP:
+
+$ /usr/lib/courier-imap/libexec/imapd.rc stop
+   The  /usr/lib/courier-imap/lib/imapd-ssl  configuration file sets some
+   additional  options  for  SSL  support,  which you may need to adjust.
+   Consult  that configuration file for additional information. Then, you
+   also have to run the /usr/lib/courier-imap/libexec/imapd-ssl.rc script
+   from   your  system  startup  and  shutdown  scripts,  just  like  the
+   /usr/lib/courier-imap/libexec/imapd.rc script. You may accept both SSL
+   and non-SSL connections by running both scripts.
+   Note  that  SSL  requires  a  valid,  signed,  X.509 certificate to be
+   installed  where Courier-IMAP expects to find it. The default location
+   for the X.509 certificate, in PEM format, is
+   /usr/lib/courier-imap/share/imapd.pem.  The  X.509 certificate must be
+   signed  by  a  certificate authority that is known to the IMAP client.
+   You  can  generate  your  own  self-signed  certificate by running the
+   script  /usr/lib/courier-imap/share/mkimapdcert  which  will work too,
+   except  that IMAP clients using SSL will display a warning message the
+   first  time  they  connect  to  the  server. To get rid of the warning
+   message  you'll  have  to pay for a signed X.509 certificate.
+    The bundled POP3 server
+   The   configuration   files   are   /usr/lib/courier-imap/etc/pop3dand
+   /usr/lib/courier-imap/etc/pop3d-ssl.
+
+   The startup/shutdown scripts are
+   /usr/lib/courier-imap/libexec/pop3d.rc
+   /usr/lib/courier-imap/libexec/pop3d-ssl.rc.
+
+   The  SSL certificate is /usr/lib/courier-imap/share/pop3d.pem, and the
+   /usr/lib/courier-imap/share/mkpop3dcert script can be used to create a
+   self-signed SSL certificate for testing purposes.
+
+You must now set up the following command to run at system boot:
+
+/usr/lib/courier-imap/libexec/authlib/authdaemond start
+
+--------------------------------------------------
+
+#./configure --enable-unicode --with-db=db --mandir=/usr/local/man --enable-workarounds-for-imap-client-bugs
+./configure --enable-unicode --with-db=gdbm --mandir=/usr/local/man --enable-workarounds-for-imap-client-bugs
+   (I think --with-db=db is Berkeley)
+make
+su
+make install-strip
+make install-configure
+
+#binaries get put in
+ls -la /usr/lib/courier-imap/bin
+
+#This way all users created normally from this point forward will have a Maildir
+cd /etc/skel
+/usr/lib/courier-imap/bin/maildirmake Maildir/
+
+#For a single existing user
+su - testdummy
+/usr/lib/courier-imap/bin/maildirmake Maildir/
+exit
+
+#Configure pop3
+vi /usr/lib/courier-imap/etc/pop3d
+CHANGE
+POP3AUTH=""
+TO
+POP3AUTH="LOGIN CRAM-MD5 CRAM-SHA1"
+CHANGE
+POP3DSTART=NO
+TO
+POP3DSTART=YES
+CHANGE
+AUTHMODULES="authdaemon"
+TO
+AUTHMODULES="authcram"
+(OR authuserdb is using that instead)
+
+(if restricting this locally use AUTHMODULES="authdaemon" and POP3AUTH="PLAIN")
+
+#to only listen locally (for webmail, etc..)
+ADDRESS="127.0.0.1"
+
+
+#MAKE USERDB (man makeuserdb(8) and userdb(8) )
+#cp /dev/null /etc/userdb
+#chmod 700 /etc/userdb
+#/usr/lib/courier-imap/sbin/userdb "testdummy@pop3.dentarthurdent.net" \
+#    set home=/usr/home/testdummy mail=/usr/home/testdummy/Maildir uid=testdummy gid=testdummy
+
+#IF PASSWD MD5 (authcram)
+cp /dev/null /etc/userdb
+chmod 700 /etc/userdb
+/usr/lib/courier-imap/sbin/userdbpw -md5 | /usr/lib/courier-imap/sbin/userdb "testdummy@pop3.dentarthurdent.net" set systempw
+#OR HMAC-MD5
+/usr/lib/courier-imap/sbin/userdbpw -hmac-md5 | /usr/lib/courier-imap/sbin/userdb "testdummy@pop3.dentarthurdent.net" set hmac-md5pw
+#OR PLAIN
+/usr/lib/courier-imap/sbin/userdbpw | /usr/lib/courier-imap/sbin/userdb "testdummy@pop3.dentarthurdent.net" set systempw
+
+#TRY just this
+/usr/lib/courier-imap/sbin/userdbpw -hmac-md5 | /usr/lib/courier-imap/sbin/userdb "testdummy" set hmac-md5pw
+enter password at prompt: testpassword
+
+/usr/lib/courier-imap/sbin/makeuserdb
+
+ls -la /etc/userdb.dat /etc/userdbshadow.dat
+
+#IF makeuserdb HAS A PROBLEM, THE REAL PROBLEM IS WITH /usr/lib/courier-imap/libexec/makedatprog
+#LDD THAT AND MAKE SURE EVERYTHING IS OK
+
+#TEST
+/usr/lib/courier-imap/libexec/pop3d.rc start
+
+netstat -an --inet SHOULD SHOW
+tcp        0      0 0.0.0.0:110             0.0.0.0:*               LISTEN      
+
+
+/usr/lib/courier-imap/libexec/pop3d.rc stop
+
+cd /etc/init.d
+vi courier-pop3
+#!/bin/sh
+#
+# Startup script for courier-imap POP3 daemon
+#
+# chkconfig: 345 81 19
+# description: courier-imap POP3 server
+
+PATH=/usr/lib/courier-imap/libexec
+export PATH
+
+exec pop3d.rc ${1+"$@"}
+
+#End
+
+chmod 0755 ./courier-pop3
+/sbin/chkconfig --level 345 courier-pop3 on
+
+---------------------------------------
+When you use port 110, there are no prompts, you just type in
+the commands. A sample session should look something like this:
+
++OK warlock POP3 Server (Version 1.004) ready.
+user mangarosa
++OK please send PASS command
+pass p9fsj54
++OK 1 messages ready for mangarosa in /usr/spool/mail/mangarosa
+list
++OK 1 messages; msg# and size (in octets) for undeleted messages:
+1 465
+.
+retr 1
++OK message 1 (465 octets):
+X-POP3-Rcpt: mangarosa@hotmail.com
+Date: Wed, 10 Dec 1997 09:55:04 +1300 (NZDT)
+From: root <root@warlock>
+To: mangarosa@hotmail.com
+Subject: test
+Message-ID: <Pine.LNX.3.93.971210095456.18334A-100000@warlock.jud>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+test message
+
+.
+
+
+---------------------------------------------------
+
+Netscape wants to set user as testdummy@pop3.dentarthurdent.net
+  (but it worked the very first time....)
+Weird - for some reason (with netscape POP3 username set to testdummy and POP3 server pop3.hfdirect.com)
+the first time the userdb username was testdummy@dentarhturdent.net  (which would be the email address)
+but after that it had to be testdummy (which is what is in the Netscape username field)
+
+
+
+/usr/lib/courier-imap/sbin/userdb "testdummy" \
+    set home=/usr/home/testdummy mail=/usr/home/testdummy/Maildir uid=testdummy gid=testdummy
+/usr/lib/courier-imap/sbin/userdbpw | /usr/lib/courier-imap/sbin/userdb "testdummy" set systempw
+/usr/lib/courier-imap/sbin/makeuserdb
+
+
+#-----------
+Make Maildir is as simple as
+cd ~
+mkdir ./Maildir
+chmod 0700 ./Maildir
+cd ./Maildir
+mkdir ./tmp
+mkdir ./new
+mkdir ./cur
+chmod 0700 ./tmp
+chmod 0700 ./new
+chmod 0700 ./cur
+
+all directories should be user:user
+#or all-in-one as the user:
+(umask 077;mkdir -p ~/Maildir/{tmp,new,cur})
+
+
+#------------------------------------------------------------------------------------------------------
+
+SQWEBMAIL
+
+tar xzvf sqwebmail-3.3.1.tar.gz
+
+
+
+
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+

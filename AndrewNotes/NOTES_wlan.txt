@@ -1,0 +1,6 @@
+
+/sbin/wlanctl-ng wlan0 lnxreq_wlansniff channel=1 enable=true
+
+prismdump > fileout
+
+

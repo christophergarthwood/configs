@@ -1,0 +1,930 @@
+#--------------------
+UNTAINT
+
+#!/usr/local/bin/perl
+
+$ENV{'PATH'} = '/bin:/usr/bin';
+delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+$path = $ENV{'PATH'};       # $path now NOT tainted
+
+
+#system('killall httpd');
+system('/usr/local/apache/bin/apachectl restart');
+
+exit(0);
+#----------------------------
+
+simple port listener
+
+wget http://www.cpan.org/modules/by-module/Net/Net-Server-0.81.tar.gz
+tar xzvf Net-Server-0.81.tar.gz 
+cd Net-Server-0.81
+perl Makefile.PL 
+make
+su
+make install
+
+see ./example/connection_test.pl
+
+#----------------------------
+@ARGV
+     The array @ARGV contains the command-line arguments intended for the script. $#ARGV is generally the number of arguments minus one, because
+     $ARGV[0] is the first argument, not the program's command name itself. See $0 for the command name. 
+
+my $arg1 = $ARGV[0] || die "I need Arg1.\n";
+
+perldoc perlvar
+#Perl predefined variables
+#----------------------------
+Tie (hash to db, or anything else)
+
+    use GDBM_File;
+    tie %hash, 'GDBM_File', $filename, &GDBM_WRCREAT, 0640;
+    # Use the %hash array.
+    untie %hash;
+
+       GDBM_READER reader
+       GDBM_WRITER writer
+       GDBM_WRCREAT writer - if database does not exist create new one
+       GDBM_NEWDB writer - create new database regardless if one exists
+       For  the  last  three (writers of the database) the following may be added added to read_write by
+       bitwise or: GDBM_SYNC, which causes all database operations to be synchronized to the  disk,  and
+       GDBM_NOLOCK,  which  prevents  the library from performing any locking on the database file.  The
+       option GDBM_FAST is now obsolete, since gdbm defaults to no-sync mode.
+
+When Perl stores your hash to disk using dbmopen, it is actually relying
+on a particular DBM system, known as either ODBM or NDBM. Many Perl
+distributions come with additional DBM's, or you can find them at CPAN,
+the Perl module repository. In particular, four alternative DBM's are
+commonly used with Perl.
+
+SDBM is the "simple DBM", and is optimized for speed with a small storage
+capacity per value. Worth considering for large hashes with small values.
+
+GDBM is the Gnu Free Software Foundation implementation of DBM. It offers
+several advances over the other DBM's, including compatibility with GDBM
+databases used on many platforms. GDBM is also very fast, and features some
+synchronization support for shared DBM's which may be accessed by multiple
+users simultaneously.
+
+DB_File is the module name for BerkeleyDB version 1. This is an even more
+sophisticated DBM which is fast, supports large values, and offers several
+different storage architectures: normal hashes, BTrees, and disk-based arrays.
+We'll take a closer look at DB_File shortly.
+
+BerkeleyDB is the DBM module for BerkeleyDB versions 2 and 3. As you can imagine,
+these DBM's are the most advanced, and are evolutions from version 1 of this software.
+
+
+use SDBM;
+                  use Fcntl;
+
+                  my %car=();
+                  tie (%car, "SDBM", "car_data", O_CREAT|O_RDWR, 0666) ||
+                   die "Could not open or create database.";
+                  %car = ( 'make'  => 'Nissan',
+                           'model' => 'Maxima',
+                           'year'  => '1997',
+                           'color' => 'evergreen'
+                          );
+                  untie (%car);
+
+Enter the BTree -- an ordered hash! When you tie a hash to a DB_File BTree, the
+hash not only preserves keys and values, but order as well. By default, when you
+add a new key to such a tied hash, it is placed in lexical (alphabetical) order
+relative to the other keys. You can define your own alternative sorting routing
+for the order of the BTree, but we won't get into that here. The DB_File documentation
+does, though.
+
+So, let's create our %car hash in a DB_File Btree:
+
+                   use DB_File;
+                   use Fcntl;
+
+                   my %car=();
+                   tie (%car, "DB_File", "car_data", 
+                        O_CREAT|O_RDWR, 0666, $DB_File::DB_BTREE) ||
+
+                        die "Could not open or create database.";
+                   %car = ( 'make'  => 'Nissan',
+                            'model' => 'Maxima',
+                            'year'  => '1997',
+                            'color' => 'evergreen'
+                           );
+                   untie (%car);
+
+What does it mean now that %car is stored as a BTree? For one thing, BTrees are
+very fast to search, so when you ask for $car{year} DB_File will be able to pull
+that value very quickly. This is especially useful when your hash is very large,
+with thousands of keys. Not quite as dramatic when there are only four keys!
+
+Beyond that, this hash has order. Specifically, the key color is going to be the
+first key in the hash, followed by make, model, and year -- because that's the
+lexical order of these keys. DB_File maintains a "cursor" at a given position in
+the hash -- this is a hypothetical pointer that says "this is where I am in the
+hash". Much like a cursor in a text document. You may never need to use this
+cursor, but doing so allows for some funky actions beyond the operations that normal
+Perl hashes are restricted to.
+
+For example, let's say we want to find the first key that begins with the letter 'm',
+and the next key after that. First, the code, assuming the previous example has
+already run and the contents of %hash are already stored on disk as a BTree:
+
+                   use DB_File;
+                   use Fcntl;
+
+                   my %car=();
+                   my $dbm = tie (%car, "DB_File", "car_data", 
+                                  O_RDONLY, 0, $DB_File::DB_BTREE) ||
+
+                                  die "Could not open or create database.";
+
+                   #Set cursor to first key that matches
+                   my $matchKey="m";
+                   my $matchValue=0;
+                   my @matchedKeys=();
+                   $dbm->seq ($matchKey, $matchValue, R_CURSOR);
+                   push (@matchedKeys, $matchKey);
+
+                   #Move cursor to next key
+
+                   $dbm->seq ($matchKey, $matchValue, R_NEXT);
+
+                   #Release tied hash
+                   undef $dbm;
+                   untie (%car);
+
+Several new concepts are introduced in this example. Because we're dealing with
+functions that normal Perl hashes don't support, we need to rely on functions
+provided by DB_File itself. When the hash is tied, we assign it to an object handle
+$dbm, through which we'll call DB_File methods.
+
+One DB_File method is illustrated here, seq(). Provide seq() with a scalar variable
+for the key and the value, along with a keyword that tells the method what to do.
+Once "it" is done, the current key and value will be assigned to the scalar variables
+provided.
+
+In the first call to seq(), we specify the keyword R_CURSOR. This tells DB_File to set
+the cursor at the first key that matches $matchKey. Since we only provided a key of
+"m", DB_File will set the cursor at the key "make", the first and closest match. Next,
+the key "make" and its value, "Nissan", will be assigned to $matchKey and
+$matchValue respectively.
+
+With the cursor in position, we call seq() again, this time with the R_NEXT keyword.
+Consequently, DB_File moves the cursor to the next key in order ("model") and fills
+the two variables with the relevant data ("model" and "Maxima"). Of course, we could
+have placed the seq( ... R_NEXT) calls inside a loop to traverse many keys of the hash.
+
+Once complete, we must set the object handle $dbm to undef along with untieing the hash.
+
+All of the hashes we've seen today have been one-level. Put another way, each key is
+simply associated with a scalar value. This works great with all the DBM's we've seen
+for storing these hashes onto disk-based files.
+
+But the game changes when you want to store a multi-level hash. After all, Perl
+doesn't restrict key values to scalars -- the value of a key could be a list of
+scalars, or another hash, or a list of hashes, or a hash of lists, and so on ad
+infinitum. In fact, Perl hashes can be arbitrarily complex with many levels, and
+this is what makes Perl hashes especially powerful (and sometimes mind-numbingly
+confusing). None of the DBM approaches we've seen thus far can properly store
+such a multi-level hash, though.
+
+Fortunately, there is a solution to everything. Well, not everything, but at
+least to this problem.
+
+MLDBM is actually a module which sits on top of one of the other DBM's we've
+seen today, and lets you store multi-level hashes transparently, as if they were
+single-level hashes. The key to this, not to steal any of MLDBM's thunder, is rather
+simple and it's called serialization.
+
+A serializer is an algorithm which essentially "flattens" a multi-level data structure
+into a single scalar value. Of course, like a compressed text file, you can't actually
+use the data structure in its serialized state, but it is a way to make such complex
+data portable. There are several serializers available for Perl, especially Data::Dumper
+and Storable. MLDBM essentially lets you hook up one of these serializers with one
+of your preferred DBM's, transparently so that the serializing and de-serializing happens
+without your intervention.
+
+By default, MLDBM uses the SDBM database with the Data::Dumper serializer. But I prefer
+Storable, because it is faster. I also prefer DB_File for a DBM, and since we've seen
+that in use, let's illustrate using MLDBM with DB_File and Storable to tie a multi-level
+hash to disk. That's quite a mouthful.
+
+                   use MLDBM qw(DB_File Storable);
+                   use Fcntl;
+
+                   my %car=();
+                   tie (%car, "MLDBM", "car_data", 
+                        O_CREAT|O_RDWR, 0666, $DB_File::DB_BTREE) ||
+
+                        die "Could not open or create database.";
+                   $car{'JN1HU11P1HX875232'} =
+
+                          { 'make'  => 'Nissan',
+                            'model' => 'Maxima',
+                            'year'  => '1997',
+                            'color' => 'evergreen'
+                          };
+
+                   $car{'1GNDM15Z2HB187252 '} =
+
+                          { 'make'  => 'Chevrolet',
+                            'model' => 'Astro',
+                            'year'  => '1999',
+                            'color' => 'black'
+                          };
+
+                   print "Inventory contains: \n";
+                   foreach (keys %car) {
+
+                    print $_ . ":\t".$car{$_}{make}." ".$car{$_}{model}."\n";
+
+                   }
+
+                   untie (%car);
+
+When we use MLDBM we express our preference for the DB_File DBM and the Storable
+serializer. From there, we tie the hash and work with it rather normally. In this
+case, we again create a BTree hash. Our %car hash is a two-level hash, because
+the values of the top-level keys are themselves hashes. Each top-level key is a
+vehicle identification number, or VIN, representing a fictional inventory. The value for
+each VIN is a hash describing the car. A short output loop near the end of this script
+illustrates how we can dig into the hash levels.
+
+There's nothing special about the code for managing this hash, and that's the point.
+Thanks to MLDBM, we deal with a multi-level hash just like any other, and the fact
+that it is being stored to disk, serialized, and de-serialized is entirely transparent.
+
+#----------------------------
+
+ordered hashes:
+http://perl.com/CPAN/modules/by-module/Tie/Tie-IxHash-1.21.tar.gz
+
+           use Tie::IxHash;
+
+           # simple interface
+           $t = tie(%myhash, Tie::IxHash, 'a' => 1, 'b' => 2);
+           %myhash = (first => 1, second => 2, third => 3);
+           $myhash{fourth} = 4;
+           @keys = keys %myhash;
+           @values = values %myhash;
+           print("y") if exists $myhash{third};
+
+           # OO interface
+           $t = Tie::IxHash->new(first => 1, second => 2, third => 3);
+           $t->Push(fourth => 4); # same as $myhash{'fourth'} = 4;
+           ($k, $v) = $t->Pop;    # $k is 'fourth', $v is 4
+           $t->Unshift(neg => -1, zeroth => 0);
+           ($k, $v) = $t->Shift;  # $k is 'neg', $v is -1
+           @oneandtwo = $t->Splice(1, 2, foo => 100, bar => 101);
+
+           @keys = $t->Keys;
+           @values = $t->Values;
+           @indices = $t->Indices('foo', 'zeroth');
+           @itemkeys = $t->Keys(@indices);
+           @itemvals = $t->Values(@indices);
+           $t->Replace(2, 0.3, 'other');
+           $t->Delete('second', 'zeroth');
+
+#----------------------------
+
+regex replace in files with orig renamed with .bak
+perl -i.bak -lpe 's//g;'
+
+#----------------------------
+
+DBI
+
+my $statement="select ID from TEMPTABLE";
+my $sth = $dbh->prepare($statement);
+$sth->execute();
+while (my $ref = $sth->fetchrow_hashref()) {
+	my $this_id = $ref->{ID};
+}
+
+$statement="UPDATE TEMPTABLE set ID=$this_id where NAME=$this_name";
+$dbh->do($statement);
+
+my $test_ret = $dbh->do(qq{
+  UPDATE TEMPTABLE set
+  NAME=?,CLASS=?,DATE=?,
+  where ID=?
+}, undef,
+$ref->{NAME},$ref->{CLASS},$ref->{DATE},$this_id) or die $dbh->errstr;
+
+#----------------------------
+
+dbf, dbase:
+#----
+#!/usr/bin/perl
+
+use strict;
+#DBD-XBase:http://www.cpan.org/modules/by-module/DBD/DBD-XBase-0.231.tar.gz
+use XBase;
+
+my $dbffile = $ARGV[0];
+my $printall = $ARGV[1];
+if (! $dbffile) { die "Arg1 must be the name of a dbf file"; }
+if (! defined($printall)) { die "Arg2 must be 0 for print all records, positive X for print X records, negative to only print summary"; }
+
+my $table = new XBase("$dbffile") or die XBase->errstr();
+
+my $reccount=$table->last_record();
+print "The DBF File is $dbffile. There are $reccount records.\n";
+
+my @field_names = $table->field_names();
+my @field_types = $table->field_types();
+my $num_fields = $table->last_field();
+for (my $ii=0;$ii<=$num_fields;$ii++) {
+        print "FIELD $ii: $field_names[$ii] $field_types[$ii]\n";
+}
+
+if ($printall>=0) {
+        my $last_rec=0;
+        if ($printall==0) {
+		$last_rec=$table->last_record();
+	} else {$last_rec=$printall;}
+        for my $recno (0 .. $last_rec ) {
+                if ( ($recno % 100) == 0 ) {
+                        print "ON RECORD NUMBER: $recno\n";
+                }
+                my @data = $table->get_record($recno) or die $table->errstr();
+		print "\n#--- RECNUM $recno ---#\n";
+		for (my $ii=0;$ii<=$num_fields;$ii++) {
+			print "($ii) $field_names[$ii] : $data[$ii]\n";
+		}
+        }
+}
+$table->close();
+print "END.\n";
+#----
+#----------------------------
+
+#!/usr/bin/perl
+use strict;
+print "BEGIN.\n";
+algo10($arg1,$arg2);
+my $trimproj = trim("   asdadq ");
+print "END.\n";
+exit();
+sub algo10 {
+   my $p=$_[0];
+   my $page=$_[1];
+}
+sub trim {
+        my @out = @_;
+        for (@out) {
+                s/^\s+//;
+                s/\s+$//;
+        }
+        return wantarray ? @out : $out[0];
+}
+#----------------------------
+sub StartTag {
+  my $p = shift;
+  $key = shift;
+}
+
+#----------------------------
+use POSIX;
+our $quitsignal = 0;
+$SIG{"INT"} = \&int_signal_handler;
+$SIG{"HUP"} = \&hup_signal_handler;
+#USE
+#use POSIX;
+##We want to quit on CtrlC (INT) and HUP
+#our $quitsignal = 0;
+#$SIG{"INT"} = \&int_signal_handler;
+#$SIG{"HUP"} = \&hup_signal_handler;
+#if ( $quitsignal == 1 ) { die "SIGNAL CAUGHT. EXITING.\n"; }
+
+sub int_signal_handler {
+        $quitsignal = 1;
+        print "GOT INT SIGNAL\n";
+}
+
+sub hup_signal_handler {
+        $quitsignal = 1;
+        print "GOT HUP SIGNAL\n";
+}
+#-------------------------------
+#($uid,$server)=split(/@/,$email);
+#for ($uid) {s/\s+//g; s/\s+$//g;}
+#------------------------------
+#kill non-alphanumeric and space
+#$string=~s/\W||_//gi;
+#kill all but alphanumeric and space
+#$string =~ s/[^A-Za-z0-9 ]+//g;
+
+#----------------------------
+>{} and [] create an empty anonymous array and hash, respectively. Their
+>value is a reference to the structure they have created. So:
+>
+>    $table = {}
+>
+>Creates an empty hash and stores a reference to it in $table. Thereafter you
+>can access and manipulate it by:
+>
+>    $table->{key} = 'value'
+perldoc perlreftut
+perldoc perlref
+
+               # This:
+               $aref = [ 1, 2, 3 ];
+
+               # Does the same as this:
+               @array = (1, 2, 3);
+               $aref = \@array;
+
+       If `$aref' contains a reference to an array, then you can
+       put `{$aref}' anywhere you would normally put the name of
+       an array.  For example, `@{$aref}' instead of `@array'.
+
+my @data = $table2->get_record($recno) or die $table2->errstr();
+$servhash{"$recno"} = [ $data[2],$data[3],$data[4],$data[5],$data[6],$data[7],
+    $data[8],$data[9],$data[10],$data[11],$data[12],$data[13] ];
+my $hold4 = @{$servhash{"$recno"}}[0];
+print "HOLD4 $hold4\n";
+
+#--
+checkresponse($coupon1,\@{$servhash{"$invmatchii"}});
+sub checkresponse {
+        my $coupon = shift;
+        my $servsR = shift;
+
+        my @servs = @{$servsR};
+
+        my $hold1s = $servs[0];
+        my $hold2s = $servs[1];
+        my $hold3s = $servs[2];
+}
+#--
+#$string = deblank($string);
+sub deblank {
+	my $string = shift;
+	chomp($string);
+	$string =~ s/\r//;
+	for ($string) {
+		s/\r//;    #dos eol is "\r\n"  unix is "\n"
+		s/^\s+//;  #beginning space
+		s/\s+$//;  #ending space
+		s/\t+$//;  #end tab (does the end space cover this??)
+	}
+	return $string;
+}
+#--
+sub makedir {
+        #use: makedir("/mnt/smb/xyz","0700");
+        my $newdir=$_[0];
+        my $mode=$_[1];
+        if (! -d $newdir) {
+                my $old = umask(000);
+                mkdir($newdir,oct($mode));
+                umask($old);
+        }
+}
+#--
+
+#----------------------------
+
+http://www.comp.leeds.ac.uk/Perl/filehandling.html
+open(INFO, $file);      # Open for input
+open(INFO, ">$file");   # Open for output
+open(INFO, ">>$file");  # Open for appending
+open(INFO, "<$file");   # Also open for input
+
+#-----------------
+from: http://www.shotglass.org/other/perl-hints.html
+Get The Last Modification Time Of A File 
+
+#
+## get the modification time of a file
+#
+    $mtime = (stat($file))[9];
+
+
+ Get the Size of a File 
+
+#
+## get the size of a file
+#
+    $size = (-s $file);
+
+
+ Read a File quickly into a variable 
+
+#
+## slurp a file -- read $size number of bytes into variable $buf
+#
+    $size = (-s $file);
+    open(IN,"$file");
+    read(IN,$buf,$size);
+    close(IN);
+
+#to read file into array of lines
+@lines = <IN>; 
+
+
+ Creating Directories 
+
+#
+## To avoid umask calculations, 
+## save the current umask while setting the umask to 000, 
+## make the directory, then set the umask back to what it had been
+#
+    if (! -d $localdir)
+    {
+        $old = umask(000);
+        mkdir($localdir,0775); 
+        umask($old);
+    }
+
+
+ Get The Current Directory 
+
+#
+## get the current directory
+#
+    use Cwd;
+    $pwd = cwd();
+
+
+ Read A Directory 
+
+#
+## read a directory $dir ( ignoring . and .. )
+#
+    opendir(DIR,"$dir") || die "opendir $dir failed";
+    @files = grep(!/^\.\.?$/,readdir(DIR));
+    closedir(DIR);
+
+
+ Recursively Read a Directory 
+
+#
+## recursively read a directory, $startdir finding all files
+## at the end all directory names are in @dirs, all files are in @files
+#
+    push(@dirs,$startdir);      # add an element to an array
+    foreach $dir (@dirs)        # loop through the elements of an array
+    {
+        opendir(DIR,"$dir") || die "opendir $dir failed";
+        @list = grep(!/^\.\.?$/,readdir(DIR));
+        closedir(DIR);
+    
+        foreach $item (@list)
+        {
+            $fullname = $dir."/".$item; # add the directory name to the file name
+            if (-d $fullname)
+            {
+                push(@dirs,$fullname);
+            }
+            elsif (-f $fullname)
+            {
+                push(@files,$fullname);
+            }
+            else
+            {
+                print "What?: $fullname\n";
+            }
+        }
+    }
+
+
+ Breaking out or "short circuiting" a loop 
+
+#
+## break out of a loop
+#
+    open(PS,"/bin/ps -ef |");
+    while ($procline = <PS>)
+    {
+        if ($procline =~ m#httpd#)      # find a webserver
+        {
+            ($junk,$user,$pid,$ppid) = split (/\s+/,$procline); # split the line on whitespace
+            last;     # jump out of the while loop
+        }
+    }
+    close(PS);
+
+
+ Determining The PID of a Child Process 
+
+#
+## determining the PID of a child process
+#
+    $childpid = open(PS,"/bin/ps -ef |");
+
+
+ get the loginID 
+
+#
+## get the loginID 
+#
+    $user = (getpwuid($<))[0];
+
+
+ get the hostname 
+
+#
+## get the hostname 
+#
+    use Sys::Hostname;
+    $host = hostname();
+
+
+ concatenate the elements of an array, separated by $delimiter 
+
+#
+## concatenate the elements of an array, separated by $delimiter
+#
+    $list = join($delimiter,@groups);
+
+
+ print using a "here" document 
+
+#
+## print using a "here" document -- print out html code without lots of quoting games
+## variables between  <<End_Text and  End_Text  will be expanded
+## note that End_Text MUST start in the first column
+#
+    print <<End_Text
+  <SCRIPT LANGUAGE=JAVASCRIPT>
+  <!--
+  document.write('<img src="/cgi-bin/get-img.cgi?'+document.referrer+'"alt="logo" height=103 width=419>')
+  // -->
+  </script>
+  <NOSCRIPT>
+  <img src="/cgi-bin/get-img.cgi?noscript" alt="logo" height=103 width=419>
+  </NOSCRIPT>
+
+End_Text
+
+
+  
+
+ parse script arguments -- either from the command line or as a cgi script 
+
+
+#
+## parse script arguments -- either from the command line or as a cgi script
+## Note: Arguments are passed to a cgi script in an environment variable 
+##       named QUERY_STRING.  These arguments are usually in the form of 
+##       name=value pairs separated by an ampersand (&)
+##       CGI:          test.pl?one=1&two=2
+##       Command Line: test.pl one=1 two=2
+## If the QUERY_STRING variable does not exist, then we can assume the script 
+##  is running from the command line (it might be running as a CGI with no 
+##  inputs, but then there will be no command line inputs either)
+## If the script is running from the command line, add the command line arguments
+##  to the QUERY_STRING environment variable.
+## This simplifies argument handling -- the same routine can then be used to parse 
+##  the arguments whether they come form the command line or from a web server.
+## This routine stores the name-value pairs in a hash named inputs
+##
+## THIS DOES NOT CHECK FOR BAD OR DANGEROUS CHARACTERS SUCH AS SHELL ESCAPES!!!!!
+#
+
+# command line inputs
+    if ($ENV{QUERY_STRING} eq "")
+    {
+        $ENV{QUERY_STRING}   = join("&",@ARGV);
+        $ENV{REQUEST_METHOD} = "GET";
+    # set a "default" value
+        $inputs{file}        = "../data.htm";
+    }
+    
+# cgi-script
+
+    if ($ENV{REQUEST_METHOD} eq 'GET')
+    {
+        # split the query into keywords
+        foreach $input (split("&",$ENV{QUERY_STRING}))
+        { 
+            if ($input =~ /(.*)=(.*)/)
+            {
+                ($key,$value) = ($1, $2);
+                if ($debug) { print "[$key] [$value]<br>\n"; }
+                # replace "+" with " "
+                $value =~ s/\+/ /g ;                          
+                # convert hex characters
+                $value =~ s/%(..)/pack('c',hex($1))/eg;
+                # add keyword/value pair to a list
+                $inputs{$key} = $value; 
+            }
+        }
+    }
+#----------------------------
+
+#do X for each html file in dir
+#!/usr/bin/perl -w
+
+  opendir(DIR, ".");
+  @files = grep(/\.html$/,readdir(DIR));
+  closedir(DIR);
+
+  foreach $file (@files) {
+     print "$file\n";
+}
+#----------------------------
+
+#download and parse a webpage
+vi test_web_download.pl
+#--
+#!/usr/bin/perl
+use strict;
+use LWP;
+
+my $ua = new LWP::UserAgent;
+$ua->agent( "AgentName/0.1 " . $ua->agent );
+my $req = new HTTP::Request GET => 'http://www.google.com/';
+# Pass request to the user agent and get a response back
+my $res = $ua->request($req);
+# Check the outcome of the response
+if ( $res->is_success ) {
+	my $textbody = $res->content;
+	print "DOWNLOAD:\n$textbody\n";
+} else {
+	print "PROBLEM DOWNLOADING WEBPAGE\n";
+	exit();
+}
+#--
+chmod a+x test_web_download.pl
+
+#----------------------------
+open(PASSWD, '/etc/passwd');
+while (<PASSWD>) {
+    chomp;
+    ($login,$passwd,$uid,$gid,$gcos,$home,$shell) = split(/:/);
+}
+#----------------------------
+
+mod_perl in Fedora Core
+
+vi /etc/httpd/conf.d/perl.conf
+uncomment Directory and Location sections
+change in Location: Allow from 127.0.0.1
+
+/etc/init.d/httpd restart
+http://127.0.0.1/perl-status
+
+mkdir /var/www/perl
+vi /var/www/perl/hello.pl
+#--
+#!/usr/bin/perl
+
+print "Content-type: text/html\n\n";
+
+print <<END;
+<HTML>
+<HEAD>
+<TITLE>Hello There</TITLE>
+</HEAD>
+<BODY>
+Hello, world!
+</BODY>
+</HTML>
+END
+#--
+chmod a+x hello.pl 
+
+#----------------------------
+
+#wait for all children
+use POSIX;
+
+wait;
+
+#----------------------------
+
+#arp table builder:
+vi ping_sub.pl
+#--
+#!/usr/bin/perl
+#builds arp table by pinging a subnet
+
+use POSIX;
+
+$sub="64.79.238.";
+print "SUBNET IS : $sub\n";
+for ($ii=1;$ii<=254;$ii++) {
+        print "$ii \n";
+        system("ping -c 1 -w 1 ".$sub."$ii 2&>1 >/dev/null &");
+}
+wait;
+
+print "\n\n\n";
+system("arp | grep -v incomplete");
+#--
+chmod 0755 ping_sub.pl
+#----------------------------
+
+http://www.web-source.net/web_development/currency_formatting.htm
+
+sub CurrencyFormatted
+{
+	my $n = shift;
+	my $minus = $n < 0 ? '-' : '';
+	$n = abs($n);
+	$n = int(($n + .005) * 100) / 100;
+	$n .= '.00' unless $n =~ /\./;
+	$n .= '0' if substr($n,(length($n) - 2),1) == '.';
+	chop $n if $n =~ /\.\d\d0$/;
+	return "$minus$n";
+}
+
+sub CommaFormatted
+{
+	my $delimiter = ','; # replace comma if desired
+	my($n,$d) = split /\./,shift,2;
+	my @a = ();
+	while($n =~ /\d\d\d\d/)
+	{
+		$n =~ s/(\d\d\d)$//;
+		unshift @a,$1;
+	}
+	unshift @a,$n;
+	$n = join $delimiter,@a;
+	$n = "$n\.$d" if $d =~ /\d/;
+	return $n;
+}
+
+my $result = CommaFormatted(CurrencyFormatted($number));
+#----------------------------
+
+DBD-RAM-0.072 in memory SQL db
+http://www.cpan.org/modules/by-module/DBD/DBD-RAM-0.072.tar.gz
+needs:
+http://www.cpan.org/modules/by-module/DBD/DBD-File-0.22.tar.gz
+http://www.cpan.org/modules/by-module/SQL/SQL-Statement-1.09.tar.gz
+
+perldoc DBD::RAM
+
+to load from a mysql table:
+my $dbh_ram = DBI->connect("dbi:RAM:",,,{'RaiseError'=>1});
+my $sth_mysql = $dbh_mysql->prepare("SELECT * FROM GOLDBANK");
+$sth_mysql->execute;
+$dbh_ram->func({
+'data_type'=>'DBI',
+'data_source'=>$sth_mysql,
+},'import');
+$dbh_mysql->disconnect;
+
+no indexes, was so slow I didn't wait for it to print out 90K records
+
+#----------------------------
+
+Date conversion/manip
+
+http://www.cpan.org/modules/by-module/Date/DateManip-5.42a.tar.gz
+no prereqs
+man Date::Manip
+
+my $startdate="2004-01-30";    #YYYY-MM-DD
+my $date = ParseDate($startdate);
+print UnixDate($date,"%B %e, %Y"),"\n";
+>January 30, 2004
+
+#quick:
+my $startdateF = UnixDate(ParseDate($startdate),"%B %e, %Y");
+
+#----------------------------
+
+CPAN install
+
+perl -MCPAN -e shell
+#answer NO and let it autoconfigure
+cpan> install MIME::Lite
+
+#----------------------------
+
+#!/usr/bin/perl
+
+use DBI();
+use strict;
+
+my $mysql_host=$ENV{"MYSQL_HOST"};
+my $mysql_passwd=$ENV{"MYSQL_PASSWD"};
+my $mysql_database=$ENV{"MYSQL_DATABASE"};
+my $mysql_uname=$ENV{"MYSQL_UNAME"};
+        if ($mysql_uname eq "") { $mysql_uname=$ENV{"USER"}; }
+ 
+my $dbh = DBI->connect("DBI:mysql:database=$mysql_database;".
+ "host=$mysql_host;mysql_socket=/var/lib/mysql/mysql.sock",
+ "$mysql_uname","$mysql_passwd",{'RaiseError' => 1});
+
+my $numrows = $dbh->selectrow_array("SELECT count(*) FROM SAMPLETABLE");
+
+my $sth = $dbh->prepare("SELECT DISTINCT SSN FROM SAMPLETABLE");
+$sth->execute();
+while (my $ref = $sth->fetchrow_hashref()) {
+        my $this_ssn = $ref->{'SSN'};
+        my $max_hhid1 = $dbh->selectrow_array("SELECT MAX(HHID1) FROM SAMPLETABLE");
+        $dbh->do("UPDATE GOLDBANK set HHID1=".$max_hhid1." WHERE SSN=".$this_ssn);
+}
+print "FINISHED.\n";
+exit();
+
+#----------------------------
+#----------------------------

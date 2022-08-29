@@ -1,0 +1,90 @@
+
+
+#-------------------------------------------
+
+#I don't know how to add a directory, so everything
+#  starts in the root DVD dir (but subdirs off of that)
+#initial session
+growisofs -Z /dev/dvd -speed=1 -R -J /home/acoleman/beatles/
+#add a session
+growisofs -M /dev/dvd -speed=1 -R -J /home/acoleman/beatles/
+
+#turn off gnome automount in Desktop->Preferences->Removable
+
+#-------------------------------------------
+cdrecord speed=8 dev=0,0,0 ./iso_out.iso
+
+mkisofs -D -d -l -J -L -R -m *.iso -relaxed-filenames -o iso_out.iso ./
+
+CDCOPY
+cdrecord -v -dev=0,0,0 speed=4 -isosize /dev/cdrom
+
+STRAIGHT TO CD
+mkisofs -D -d -l -J -L -R -relaxed-filenames ./ | cdrecord speed=4 dev=0,0,0 -
+
+BOOTABLE
+mkisofs -D -d -l -J -L -R -m *.iso -relaxed-filenames -b tomsrtbt-1.7.361.ElTorito.288.img -o iso_out.iso ./
+
+EXT2 CD
+Create an empty file of 650MB size. 
+
+         dd if=/dev/zero of="empty_file" bs=1024k count=650
+
+     Create an extended-2 filesystem on this file 
+
+         shell> /sbin/mke2fs  -b 2048  empty_file
+         empty_file is not a block special device.
+         Proceed anyway? (y,n) y
+
+     Mount this empty file through the loopback devices (you need a reasonable new mount for this; read above). 
+
+         mount -t ext2 -o loop=/dev/loop1 empty_file /mnt
+
+     Copy files to /mnt and umount it afterwards. 
+     Use cdrecord on empty_file (which is no longer empty) as if it were an ISO-9660-image. 
+
+If you want to make an entry in /etc/fstab for such a CD, then disable the checking of the device file on system startup. For example: 
+
+     /dev/cdrom  /cdrom  ext2  defaults,ro  0 0
+
+#----------------------------------------------------------------
+
+From: Marcus Herbert (rhoenie@spam-filter.de)
+ Subject: Re: how to copy an efs cdrom?
+ Newsgroups: comp.sys.sgi.admin
+ Date: 2001-12-21 14:14:24 PST
+
+
+Michael Renner <michael.renner@gmx.de> wrote:
+> I need to copy a cdrom with efs file format. My
+> first tries with dd and burning the resulting image
+> to the blank CD failed, it was not readable.
+
+I did so xxx times before (under linux) and it worked each time :-)
+
+ dd if=/dev/cdrom of=your_efs_cd_image.img bs=256k
+
+Where /dev/cdrom ist your CD-ROM device (for example /dev/hdc). You
+wrote that you write your CDs with linux, then you can read it there
+too :-).
+
+The reason why it failed for you under IRIX probably is that you
+used the wrong device file.
+
+#--------------------------------------------
+CDRDAO
+http://cdrdao.sourceforge.net/index.html
+
+(bin cue) format
+CDRECORD
+
+http://www.fokus.gmd.de/research/cc/glone/employees/joerg.schilling/private/cdrecord.html
+ftp://ftp.fokus.gmd.de/pub/unix/cdrecord/
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+
+
+

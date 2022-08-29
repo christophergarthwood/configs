@@ -1,0 +1,10 @@
+
+For advanced debugging such as memory leaks, kmtrace (in
+                               kdesdk) seems to do a good job too. What was missing for a long time was a memory debugger, to detect use of
+                               uninitialized or deleted memory etc., such as Purify provides. This is now available thanks to Julian Seward, who
+                               developed a GPL tool call valgrind. 
+
+                               Although still under development, this tool allows to find many non-obvious bugs in the code. But for the most common
+                               types of bugs (wrong code paths etc.) kdDebug() (the equivalent of printf or cout) and gdb do the job quite well ;) 
+
+

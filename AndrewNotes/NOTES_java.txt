@@ -1,0 +1,1536 @@
+
+#------------------------------------------------------
+nice try/catch
+
+try {
+} catch (SQLException sqle) {
+String errmessage="Exception ( "+sqle.getClass().getName()+" ) : "+sqle.getMessage();
+System.out.println(errmessage);JOptionPane.showMessageDialog(null,errmessage);
+}
+
+#------------------------------------------------------
+
+#yes/no dialog for "are you sure"
+
+Object[] options = {"Yes","No"};
+int dialogAnswer = JOptionPane.showOptionDialog(null,
+"Delete this row?",
+"Confirm Delete",
+JOptionPane.YES_NO_OPTION,
+JOptionPane.QUESTION_MESSAGE,
+null,     //don't use a custom Icon
+options,  //the titles of buttons
+options[1]); //default button title
+
+if ( dialogAnswer == 0 ) {
+//do delete function here
+}
+
+#------------------------------------------------------
+
+java SETUP:
+./j2re-1_4_0_01-linux-i586-rpm.bin  #decompresses to an rpm
+rpm -ivh j2sdk-1_4_1_01-fcs-linux-i586.rpm
+vi /etc/profile
+#--
+export JAVA_HOME=/usr/java/j2sdk1.4.1_01
+export PATH=$PATH:$JAVA_HOME/bin
+
+#and if using jikes
+export BOOTCLASSPATH=$JAVA_HOME/lib/rt.jar  #j2re
+#export BOOTCLASSPATH=$JAVA_HOME/jre/lib/rt.jar  #j2sdk
+
+#--
+#move gcc java:
+mv /usr/bin/java /usr/bin/gcj-java
+mv /usr/bin/javac /usr/bin/gcj-javac
+mv /usr/bin/javah /usr/bin/gcj-javah
+mv /usr/bin/jar /usr/bin/gcj-jar
+
+#------------------------------------------------------
+
+This tutorial shows you how to develop, test, run, and
+debug a complete J2EE application using Linux and WebSphere(trial download).
+
+http://www7b.boulder.ibm.com/wsdd/library/tutorials/0206_wosnick/wosnick_reg.html?open&l=251,t=gr
+http://www-106.ibm.com/developerworks/toolbox/download.html?open&l=251
+
+#------------------------------------------------------
+
+The place to put your jar files is
+$JAVA_HOME/jre/lib/ext
+Then they are automatically included.
+
+cp *jar $JAVA_HOME/jre/lib/ext
+
+#-----------------------
+
+screen size stuff:
+
+//vanilla, largish size
+Toolkit kit = Toolkit.getDefaultToolkit();
+Dimension screenSize = kit.getScreenSize();
+int screenHeight = screenSize.height;
+int screenWidth = screenSize.width;
+int locationX = screenWidth / 8;
+int locationY = screenHeight / 8;
+frame.setSize( (int)(screenWidth / 1.5) , (int)(screenHeight / 1.5) );
+frame.setLocation(locationX,locationY);
+frame.setTitle("TeSt TiTle");
+frame.setVisible(true);
+
+//vanilla compacted
+import javax.swing.*;
+import java.awt.*;
+Dimension screenSize = this.getToolkit().getScreenSize();
+this.setSize( (int)(screenSize.width / 1.5) , (int)(screenSize.height / 1.5) );
+this.setLocation( (int)(screenSize.width / 8) , (int)(screenSize.height / 8) );
+this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+//full screen one liner
+frame.setSize(frame.getToolkit().getScreenSize());
+
+//using from 1.4: java.awt.Toolkit.getScreenInsets();
+GraphicsConfiguration gc = frame.getGraphicsConfiguration();
+Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+Rectangle rect = gc.getBounds();
+int scWidth = rect.width - (insets.left + insets.right);
+int scHeight = rect.height - (insets.top + insets.bottom);
+frame.setSize( (int)(scWidth / 1.5),(int)(scHeight / 1.5) );
+frame.setLocation( (int)(scWidth / 8),(int)(scHeight / 8) );
+frame.setVisible(true);
+
+
+//location centered on screen
+this.setLocation( (int)( (screenSize.width-this.getWidth())/2 ),
+	(int)( (screenSize.height-this.getHeight())/2 ) );
+
+
+#-----------------------
+
+splash screen on load:
+http://www.javaworld.com/javaworld/javatips/jw-javatip104.html
+also:
+http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&oe=UTF-8&selm=as65ds%24o95ul%241%40ID-139894.news.dfncis.de&rnum=4
+(supply your own "splash.gif").  Mark Thornton
+import java.awt.*;
+
+import java.io.InputStreamReader;
+import javax.swing.JFrame;
+
+public class SplashScreen extends Component
+{
+ static String tLaunch;
+ static long tStart;
+ static long tSize;
+ static long tPaint=-1;
+
+ Frame frame;
+ Window splashWindow;
+ Image splashImage;
+ boolean haveSize;
+ boolean haveAllBits;
+ boolean frameShown;
+ /**
+  * This method is called after start up.
+  */
+ public static void main(String[] args)
+ {
+  if (args.length == 0)
+  {
+   launch();
+   return;
+  }
+  tLaunch = args[0];
+  tStart = System.currentTimeMillis();
+  // Create application frame.
+  JFrame frame = new JFrame("Splash screen demonstration");
+  frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+  new SplashScreen(frame);
+ }
+
+ private static void launch()
+ {
+  // System.out.println("Classpath:
+"+System.getProperty("java.class.path"));
+  String[] args = {"javaw.exe", "-classpath",
+    System.getProperty("java.class.path"),
+    "SplashScreen",
+    String.valueOf(System.currentTimeMillis())};
+  try
+  {
+   Process p = Runtime.getRuntime().exec(args);
+   InputStreamReader in = new InputStreamReader(p.getInputStream());
+   char[] buffer = new char[512];
+   while(true)
+   {
+    int n = in.read(buffer);
+    if (n == -1)
+     break;
+    System.out.print(new String(buffer, 0, n));
+   }
+  }
+  catch (Exception ex)
+  {
+  }
+ }
+
+ SplashScreen(Frame frame)
+ {
+  this.frame = frame;
+  // create window for splash screen
+  splashWindow = new Window(frame);
+  splashWindow.setLayout(null);
+  splashWindow.add(this);
+  splashImage =
+Toolkit.getDefaultToolkit().createImage(getClass().getResource("splash.gif")
+);
+  checkSize();
+ }
+
+ private void checkSize()
+ {
+  int w = splashImage.getWidth(this);
+  int h = splashImage.getHeight(this);
+  // System.out.println("w="+w+", h="+h);
+  if (w != -1 && h != -1)
+  {
+   haveSize = true;
+   tSize = System.currentTimeMillis()-tStart;
+   Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+   int x = (screen.width-w)/2;
+   int y = (screen.height-h)/2;
+   splashWindow.setLocation(x, y);
+   splashWindow.setSize(w, h);
+   setLocation(0, 0);
+   setSize(w, h);
+   splashWindow.show();
+  }
+ }
+
+ public boolean imageUpdate(Image img, int flags, int x, int y, int w, int
+h)
+ {
+  if ((flags & ALLBITS) != 0)
+  {
+   haveAllBits = true;
+   // System.out.println("All bits available");
+  }
+  if (!haveSize)
+   checkSize();
+  if (haveSize)
+   return super.imageUpdate(img, flags, x, y, w, h);
+  return true;
+ }
+
+ public void paint(Graphics g)
+ {
+  if (tPaint < 0)
+   tPaint = System.currentTimeMillis()-tStart;
+  g.drawImage(splashImage, 0, 0, this);
+  if (haveAllBits && !frameShown)
+  {
+   frameShown = true;
+   frame.pack();
+   frame.show();
+   System.out.println("Launch delay:
+"+(tStart-Long.parseLong(tLaunch))+"ms");
+   long t = System.currentTimeMillis();
+   System.out.println("Have image size after "+tSize+"ms");
+   System.out.println("Commence image paint after "+tPaint+"ms");
+   System.out.println("Splash complete after "+(t-tStart)+"ms");
+   System.out.println("Image size: "+getWidth()+" * "+getHeight());
+  }
+ }
+}
+#-----------------------
+
+Combo application and applet:
+#(extends JApplet, but also has main method that creates a frame
+#  to start the applet in if running as an application)
+
+public class AppletVersionOfStringSearch extends JApplet {
+
+  //All your StringSearch fields and methods here...
+
+  public static void main(String [] args)
+  { 
+    JApplet applet = new AppletVersionOfStringSearch() ;
+     JFrame     jf = new JFrame("Stand Alone Version Of StringSearch");
+     jf.getContentPane().add(applet);
+     applet.init() ;
+     applet.start() ;           
+  }
+}
+
+#--
+Other options:
+Check out http://www.acme.com where he has a wrapper class to do that.
+
+Java Examples in a Nutshell from O'Reilly,
+http://www.oreilly.com/catalog/jenut/, has several examples of code that is both
+an applet and an application.  Download the example code and check out
+MenuScribble.java for ideas on what you need to do.
+
+http://www.javaworld.com/javaworld/jw-01-1997/jw-01-applet.to.app_p.html
+
+#--
+My application main class is defined like this:
+
+public class myApp extends JFrame
+{
+   // Class variables
+   static final JApplet applet;
+   public static void main(String args[])
+   {
+      // Do whatever...
+   }
+   public static void setApplet(JApplet ja)
+   {
+      applet = ja;
+   } // etc, etc, etc....
+}
+
+I have been able to get a browser to start the application (using standard
+APPLET tags in an HTML file) with the following implementation:
+
+public class myApplet extends JApplet
+{
+  public void init()
+  {
+    myApp.setApplet(this);
+    myApp.main(null);
+  }
+}
+
+The only problem here is that the UI pops up in a separate window, as though
+it's running as an application. I need to somehow get this to run WITHIN the
+browser's window, not as a separate window.
+#--
+
+#-----------------------
+
+Java3D:
+Windows,solaris:
+http://java.sun.com/products/java-media/3D/download.html
+Linux:
+http://www.blackdown.org/java-linux/jdk1.2-status/java-3d-status.html
+
+#install
+ftp://metalab.unc.edu/pub/linux/devel/lang/java/blackdown.org/java3d/1.3/i386/fcs/
+cd /usr/java/j2sdk1.4.1_01/
+sh ~n9n/downloads/java3d-sdk-1.3-fcs-linux-i386.bin
+
+#test
+cd /usr/java/j2sdk1.4.*/demo/java3d/HelloUniverse/
+java HelloUniverse
+cd /usr/java/j2sdk1.4.*/demo/java3d/SphereMotion/
+java SphereMotion
+cd /usr/java/j2sdk1.4.*/demo/java3d/SplineAnim/
+java SplineAnim
+
+#docs
+http://java.sun.com/products/java-media/3D/releases.html
+#API
+http://java.sun.com/products/java-media/3D/forDevelopers/J3D_1_3_API/j3dapi/index.html
+
+#-------------------------------------------------------------------------------------------
+
+#quick frame:
+vi QuickFrame.java
+#--
+import javax.swing.*;
+import java.awt.*;
+public class QuickFrame {
+    QuickFrame() {
+        JFrame frame = new JFrame("Title");
+        Dimension screenSize = frame.getToolkit().getScreenSize();
+        frame.setSize( (int)(screenSize.width / 1.5) , (int)(screenSize.height / 1.5) );
+        frame.setLocation( (int)(screenSize.width / 8) , (int)(screenSize.height / 8) );
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        QuickFrame mainframe = new QuickFrame();
+    }
+}
+#--
+
+#-------------------------------------------------------------------------------------------
+#AFrame.java
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+//javadoc -version -author -d ./doc AFrame.java
+
+/**
+        Creates nice defaults for JFrame
+        @author A Coleman
+        @version 20021210
+*/
+public class AFrame extends JFrame {
+
+/** Dummy variable to test javadoc */
+        private int dummyX = 42;
+
+        public AFrame() {
+                super();
+                init(0.66,0.66,0.125,0.125);
+        }
+/**
+        Constructor with just title (default dimensions)
+        @param title frame title
+*/
+        public AFrame(String title) {
+                super(title);
+                init(0.66,0.66,0.125,0.125);
+        }
+/**
+        Test
+        @param title frame title
+               width frame width
+               height frame height
+               startx frame x location
+               starty frame y location
+*/
+        public AFrame(String title, double width, double height, double startx, double starty) {
+                super(title);
+                init(width,height,startx,starty);
+        }
+/**
+        Test init method
+*/
+        private void init(double width, double height, double startx, double starty) {
+                this.addWindowListener(new WindowAdapter(  ) {
+                        public void windowClosing(WindowEvent e) { System.exit(0); }
+                });
+
+                Dimension screenSize = this.getToolkit().getScreenSize();
+                this.setSize( (int)(screenSize.width * width) , (int)(screenSize.height * height) );
+                this.setLocation( (int)(screenSize.width * startx) , (int)(screenSize.height * starty) );
+
+        }
+}
+
+#-------------------------------------------------------------------------------------------
+
+#Template html for applet (use: appletviewer MyApplet.html):
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<title>applet</title>
+	<link rel="STYLESHEET" href="/default.css" type="text/css">
+</head>
+<body>
+	<APPLET CODE=MyApplet.class WIDTH=200 HEIGHT=200>
+	</APPLET>
+	<p>
+	<a href="http://java.sun.com/docs/books/tutorial/applet/appletsonly/html.html">
+		External: Using the APPLET Tag [java.sun.com]</a>
+	</p>
+	<!-- last update: ..Wed Jun 19 14:04:19 CDT 2002..  -->
+</body>
+</html>
+#-------------------------------------------------------------------------------------------
+
+jikes:
+#just a very fast compiler. You need a jre or sdk for the jvm and classes
+http://www-124.ibm.com/developerworks/oss/jikes/
+http://sourceforge.net/projects/jikesrvm
+http://jikes.sourceforge.net/
+rpm -ivh ./jikes-1.22-1.i586.rpm
+
+export CLASSPATH=$CLASSPATH:/usr/java/j2sdk1.4.0_01/jre/lib/rt.jar
+jikes PongGame.java
+java PongGame
+
+#-------------------------------------------------------------------------------------------
+
+Encryption:
+cryptix
+JCE
+
+#-------------------------------------------------------------------------------------------
+
+TUTORIALS:
+javaboutique.internet.com/tutorials
+http://www.cs.duke.edu/courses/cps108/fall98/code.html
+#-------------------------------------------------------------------------------------------
+
+CLASSPATH:
+user classpath:
+export CLASSPATH=$CLASSPATH:/home/n9n/downloads/slaf
+#ls -la /home/n9n/downloads/slaf/com/memoire/slaf/SlafLookAndFeel.class 
+
+Extension mechanism:
+should default to $JAVA_HOME/jre/lib/ext   (for both jre and jdk)
+change with
+javac -extdirs /other_dir MyProg.java
+java -Djava.ext.dirs=/other_dir MyProg
+
+#-------------------------------------------------------------------------------------------
+SLAF
+com.memoire.slaf.SlafLookAndFeel.setCurrentTheme(args[0]);
+try { UIManager.setLookAndFeel("com.memoire.slaf.SlafLookAndFeel"); }
+catch (Exception ex) { System.err.println("SLAF not found"); }
+
+unzip themes into home dir (~/.slaf)
+
+#-------------------------------------------------------------------------------------------
+
+MS SQL SERVER:
+jTDS (java part of freeTDS)
+http://jtds.sourceforge.net/
+jTDS is an open source 100% pure Java (type 4) JDBC 2.0 driver for the
+  Microsoft SQL Server series (6.5, 7.x and 2000) and Sybase 10.
+
+jtds-0.5.1.jar
+cp jtds-0.5.1.jar /usr/java/j2sdk1.4.0_01/jre/lib/ext/
+
+Being a type 4 JDBC driver, jTDS does not need any kind of installation. Just
+add jtds.jar (or whatever the name of your specific version of jar is) to your
+existing classpath and you're done. What's more important is the class name of
+the driver and DataSource implementations and the URL format. The class names
+are net.sourceforge.jtds.jdbc.Driver (for the Driver implementation) and
+net.sourceforge.jtds.jdbcx.TdsDataSource (for the DataSource implementation).
+The URL format is:
+
+jdbc:jtds:<server_type>://<server>[:<port>][/<database>][;<property>=<value>[;...]]
+
+where <server_type> is one of either 'sqlserver' or 'sybase' (their meaning is
+quite obvious), <port> is the port the server is listening to (with a default
+of 1433 for SQL Server and 4000 for Sybase) and <database> is the database
+name -- or catalog, by the JDBC terminology -- (default is 'master').
+
+#simple test:
+export JDBCPATH=/home/n9n/downloads
+jikes foo.java 
+java -classpath $CLASSPATH:$JDBCPATH/jtds-0.5.1.jar foo
+#--
+import java.io.*;
+import java.sql.*;
+import java.net.URL;
+public class foo {
+        public static void main(String s[])
+        {
+                Connection con;
+                try {
+                        Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                        con = DriverManager.getConnection(
+                                "jdbc:jtds:sqlserver://estonia.hfdirect.com/master;TDS=4.2", "username", "password");
+                        System.out.println("Connected.");
+                        Statement stmt = con.createStatement();
+                        ResultSet rs=stmt.executeQuery("SELECT * FROM sysusers");
+                        while (rs.next()) {
+                            for (int j = 1; j <= rs.getMetaData().getColumnCount(); j++) {
+                                System.out.print(rs.getObject(j) + "\t");
+                            }
+                            System.out.println();
+                        }
+                        stmt.close();
+                        con.close();
+                }
+                catch (SQLException e) {
+                        System.out.println("Error SQLException: "+e.getMessage());
+                }
+                catch (ClassNotFoundException e) {
+                        System.out.println("Error ClassNotFoundException: "+e.getMessage());
+                }
+        }
+}
+#--
+
+#-------------------------------------------------------------------------------------------
+
+Drag and Drop in JDKTM 1.2 Beta 4 
+The following example should work on all platforms,
+however, there is a
+bug in the listener on Solaris. You need to implement
+DragGestureListener in your
+drag object now. It is part of a platform-independent
+notification mechanism. 
+
+#--
+                 DragSource ds = DragSource.getDefaultDragSource();
+
+                 ds.createDefaultDragGestureRecognizer(this,
+                 DnDConstants.ACTION_COPY, this); 
+
+                 Here is a modified program edited from a bug report: 
+
+
+                 import java.awt.*;
+                 import java.awt.event.*;
+                 import java.awt.datatransfer.*;
+                 import java.awt.dnd.*;
+
+
+                 import java.io.*;
+
+                 import java.util.mime.*;
+
+                 class DropText extends TextField implements 
+                                 DropTargetListener {
+                   DropText(String text){
+                     super(text);
+                     setDropTarget(new DropTarget(this, this));
+                   }
+                   
+                   public void dragEnter(DropTargetDragEvent e) {
+                     e.acceptDrag(DnDConstants.ACTION_COPY);
+                   }
+                   
+                   public void dragOver(DropTargetDragEvent e) {
+                     e.acceptDrag(DnDConstants.ACTION_COPY);
+                   }
+                   
+                   public void dragExit(DropTargetEvent e) {
+                     repaint();
+                   }
+                   
+                   public void drop(DropTargetDropEvent dtde) {
+                     DropTargetContext dtc = 
+                                 dtde.getDropTargetContext();
+                     
+                     boolean outcome = false;
+                     if ((dtde.getSourceActions() 
+                                 & DnDConstants.ACTION_COPY) != 0)
+                       dtde.acceptDrop(DnDConstants.ACTION_COPY);
+                     else {
+                       dtde.rejectDrop();
+                       return;
+                     }
+                     
+                     DataFlavor[] dfs = dtde.getCurrentDataFlavors();
+                     DataFlavor   tdf = null;
+                     
+                     for (int i = 0; i < dfs.length; i++) {
+                       if (DataFlavor.plainTextFlavor.equals(dfs[i])) {
+                         tdf = dfs[i];
+                         break;
+                       }
+                     }
+                     
+                     if (tdf != null) {
+                       Transferable t  = dtde.getTransferable();
+                       InputStream  is = null;
+                       
+                       try {
+                         is = (InputStream)t.getTransferData(tdf);
+                       } catch (IOException ioe) {
+                         ioe.printStackTrace();
+                         dtc.dropComplete(false);
+
+                         return;
+                       } catch (UnsupportedFlavorException ufe) {
+                         ufe.printStackTrace();
+                         dtc.dropComplete(false);
+
+                         repaint();
+                         return;
+                       }
+                       
+                       if (is != null) {
+                         String s = getText();
+
+                         try {
+                           int len = is.available();
+                           
+                           System.err.println("len = " + len);
+                           
+                           byte[] string = new byte[len];
+                           
+                           is.read(string, 0, len);
+                           
+                           for (int i = 0; i < len; i++) 
+                             if (string[i] == 0) {
+                               len = i;
+                               break;
+                             }
+                           
+                           s = new String(string, 0, len);
+                           
+                           outcome = true;
+                         } catch (Exception e) {
+                           e.printStackTrace();
+                           dtc.dropComplete(false);
+                           
+                           repaint();
+                           return;
+                         } finally {
+                           setText(s);
+                         }
+                       } else outcome = false;
+                     }
+                     
+                     repaint();
+                     
+                     dtc.dropComplete(outcome);
+                   }
+
+                   public void dragScroll(DropTargetDragEvent e) {
+                   }
+                   
+                   public void 
+                         dropActionChanged(DropTargetDragEvent e) {
+                   }
+                   
+                 }
+
+                 class DragText extends TextField implements 
+                         Transferable, DragGestureListener,
+DragSourceListener {
+                   
+                  DragText(String s) {
+                     super(s);
+                     DragSource ds = DragSource.getDefaultDragSource();
+                     ds.createDefaultDragGestureRecognizer(this, 
+                                         DnDConstants.ACTION_COPY,
+this);
+                   }
+
+                     public void dragGestureRecognized(
+                                                 DragGestureEvent dge) {
+                         dge.startDrag(null, this, null);
+                     }
+
+                   public void dragEnter(DragSourceDragEvent dsde) {
+                     dsde.getDragSourceContext().setCursor(
+                                         DragSource.DefaultCopyDrop);
+                   }
+                   
+                   public void dragOver(DragSourceDragEvent dsde) {
+                   }
+                   
+                   public void dragGestureChanged(
+                                         DragSourceDragEvent dsde) {
+                   }
+                   
+                   public void dragExit(DragSourceEvent dse) {
+                     dse.getDragSourceContext().setCursor(null);
+                   }
+                   
+                   public void dragDropEnd(DragSourceDropEvent dsde) {
+                   }
+                   
+                   public void dropActionChanged(DragSourceDragEvent e)
+{
+                   }
+                   public DataFlavor[] getTransferDataFlavors() {
+                     return dfs;
+                   }
+
+                   public boolean isDataFlavorSupported(DataFlavor sdf)
+{
+                     for (int i = 0 ; i < dfs.length; i++)
+                       if (dfs[i].equals(sdf)) return true;
+                     return false;
+                   }
+                   
+                   public Object getTransferData(DataFlavor tdf) throws 
+                                 UnsupportedFlavorException , 
+                                                 IOException {
+                     if (!isDataFlavorSupported(tdf)) 
+                                 throw new
+UnsupportedFlavorException(tdf);
+                     
+                     String text = getText();
+                     
+                     if (DataFlavor.stringFlavor.equals(tdf)) {
+                       ByteArrayOutputStream baos = 
+                                         new ByteArrayOutputStream();
+                       ObjectOutputStream oos = 
+                                         new ObjectOutputStream(baos);
+                       
+                       try {
+                         oos.writeObject(text);
+                       } catch (Exception e) {
+                         throw new IOException();
+                       }
+                       
+                       return new ObjectInputStream(
+                         new ByteArrayInputStream(baos.toByteArray()));
+                     } else {
+                       StringBufferInputStream sbis = 
+                                         new
+StringBufferInputStream(text);
+                       return sbis;
+                     }
+                   }
+                   
+                   private transient int dropAction;
+                   
+                   private static DataFlavor create() {
+                     try {
+                       return new DataFlavor(
+                                 "text/plain; charset=iso8859-1",
+"String");
+                     } catch (Exception e) {
+                       e.printStackTrace();
+                       return null;
+                     }
+                   }
+                   private static    DataFlavor dfs[] = new DataFlavor[]
+{
+                     create(),
+                       DataFlavor.plainTextFlavor,
+                       DataFlavor.stringFlavor
+                       };
+                 }
+
+                 public class TestText extends Frame {
+                   Panel  p;
+                   
+                   public TestText() {
+                     super();
+                   }
+                   
+                   public void init() {
+                     Component c1, c2;
+                     
+                     p = new Panel();
+                     p.setBackground(Color.white);
+                     
+                     c1 = new DropText("Drop this");
+                     c2 = new DragText("Drag this");
+                     
+                     p.add(c1);
+                         p.add(new Button("test"));
+                     p.add(c2);
+                     p.show();
+                     c1.show();
+                     c2.show();
+                         add(p);
+                     
+                     pack();
+                     show();
+                   }
+
+
+                   public static void main(String[] args) {
+                     TestText tt = new TestText();
+                     
+                     tt.init();
+                   }
+                 }
+#--
+vi JLabelDragNDrop2.java
+#--
+// Implemented under 1.4.
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.awt.datatransfer.*;
+// This example demonstrates adding drag and drop (DnD)
+// support to a JLabel to both native and Java apps.
+public class JLabelDragNDrop2 extends JFrame {
+    // Constructor
+    public JLabelDragNDrop2() {
+        super("JLabel Drag to Native Demo");
+        setSize(100, 10);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.addWindowListener( new WindowAdapter() {
+          public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
+        final JLabel myLabel = new JLabel("Drag me 2 native or Java", SwingConstants.LEFT);
+        class myTransferHandler extends TransferHandler {
+          protected myTransferHandler() {
+                // Sets up new TransferHandler to initialise
+                // the mechanics
+              super("text");
+            }
+          protected Transferable createTransferable(JComponent c) {
+                // Creates a new Transferable object
+                // with the correct DataFlavors etc.
+                return new StringSelection(myLabel.getText());
+            }
+        }
+        myLabel.setTransferHandler(new myTransferHandler());
+        // Mouse click used as a Drag gesture recogniser
+        MouseListener ml = new MouseAdapter() {
+          public void mousePressed(MouseEvent e) {
+                JComponent c = (JComponent)e.getSource();
+                TransferHandler th = c.getTransferHandler();
+                th.exportAsDrag(c, e, TransferHandler.COPY);
+            }
+        };
+        myLabel.addMouseListener(ml);
+        getContentPane().add(myLabel);
+        setSize(300, 200);
+        setVisible(true);
+    }
+ 
+    public static void main(String[] args) {
+        // Set the look and feel.
+        try {
+            UIManager.setLookAndFeel(
+                UIManager.getCrossPlatformLookAndFeelClassName());
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        new JLabelDragNDrop2();
+    }
+}
+#--
+
+#-------------------------------------------------------------------------------------------
+
+Date:
+
+String to java.util.date:
+//SimpleDateFormat d = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+//Date date = d.parse("01/01/1900 00:00:00"); // throws ParseException!
+
+//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-M-d");
+//dateOfBirth = sdf.parse(request.getParameter("txtDateOfBirth")); // dateOfBirth will be null if parse fails 
+
+/*
+DateFormat dfInput = DateFormat.getDateInstance (
+                         DateFormat.LONG, Locale.US);
+                     Date inputDate = dfInput.parse(dateString));
+
+                     Don't forget to catch a potential ParseException. 
+*/
+
+#-------------------------------------------------------------------------------------------
+JTable:
+http://www-106.ibm.com/developerworks/java/library/j-jtable/
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+
+java - mozilla
+Mozilla users: (From the Mozilla docs) If the plugin fails to load, make a symlink to /usr/java/j*/jre/plugins/i386/ns610/libjavaplugin_oji.so in your Mozilla.0 /plugins/ directory. Do not copy the file, but instead make a symlink to it
+must restart mozilla
+
+#-------------------------------------------------------------------------------------------
+
+HSQLDB:
+http://sourceforge.net/projects/hsqldb/
+open-source small-sized db, pure 100% java, can use file-based db and/or
+memoryonly tables. Althought, I doubt it could handle 4 million rows
+effectively. Probably it runs out of memory with such a row numbers due to
+keeping an entire index table in a memory.
+
+#-------------------------------------------------------------------------------------------
+
+Examples:
+http://javaalmanac.com/
+The Java Developers Almanac 1.4
+http://javaalmanac.com/egs/
+
+#-------------------------------------------------------------------------------------------
+
+Webstart:
+
+http://java.sun.com/products/javawebstart/faq.html
+An application requesting unrestricted access must be digitally signed.
+
+Java Web Start requires only one change to your web server, that is
+creating an association between the file extension, typically jnlp,
+and the mime type, application/x-java-jnlp-file. The steps for doing
+this vary depending upon the Web server you are using. 
+
+http://java.sun.com/products/javawebstart/docs/developersguide.html
+http://java.sun.com/j2se/1.4.2/docs/guide/jws/developersguide/setup.html
+http://java.sun.com/j2se/1.4.2/docs/guide/jws/developersguide/launch.html
+http://java.sun.com/j2se/1.4.2/docs/guide/jws/developersguide/syntax.html
+http://developer.apple.com/documentation/WebObjects/DesktopApplications/DeployingApplications/chapter_11_section_3.html
+
+
+#-------------------------------------------------------------------------------------------
+
+#--------------------------------
+
+#CREATE A JAR
+
+#packages make things nice - but they
+#are completely separate from jars.
+
+#create a manifest so we can specify
+#a main class
+vi MANIFEST.MF
+#--
+Manifest-Version: 1.0
+Created-By: 1.4.0_01 (Sun Microsystems Inc.)
+Main-Class: FrameTree
+Class-Path: jtds-0.5.1.jar devpgjdbc3.jar #local to machine
+#--
+
+#jars can NOT go into other jars - unzip the
+#  other jars and add them to the main one
+#or use a classloader to allow jars within a jar, like:
+http://www.jpevans.com/software/jjcl/    #The JarJar ClassLoader
+
+jar cvmf MANIFEST.MF test.jar *.class ./net/ ./org/ ./com/
+
+#then to run:
+java -jar test.jar
+
+#to add images and load them from the jar see below
+
+#--------------------------------
+
+web start:
+vi test.jnlp
+#--
+<jnlp codebase="http://192.168.0.179"> 
+<information>
+<title>Test Web Start</title>      
+<vendor>Test Vendor</vendor>
+</information>
+<resources>
+<j2se version="1.4"/>
+<jar href="test.jar"/>
+</resources>
+<application-desc main-class="HelloWorld"/>
+</jnlp> 
+#--
+vi /etc/mime.types
+#--
+application/x-java-jnlp-file    jnlp
+application/x-java-archive-diff jardiff
+#--
+
+for a signed jar, you can add to the jnlp:
+<security> 
+<all-permissions/> 
+</security> 
+
+
+#--------------------------------
+
+signing jars:
+
+#create keystore and keys:
+http://java.sun.com/products/jdk/1.2/docs/tooldocs/solaris/keytool.html
+
+keytool -genkey -alias testalias
+#prompts for password and cert info
+
+#sign jar
+http://java.sun.com/docs/books/tutorial/jar/sign/signing.html
+
+jarsigner test.jar testalias
+#prompts for testalias password, overwrites test.jar
+
+#one line - password on line
+jarsigner -storepass password hello.jar testalias
+
+#jarsigner requires entropy in /dev/random or it hangs waiting for it.
+#having lots of ssh sessions up can suck all you entropy up
+
+vi ./makejar.sh #change tester to username, testpass to password
+#--
+MYNAME="MainClassName"
+
+echo "Manifest-Version: 1.0" > MANIFEST.MF
+echo "Main-Class: $MYNAME" >> MANIFEST.MF
+
+rm *class; jikes $MYNAME.java
+jar cvmf MANIFEST.MF $MYNAME.jar *.class ./com/
+expect -c "spawn jarsigner $MYNAME.jar tester" -c 'expect "Enter Passphrase for keystore:" {send "testpass\n"}' -c 'wait'
+echo
+#touch the file and chown on france since the dir is read-only
+scp $MYNAME.jar france:/var/www8080/
+echo
+#--
+chmod 0755 ./makejar.sh
+
+#-------------------------------
+#--------------------------------
+#-------------------------------------------------------------------------------------------
+Extensions:
+Java Supplements: This free library of utility classes extends the normal classes
+http://www.jpevans.com/software/javas/
+
+#-------------------------------------------------------------------------------------------
+
+random:
+from: http://www.cs.geneseo.edu/~baldwin/reference/random.html
+
+import java.util.Random;
+Random generator = new Random(); //uses current time as seed
+Random generator2 = new Random( 19580427 ); //uses 19580427 as seed
+int r = generator.nextInt(); //returns a valid integer positive or negative
+int randomIndex = generator.nextInt( n ); //returns int between 0 and n-1
+double r = generator.nextDouble(); // returns double btween 0 and 1
+double r = generator.nextGaussian(); // centered on 0;
+  //(about 70% will lie between -1 and 1, about 95% between -2 and 2)
+
+int throw = generator.nextInt(5) + 1;  // int 1 to 6
+double angle = generator.nextDouble() * 360.0; //double 0 to 360
+double length = generator.nextDouble() * 40.0 + 10.0; //double 10 to 50
+
+#-------------------------------------------------------------------------------------------
+
+sleep.java
+public class sleep { 
+  public static void main(String[] args) {
+    try {
+      Thread.sleep(Integer.parseInt(args[0]) * 1000);
+    }
+    catch (Exception e) {
+      System.err.println("Usage: sleep <seconds>");
+    }
+  }
+}
+
+#-------------------------------------------------------------------------------------------
+
+????
+Calendar calendar = Calendar.getInstance();
+calendar.get(Calendar.DAY_OF_MONTH);
+
+Date date = new Date();
+calendar.setTime(date);
+
+date = calendar.getTime();
+
+#-------------------------------------------------------------------------------------------
+using String.replaceAll() :
+to quote special chars,etc (I know $ is one):
+
+String cost = Str.formatDouble(projectCost,2);
+String costreplace = "$"+cost;
+String quoted = costreplace.replaceAll("(\\W)", "\\\\$1");
+insertstring = insertstring.replaceAll( "VARcost", quoted);
+
+Str is from com.javaranch.common
+
+also (above escape *everything*):
+public static String quotemeta(String str) {
+	if (str.length() == 0) { return ""; }
+	StringBuffer buf = new StringBuffer();
+	for (int i = 0; i < str.length(); i++) {
+		char c = str.charAt(i);
+		if ("\\[](){}.*+?$^|".indexOf(c) != -1) {
+			buf.append('\\');
+		}
+		buf.append(c);
+	}
+	return buf.toString();
+}
+
+#Better way to get currency format:
+String formattedDollars = NumberFormat.getCurrencyInstance().format(someDouble);
+#formattedDollars = "$1,115.37"
+
+#-------------------------------------------------------------------------------------------
+EdenLib is a collection of Java libraries which I use throughout my open source projects.
+http://edenlib.sourceforge.net/
+#-------------------------------------------------------------------------------------------
+
+anonymous inner class ex:
+accepted = new JCheckBox("Accepted", false );
+accepted.addActionListener(new ActionListener() {
+	public void actionPerformed(ActionEvent e) {
+		if (currentproj!=null) {
+			currentproj.setAccepted(accepted.isSelected());
+		}
+	}
+});
+
+#when using outside variables in anon inner class, you get the error
+#Invalid reference in inner class "..." to a non-final local variable
+#instead do:
+#public void actionPerformed(ActionEvent e) {
+#	fireThisActionPerformed();
+#}
+#private void fireThisActionPerformed() {
+# //do stuff involving variables here
+#}
+
+#-------------------------------------------------------------------------------------------
+
+J2EE/j2ee install
+http://java.sun.com/j2ee/download.html
+download
+j2eesdk-1_4-beta2-linux-eval.zip #about 100 megs
+unzip j2eesdk-1_4-beta2-linux-eval.zip  # about 140 megs
+creates ./j2ee_sdk_lin/
+cd ./j2ee_sdk_lin/
+su
+./setup #starts gui install wizard
+#change install dir to: /usr/java/j2eesdk1.4_beta2
+#type in admin user password: PIznF9BR  #not a system user
+#installs about 150 megs, no changes outside of install dir and
+#   /root/.java/.userPrefs/ dir
+cd .. && \rm -r ./j2ee_sdk_lin/
+
+export J2EE_CLASSPATH=/usr/java/j2eesdk1.4_beta2
+export J2EE_HOME=/usr/java/j2eesdk1.4_beta2
+
+#-------------------------------------------------------------------------------------------
+
+vi HelloWorld.java
+#--
+public class HelloWorld {
+
+    public HelloWorld() {
+        System.out.println("Hello World.");
+    }
+
+    public static void main(String[] args) {
+        HelloWorld hello = new HelloWorld();
+    }
+}
+#--
+javac HelloWorld.java 
+java HelloWorld
+OR
+gcj HelloWorld.java --main=HelloWorld
+./a.out
+
+
+#-------------------------------------------------------------------------------------------
+
+random character
+The best way (IMO) of then getting a random letter (in my example 
+a-zA-Z) you create a char array and get a random element out of it:
+
+private static final char[] ALPHABET = ("abcdefghijklmnopqrstuvwxyz"+
+                                        "ABCDEFGHIJKLMOPQRSTUVWXYZ").
+                                       toCharArray();
+
+then use:
+
+char x = ALPHABET[myRandom.nextInt (ALPHABET.length)];
+
+#at beginning
+import java.util.Random;
+myRandom = new Random();
+
+#-------------------------------------------------------------------------------------------
+
+Here's a simple example of monitoring file read progress
+
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.ProgressMonitorInputStream;
+
+public class Test {
+  public static void main(String[] args) {
+    // create a test frame with a "press me" button
+    final JFrame f = new JFrame("Sample");
+    f.getContentPane().setLayout(new FlowLayout());
+    JButton b = new JButton("Press me");
+    f.getContentPane().add(b);
+    f.pack();
+
+    // set up the file read action
+    b.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        // when button is pressed, start a new thread
+        //   to read the file. A new thread is needed because we
+        //   need to free the GUI update thread to paint the
+        //   progress monitor
+        new Thread() {
+          public void run() {
+            try {
+              // open the file, wrapping it in a ProgressMonitorInputStream
+              InputStream in = new FileInputStream("c:\\bigfile.bin");
+              ProgressMonitorInputStream pm = 
+                  new ProgressMonitorInputStream(f,"Reading the big file",in);
+              // read the file. If it's taking too long, the progress
+              //   monitor will appear. The amount of time is roughly
+              //   1/100th of the estimated read time (based on how long
+              //   it took to read the first 1/100th of the file.)
+              //   Note that by default, the dialog won't appear unless
+              //   the overall estimate is over 2 seconds.
+              int c;
+              while((c=pm.read()) != -1) {
+                // do something
+              }
+              pm.close(); // needs better error handling, of course...
+            }
+            catch(Exception ex) {
+              ex.printStackTrace();
+            }
+          }
+        }.start();
+      }});  
+  
+    // display the frame
+    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    f.setVisible(true);
+  }
+}
+
+#-------------------------------------------------------------------------------------------
+
+easy start function in a separate thread:
+        new Thread() {  
+            public void run() {
+                FindTypesLengths();
+            }                   
+        }.start();                  
+
+#-------------------------------------------------------------------------------------------
+
+ Use the following to write text to a file
+
+int input = 3;
+PrintWriter out = new PrintWriter(new FileOutputStream("input.txt"));
+out.println(input);
+out.close();
+
+To read the text use:
+
+BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("input.txt")));
+String line = "";
+while((line = br.readLine()) != null) {
+System.out.println(line);
+}
+#-------------------------------------------------------------------------------------------
+
+GENERIC JDBCODBC MSACCESS SKELETON
+#--
+import java.sql.*;
+import javax.swing.*;
+
+public class test_jdbcodbc_mdb {
+
+    String MDBlocation = "\\\\server\\APPS\\DIR\\mymdb.mdb";
+    //String MDBlocation = "c:\\LocalMdb.mdb";
+    String fullMDBConnString = "jdbc:odbc:Driver={Microsoft Access Driver (*.mdb)};DBQ=" + MDBlocation;
+
+    Connection mdbcon;
+
+    public test_jdbcodbc_mdb() {
+        SetupMDBConnection();
+
+        //employee name
+        String employeename = null;
+        try {
+            PreparedStatement pst = mdbcon.prepareStatement("SELECT NAME FROM employee WHERE Login=?");
+            pst.setString(1, System.getProperty("user.name"));
+            ResultSet rs = pst.executeQuery();
+            rs.next();
+            employeename = rs.getString(1);
+        } catch(java.sql.SQLException sqle) {
+            String errmessage="Exception ( "+sqle.getClass().getName()+" ) : "+sqle.getMessage();
+            System.out.println(errmessage);JOptionPane.showMessageDialog(null,errmessage);
+        }
+    }
+
+    Connection SetupMDBConnection() {
+        mdbcon = null;
+        try {
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+            mdbcon = DriverManager.getConnection(fullMDBConnString,"admin","");
+        } catch (SQLException sqle) {
+            System.out.println("Exception ( "+sqle.getClass().getName()+" ) : "+sqle.getMessage());
+            JOptionPane.showMessageDialog(null,"Exception ( "+sqle.getClass().getName()+" ) : "+sqle.getMessage());
+        } catch (ClassNotFoundException cnfe) {
+            System.out.println("Error ClassNotFoundException: "+cnfe.getMessage());
+            String warning = "Your system enviroment is not set correctly.\nPlease write down "+
+                "the following message and contact your System Administrator.\n"+
+                "Error ClassNotFoundException: \n"+cnfe.getMessage();
+            JOptionPane.showMessageDialog(null, warning, "Alert", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
+        return mdbcon;
+    }
+
+    public static void main(String[] args) {
+        test_jdbcodbc_mdb mainobj = new test_jdbcodbc_mdb();
+    }
+}
+#--
+
+
+MS Access JDBCODBC Date insert
+
+#FOR DAY ONLY
+GDate thisgdate = datereceived.getGDate();
+String datestring = "#"+thisgdate.getMonth()+"/"+thisgdate.getDay()+"/"+thisgdate.getYear()+"#";
+cursor = mdbcon.prepareStatement("INSERT INTO TAPE....VALUES (?,?,?,"+datestring+",...);
+
+#FOR DAY AND TIME
+import java.text.SimpleDateFormat;
+SimpleDateFormat accessDateFormat = new SimpleDateFormat("'#'MM/dd/yyyy HH:mm:ss a'#'");
+java.util.Date nowDate = new java.util.Date();
+String datestring = accessDateFormat.format(nowDate);
+
+#-------------------------------------------------------------------------------------------
+
+Date reformat:
+
+String olddata = "2000-12-31"; // your date from database.
+SimpleDateFormat fromFormat = new SimpleDateFormat("yyyy'-'MM'-'dd");
+SimpleDateFormat toFormat = new SimpleDateFormat("dd'-'MM'-'yyyy");
+String dateAsFormattedString;
+try {
+Date fromDate = fromFormat.parse(olddata);
+dateAsFormattedString = toFormat.format(fromDate);
+}
+catch (ParseException e) {
+// or whatever you want to do with an error
+dateAsFormattedString = e.getMessage();
+}
+out.println(dateAsFormattedString);
+#-------------------------------------------------------------------------------------------
+
+#Getting a table to use overwrite behavior instead of the non-intuitive append to cell contents
+
+vi AJTable.java
+#--
+import javax.swing.*;
+import java.awt.*;
+import javax.swing.table.*;
+import javax.swing.text.*;
+
+public class AJTable extends JTable {
+
+    public AJTable(TableModel dm) {
+        super(dm);
+    }
+
+    public Component prepareEditor(TableCellEditor editor,int row,int col) {
+        Component c = super.prepareEditor(editor,row,col);
+        if (c instanceof JTextComponent) {
+            ((JTextComponent)c).selectAll();
+        }
+        return c;
+    }
+}
+#--
+AJTable poList;
+poList = new AJTable(tablemodel);
+
+
+
+#----untried ways
+Selecting all of a JTextField on focus gained
+Using invokeLater() ensures that the toolkit has completely finished repainting
+and refreshing so you know that the component has the focus.
+The point is that the selectAll() method is called AFTER alle focuslisteners are notified,
+this is also why the "invokeLater" trick works.
+class MyFocusListener extends FocusAdapter {
+    public void focusGained(FocusEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                selectAll();
+            }
+        }
+    }
+}
+#--
+ Actually the way to do it is to override to processFocusEvent method
+
+
+  /**
+   * @see javax.swing.JFormattedTextField#processFocusEvent(java.awt.event.FocusEvent)
+   */
+  protected void processFocusEvent(FocusEvent e)
+  {
+    super.processFocusEvent(e);
+    if (e.getID() == FocusEvent.FOCUS_GAINED)
+    {
+      this.selectAll();
+    }
+    else
+    {
+      this.select(0, 0);
+    }
+  }
+#--
+#----untried ways
+
+#-------------------------------------------------------------------------------------------
+
+CLIPBOARD
+
+http://www.javaworld.com/javatips/jw-javatip61_p.html
+
+MAIN THING:
+One disadvantage of using the SYSTEM clipboard is that you can only transfer text data.
+(the local - java only clipboard does not have this limit)
+#-------------------------------------------------------------------------------------------
+
+ANT ant build system
+
+http://ant.apache.org/
+
+cd /usr/java/
+su
+tar xjvf apache-ant-1.6.2-bin.tar.bz2
+
+vi /etc/profile
+#--
+export ANT_HOME=/usr/java/apache-ant-1.6.2
+#--
+
+#-------------------------------------------------------------------------------------------
+
+#loading resources from a jar (the main app jar):
+
+jar cvmf MANIFEST.MF $MYNAME.jar *.class ./com/ ./images/
+
+ls ./images/
+head_dilbert.gif  head_ratbert3.gif  head_wally2.gif
+
+ImageIcon shortIcon = new ImageIcon( getClass().getResource("/images/head_ratbert3.gif") );
+ImageIcon longIcon = new ImageIcon( getClass().getResource("/images/head_wally2.gif") );
+
+#-------------------------------------------------------------------------------------------
+
+LOOK AT:
+launch4j 2.0.beta2
+wrapping Java applications distributed as jars in Windows native executables.
+http://launch4j.sourceforge.net/
+
+Tapestry/Tacos
+java web application framework - AJAX
+http://tacos.sourceforge.net/
+
+Compass is a Java framework which makes it simple to map your Java object model into a search engine
+http://www.compassframework.org/display/SITE/Home
+
+WidgetServer is a Java/XML server-side GUI-framework which enables an application to run as either a
+monolithic Swing app, a client/server Swing app, or as a Web app without any change and without
+loss of functionality.
+https://wiser.dev.java.net/
+
+JFreeChart is a free Java class library for generating charts
+http://www.jfree.org/jfreechart/index.php
+
+Ganymed SSH-2 for Java is a library which implements the SSH-2 protocol in pure Java
+
+NA_WorkSheet 2006-02-22 collective aggregation of algorithms written in Java that implements various numerical analysis solutions
+
+#-------------------------------------------------------------------------------------------
+
+Java 1.6 mustang beta downloads:
+https://mustang.dev.java.net/
+
+Install on FC4:
+sh ./jdk-6-beta2-bin-b73-linux-i586-23_feb_2006.bin
+mv ./jdk1.6.0 /usr/java/
+export JAVA_HOME=/usr/java/jdk1.6.0
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASSPATH=$CLASSPATH:/usr/java/jdk1.6.0/jre/lib/rt.jar
+
+
+System tray in mustang:
+http://java.sun.com/developer/technicalArticles/J2SE/Desktop/mustang/systemtray/index.html
+
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------

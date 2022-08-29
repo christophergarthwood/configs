@@ -1,0 +1,133 @@
+
+#-------------------------------------------
+
+Festival
+
+tar xzvf festival-1.4.2-release.tar.gz
+tar xzvf festlex_OALD.tar.gz
+tar xzvf festlex_POSLEX.tar.gz
+tar xzvf speech_tools-1.2.2-release.tar.gz
+
+cd speech_tools/
+./configure
+make
+
+cd festival/
+./configure
+make
+make install
+
+#test ??? fro some freeos article
+festival
+festival> (SayText "type the text you want to hear over here")
+festival> (tts "filename")
+
+#test
+cd ./examples
+cc -o festival_client -DSTANDALONE festival_client.c
+festival_client -text "hello there"
+
+
+
+Flint (sortof festival-lite)
+
+tar xjvf flite-1.1-release.tar.bz2
+tar xzvf flite-1.1-regex_extras.tar.gz
+cd flite-1.1-release/
+./configure
+make
+cp ./bin/flite /usr/local/bin
+cp ./bin/flite_time /usr/local/bin
+
+#test
+#needs esddsp in front for gnome
+flite "Flite is a small fast run-time synthesis engine" flite.wav
+flite doc/alice.txt
+flite_time `date +%H:%M`
+
+#-------------------------------------------
+
+See also:
+Voice, a Linux daemon that works with the Festival Text to Speech System.
+http://www.emporia.edu/math-cs/simpson/bsimpson.htm
+
+* speechd - Implements /dev/speech
+http://www.speechio.org/
+#-------------------------------------------
+
+??place later
+echo Hello there | festival --tts
+
+ And the best I have found so far is Festival with Mbrola voices (although not
+perfect they are far superior than the Festival voices)
+
+#--
+ I can only concur with the poster above who said that Festival with MBrola is
+probably the bet OSS bet. Actually, The MBrola voice itself has a license for
+"non-commercial" use, but we are a nonprofit, so...
+In particular, there is one high-res female voice in MBrola that is very good.
+If you need any help setting it up (I can happiyl give you my festival config
+file) just say mail me at netgrok @at@ yahoo . de 
+    * There is a small script that checks the main services on all our
+    * critical machines and if one goes down, the system moans. A loud voice
+    * that says "The http server on web1 is down" gets more attention than a
+    * little light.
+    * Our backup system moans at specific times (about three times a day)
+    * about the next tape that needs to be put in. "Please insert the correct
+    * tape into the tape drive on backup. The tape needed is Unix 1.
+
+      The backup will start at 4 this afternoon" is the announcement I just
+heard. Sometimes I add "Please insert the tape, pleeeeease", just to hear the
+damn computer beg ME for a change :)
+
+Also, if I FORGET to insert the tape the computer starts moaning continously
+about it. Nothing like a whining b.tch to convince you get off your butt to
+put the tape in :) 
+http://ask.slashdot.org/article.pl?sid=02/11/13/1334209
+#--
+
+#-------------------------------------------
+
+festival is included with RH now.
+
+TROUBLESHOOTING:
+festival --tts /etc/redhat-release
+sounds like a chipmunk. Do this:
+vi /usr/share/festival/siteinit.scm
+#--
+(Parameter.set 'Audio_Method 'Audio_Command)
+(Parameter.set 'Audio_Required_Rate 48000)
+(Parameter.set 'Audio_Required_Format 'snd)
+(Parameter.set 'Audio_Command "play $FILE")
+#--
+this happens with VIA audio chipsets
+
+change voice with
+festival
+>(voice_ked_diphone)
+>(tts "/etc/redhat-release" nil)
+
+other voices on RH (stick voice_ at beginning) #errors if not found
+kal_diphone  #default
+ked_diphone
+el_diphone
+
+MBROLA voices go under
+ls /usr/share/festival/voices/english/
+kal_diphone  ked_diphone  us1_mbrola
+
+
+You can make festival read text kernel docs to you with:
+cd /usr/src/linux/Documentation
+for f in *.txt
+do	festival --tts $f
+done
+
+to run examples (not included in RH)
+festival --script ./saytime.sh
+
+
+#-------------------------------------------
+#-------------------------------------------
+#-------------------------------------------
+#-------------------------------------------

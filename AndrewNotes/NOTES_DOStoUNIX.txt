@@ -1,0 +1,51 @@
+
+perl -e "s/\r\n/\n/g" bbt.html 
+
+#---------------------------------------
+
+If it exists on your system, you could use the dos2unix command.  If you
+want to use perl, here's a safer and more perlish way to do what you
+want:
+
+#!/usr/local/bin/perl -np
+s/\r$//;
+
+If you put this in a script called, say, dos2unix.pl, you can convert
+files like this:
+perl dos2unix.pl _dosfile_ > _unixfile_
+
+or
+
+cat _dosfile_ | perl dos2unix.pl > _unixfile_
+
+If you want to do the edits "in-place", you can do this:
+perl -i.bak dos2unix.pl _file_
+
+Hope this helps!
+
+Benjamin Holzman
+
+#---------------------------------------
+#!/usr/local/bin/perl 
+
+$filename = $ARGV[0];
+
+open(MYFILE,"$filename") || die "Cant open $filename: $! \n";
+
+while (<MYFILE>) {
+   $thisline = $_;
+   $thisline =~ s/\r\n/\n/g;
+   $thisline =~ s/\r/\n/g;
+#   chomp($thisline);
+
+   print $thisline;
+}
+
+close(MYFILE);
+
+#---------------------------------------
+
+#---------------------------------------
+
+#---------------------------------------
+

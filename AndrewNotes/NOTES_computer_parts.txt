@@ -1,0 +1,32 @@
+
+#------------------------------------------
+
+Small, hard to find stuff:
+
+CompactFlash to IDE Adapter:
+http://www.pcengines.com/cflash.htm
+  (also POST code displays, ISA and PCI)
+
+IEEE 1394 FireWire / IDE Bridge Boards
+http://www.granitedigital.com/catalog/pg19_firewirebridgeboards.htm
+http://www.fwdepot.com/catalog/default.php
+  http://fwdepot.com/thestore/product_info.php?cPath=26&products_id=32&osCsid=c8993f75e53c181ee862678ae65a93f6
+http://www.scsipro.com/catalog/pg19_firewirebridgeboards.htm
+
+#------------------------------------------
+
+Cheapo laptops:
+
+idot.com
+enote laptop
+http://www.idot.com/TheStore/Desktop/818Spec.asp?Product.id=818&Cate.id=2
+
+sager
+http://www.sagernotebook.com/index.html
+
+sotec
+http://www.sotecglobal.com/
+
+#------------------------------------------
+#------------------------------------------
+#------------------------------------------

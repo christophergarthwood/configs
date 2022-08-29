@@ -1,0 +1,87 @@
+
+interactive:
+
+gnuplot
+
+set parametric
+
+plot (-exp(3*t)+6*exp(4*t)),(-exp(3*t)+4*exp(4*t))
+plot [0:10] (-exp(3*t)+6*exp(4*t)),(-exp(3*t)+4*exp(4*t))
+
+plot "output0.1.txt" with lines
+
+replot instead of plot appends to graph
+
+
+
+gnuplot> plot "outfile" with lines
+gnuplot> replot "truefile" with lines
+gnuplot> plot "difffile" with lines
+
+
+gnuplot> plot "outfile"           
+gnuplot> replot "truefile"           
+
+
+#print
+set parametric
+set terminal png small color
+set output "out.png"
+set xrange [0:350]
+set yrange [0:350]
+
+set xlabel 'X'
+set ylabel 'Y'
+set title 'Parametric T from 0:1'
+plot [0:1] \
+ "outfile0.0001" title "delta 0.0001" with linespoints 3, \
+ "outfile0.01" title "delta 0.01" with linespoints 2, \
+ "outfile0.1" title "delta 0.1" with linespoints 7, \
+ "outfile0.5" title "delta 0.5" with linespoints 9, \
+ (-exp(3*t)+6*exp(4*t)),(-exp(3*t)+4*exp(4*t)) with lines 1
+
+
+#------------
+set autoscale
+set time
+set xdata time
+set timefmt '%Y%m%d'
+set xlabel 'Date'
+set format x '%m/%y'
+set terminal png color
+set title 'Total connections'
+set output 'output.png'
+set ylabel 'No. Connections'
+plot 'file1' using 1:2 title 'Northeast' with lines 1, \
+	'file2' using 1:2 title 'Southeast' with lines 2, \
+	'file3' using 1:2 title 'Central' with lines 3, \
+	'file4' using 1:2 title 'Pacific' with lines 4
+
+#-----------
+
+export rep=0.1
+mv errfile errfile$rep && mv difffile difffile$rep
+mv outfile outfile$rep && mv truefile truefile$rep
+
+./fd 0.0001 10000
+./fd 0.01 100
+./fd 0.1 10
+./fd 0.5 2
+
+#---------
+
+set terminal png small color
+set output "out.png"
+
+set xlabel 'T'
+set ylabel 'Error (sqrt (xerror^2 + yerror^2) )'
+set title 'Error'
+plot \
+ "errfile0.0001" title "delta 0.0001" with linespoints 3, \
+ "errfile0.01" title "delta 0.01" with linespoints 2, \
+ "errfile0.1" title "delta 0.1" with linespoints 7, \
+ "errfile0.5" title "delta 0.5" with linespoints 9
+
+
+
+

@@ -1,0 +1,259 @@
+
+#---------------------------------------------------------------------------
+
+http://netatalk.sourceforge.net/
+http://unc.dl.sourceforge.net/sourceforge/netatalk/netatalk-1.5.3.1.tar.gz
+
+tar xzvf netatalk-*.tar.gz  && cd ./netatalk-*/     
+
+./configure --with-shadow --disable-shell-check --with-tcp-wrappers
+make
+make install
+
+vi /etc/ld.so.conf
+#--
+/usr/local/lib
+/usr/local/etc/netatalk/uams
+#--
+/sbin/ldconfig
+
+cp ./distrib/initscripts/rc.atalk.redhat /etc/init.d/appletalk
+chmod 0755 /etc/init.d/appletalk
+
+vi /etc/services   #(probably already there)
+#--
+rtmp            1/ddp           # Routing Table Maintenance Protocol
+nbp             2/ddp           # Name Binding Protocol
+echo            4/ddp           # AppleTalk Echo Protocol
+zip             6/ddp           # Zone Information Protocol
+afpovertcp      548/tcp         # AFP over TCP
+afpovertcp      548/udp
+#--
+
+#for RH: cd /etc/atalk
+vi AppleVolumes.default   #/usr/local/etc/netatalk/AppleVolumes.default
+#--
+/tmp/netatalk tmp
+#--
+mkdir /tmp/netatalk
+chmod 0777 /tmp/netatalk
+
+vi netatalk.conf  #(called config on RH) #/usr/local/etc/netatalk/netatalk.conf
+#---don_t deal with printers
+PAPD_RUN=no
+ATALK_BGROUND=yes
+#--
+
+vi afpd.conf             #/usr/local/etc/netatalk/afpd.conf
+#--
+"Guest Volume" -uamlist uams_guest.so
+#--
+
+#This is only needed for multiple interfaces:
+vi atalkd.conf
+#--
+eth0
+#--
+
+/etc/init.d/appletalk start
+
+#also see:
+#/usr/local/etc/netatalk/afpd.conf
+#/usr/local/etc/netatalk/atalkd.conf
+#/usr/local/etc/netatalk/netatalk.conf
+#/usr/local/etc/netatalk/papd.conf
+
+#---------------------------------------------------------------------------
+
+less /usr/src/linux/.config
+CONFIG_APPLETALK=m
+CONFIG_IPDDP=m
+
+ls -la /lib/modules/*/kernel/drivers/net/appletalk/ipddp.o
+ls -la /lib/modules/*/kernel/net/appletalk/appletalk.o
+
+NOTE THAT RH SHIPS NETATALK BY DEFAULT:
+/etc/init.d/atalk
+/etc/atalk/
+  config == netatalk.conf
+afpd.conf does not get read (??)
+for guest volume:
+vi /etc/init.d/atalk
+#--
+daemon afpd -c ${AFPD_MAX_CLIENTS} -n ${ATALK_NAME} \
+-f /etc/atalk/AppleVolumes.default \ 
+-s /etc/atalk/AppleVolumes.system -U uams_guest.so
+#--
+
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+
+Netatalk supplies two different types of AFP servers and both can run at
+the same time. Classic AFP over AppleTalk requires afpd and atalkd. AFP
+over IP only requires afpd.
+
+Add the following lines to your /etc/services file:
+
+rtmp            1/ddp           # Routing Table Maintenance Protocol
+nbp             2/ddp           # Name Binding Protocol
+echo            4/ddp           # AppleTalk Echo Protocol
+zip             6/ddp           # Zone Information Protocol
+afpovertcp      548/tcp         # AFP over TCP
+afpovertcp      548/udp
+
+cp conf/atalkd.conf /usr/local/atalk/etc/
+cp config/afpd.conf /usr/local/atalk/etc
+
+cp conf/AppleVolumes.default /usr/local/atalk/etc
+cp conf/AppleVolumes.system /usr/local/atalk/etc
+
+The AppleVolumes.default and AppleVolumes.system
+files are listings of volume to path mappings and
+type / creator mappings. AppleVolumes.default
+will be parsed when a real user logs in.
+(ie: not the guest account) The settings in
+AppleVolumes.default can be overridden with an
+AppleVolumes or .AppleVolumes file in the users'
+home directory. AppleVolumes.system will be
+processed for all users. Adding the lines:
+
+#
+# volumes
+Home
+/music "Some Tunes"
+#
+# type / creator mappings
+.txt    TEXT    MSWD
+
+will cause two volumes to show up, one called Home
+which is the user's home directory and one
+called Some Tunes that is the directory /music. (keep
+in mind that users won't be able to see the
+contents of volumes unless the unix user has at least
+read permission in the directory. same goes for
+write permission.) The rest of the file is a listing of
+"dot extensions" to type / creator mappings.
+
+
+#---------------------------------------------------------------------------
+
+Makefile
+./etc/uam/Makefile
+  rm -lcrypto
+
+init script in
+./netatalk-1.5pre5/distrib/initscripts/rc.atalk.sysv
+
+-------
+
+I've been doing this for awhile.  I have a stable netatalk/samba server
+at netatalk 1.4b2+asun.  No trouble; unless my users aren't telling me.
+Read the mailing lists - there a --with-netatalk config time option (not
+in the build docs that I could see, but it was covered on the mailing
+list IIRC).  --with-netatalk is currently an experimental hack, if I
+remember, it forces samba to move the .AppleDouble entries if a PC user
+moves files around from the PC (so as not to pooch appleshare side
+stuff).  Don't know how reliable it is, I only included that option on
+the most recent server I config'd and it hasn't been tested thoroughly
+yet.
+
+-----
+
+A guest only server seemed like a good idea for security. I have two 
+servers on one box. Guest is one of them. Guest is defined as such: 
+"Guest" -transall -uamlist uams_guest.so -systemvol 
+/etc/atalkd/AppleVolumes.guest \ 
+
+the AppleVolumes.guest file has all of the standard mappings and then at the 
+bottom has the line 
+/mnt/world World 
+
+The lines describing the AppleVolumes file says that the systemvol one 
+defines the mappings and the shares available to guest... so I figured this 
+should make just the share "World" available to guest. It did... however 
+in the list (greyed out mind you) was another share from 
+Applevolumes.default. Why would this exist as I am guest? I figrued the 
+fact that it was greyed out was ok... but not the best of all worlds... So 
+I created a new AppleVolumes.default file (as AppleVolumes.empty added it 
+with -defaultvol option) and removed everything except the "World" share 
+from the .empty file. Now I get nothing for guest! Argh!... It seems from 
+reading that the only thing I should have to do for a guest volume is add it 
+to the AppleVolumes.system! This is really screwy! 
+
+Keith 
+
+P.S. Anyone else get an occasional Hickup in their transfers. about every 
+meg or so I see a considerable well... not slowdown... it really stops... 
+and then it continues... ideas? 
+#----
+There are two config files looked for by etc/afpd. (AppleVolumes.system and
+AppleVolumes.default) They both have the same format. The only
+differience is that users coming in as guest will only get the volumes listed
+in the AppleVolumes.default file. (as well as only having guest privelage)
+Usually I use
+AppleVolumes.system to export the directories that everyone should be able to
+see such as /usr2/data and AppleVolumes.default exports private
+stuff such as ~/, the home directory of the user. There are examples of each
+of these files in your netatalk source directory under etc/afpd/. They are
+etc.AppleVolumes.system and etc.AppleVolumes.default. You should copy these
+two files into your DESTDIR/etc directory (usually
+/usr/local/atalk/etc) and get rid of the etc. in front of the names. One of my
+AppleVolumes.system files is below: 
+
+/usr2/data Thak
+/usr4/extra_space "Extra Space"
+.txt TEXT MSWD
+.TXT TEXT MSWD
+.html TEXT TTXT
+.HTML TEXT TTXT
+.gif GIFf 8BIM
+.jpg JPEG 8BIM
+.jpeg JPEG 8BIM
+#----
+Additional 'Guest' shares (i.e. shares for users who don't have an account on
+the Linux machine) can be created by just adding the shares which
+       should be available to the Mac clients to
+'/etc/atalk/AppleVolumes.default' (just below the '~' which makes the home
+directories available):
+
+       /tmp tmp
+Pitfalls:
+
+          1.Mac clients do not accept passwords longer than eight characters,
+even if it is a password to a valid account on the Linux machine. 
+#----
+
+mkdir /var/netatalk
+chmod 0777 /var/netatalk
+
+vi afpd.conf
+"Vol Name" -uamlist uams_guest.so
+
+vi AppleVolumes.default
+/var/netatalk ShareName
+
+FOR RH7.3:
+vi /etc/init.d/atalk
+change to:
+daemon afpd -U uams_guest.so -c ${AFPD_MAX_CLIENTS}
+or else you can not have guest volumes
+
+#----
+
+#configuring netatalk by hand to mimic RH
+
+????????????????????????????????????????????????
+tar xjvf netatalk-2.0-beta1.tar.bz2 && cd netatalk-2.0*/
+./configure --prefix=/usr --with-pkgconfdir=/etc/atalk/ \
+  --with-tcp-wrappers --with-uams-path=/usr/lib/
+????????????????????????????????????????????????
+
+
+#----
+#----
+
+
+
+
+

@@ -1,0 +1,341 @@
+
+#-----------------------------------------------------------------------------------
+On Tue, 09 Oct 2001 13:09:21 +0000, Andre Georgel <andre.georgel@noos.fr> wrote:
+
+>Hi, all,
+>
+>Can somebody say me how to allow only some defined users aailable to
+>login on a server.
+>
+>Thank in advance for your help.
+>-----------------------------------------------------
+>Andre Georgel
+
+
+Hi Andre,
+
+  If you are using openssh-2.9.9p2 or similar,
+you can go into your sshd config file,
+ 
+   /usr/local/etc/sshd_config
+
+and add a line called 
+
+  AllowUsers jeff pete bill toad@hops
+
+to allow only jeff and pete and bill to log in.
+Also, toad could only log in from the computer hops.
+Or you could restrict access by groups rather than
+users using the line:
+
+  AllowGroups sales admin
+
+Then only members of the sales and admin groups
+could log in.
+
+No uids or gids, only names allowed.  As Tony 
+mentioned, you can find these and other useful 
+options in sshd(8).
+
+Good Luck,
+Matt
+
+
+#-------------------------------------------------------------------------
+vi /etc/init.d/sshd
+#--
+#!/bin/sh
+#
+# chkconfig: - 92 35
+# description: Starts and stops the sshd daemon 
+
+# Source function library.
+. /etc/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+        echo -n "Starting sshd services: "
+        /usr/local/sbin/sshd &  
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sshd || \
+           RETVAL=1
+        ;;
+  stop)
+        echo -n "Shutting down sshd services: "
+        killproc sshd
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/sshd
+        echo ""
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+  reload)
+        echo -n "Reloading sshd_config file: "
+        killproc sshd -HUP
+        RETVAL=$?
+        echo
+        ;;
+  status)
+        status sshd
+        RETVAL=$?
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $RETVAL
+
+#--
+#-------------------------------------------------------------------------
+#------TINY INIT.D--------------------------------------------------------
+vi /etc/init.d/sshd
+#--
+#!/bin/sh
+# chkconfig: - 92 35
+# description: Starts and stops the sshd daemon 
+case "$1" in
+  start)
+        echo "Starting sshd services: "
+        /usr/local/sbin/sshd
+        ;;
+  stop)
+        echo "Shutting down sshd services: "
+        killall sshd
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/sshd
+#-------------------------------------------------------------------------
+
+wget http://www.openssl.org/source/openssl-0.9.6d.tar.gz
+
+tar xzvf openssl-0.9.*.tar.gz && cd openssl-0.9.*/
+
+./config shared
+make
+make test
+make install
+
+vi /etc/ld.so.conf
+ADD
+/usr/local/ssl/lib
+
+/sbin/ldconfig
+
+http://www.ibiblio.org/pub/packages/security/openssh/portable/openssh-3.4p1.tar.gz
+ftp://ftp.cse.buffalo.edu/pub/OpenBSD/OpenSSH/portable/openssh-3.4p1.tar.gz
+
+#to check sig (openssh-3.3p1.tar.gz.sig)
+gpg --verify openssh-3.3p1.tar.gz.sig openssh-3.3p1.tar.gz
+#first time gives key id - need to import that key id
+#gpg: Signature made Fri 21 Jun 2002 11:01:37 AM CDT using DSA key ID 86FF9C48
+#gpg: Can't check signature: public key not found
+gpg --keyserver wwwkeys.us.pgp.net --recv-keys 0x86FF9C48
+#then verify again
+
+tar xzvf openssh-3.*.tar.gz && cd ./openssh-3.*/
+./configure --with-md5-passwords
+make
+make install
+
+#for version 3.3 on, one-time only BEFORE make install
+mkdir /var/empty
+chown root:sys /var/empty
+chmod 755 /var/empty
+groupadd sshd
+useradd -g sshd -c 'sshd privsep' -d /var/empty -s /bin/false sshd
+
+#-------------------------------------------------------------------------
+
+scp forcing protocol version 1
+scp -o "protocol=1" abc@123.123.123.123:~/test.txt .
+
+scp using non-reserved ports
+scp -o "UsePrivilegedPort=no" abc@mag:oosa.mp3 .
+
+#-------------------------------------------------------------------------
+
+To upgrade a remote running version of ssh
+  (long way, but really safe way)
+
+open a couple (or three) ssh sessions up
+
+back up existing host keys (just in case)
+   (/usr/local/etc/ssh_host_rsa_key (.pub) and friends)
+
+make install new version.
+
+check date on sshd
+  ls -al /usr/local/sbin/sshd 
+
+use test mode to check config file
+    /usr/local/sbin/sshd -t
+
+start up new instance on port 2222
+   /usr/local/sbin/sshd -d -p 2222
+
+open another ssh console, now to the new sshd
+  ssh -p 2222 xxx@xxx.xxx.com
+
+if this works ok, we are ready to start the switch out
+open a safety sshd
+   /usr/local/sbin/sshd -p 2222
+find pid of this sshd (we kill it later)
+   netstat -anp --inet | grep sshd | grep 2222
+
+find pid of old sshd
+   netstat -anp --inet | grep sshd | grep ":22 "
+kill main sshd (lowest pid)
+   kill 396
+make sure it is dead
+   netstat -anp --inet | grep sshd | grep ":22 "
+
+start new fresh copy
+    /usr/local/sbin/sshd
+make sure copy is started
+   netstat -anp --inet | grep sshd | grep ":22 "
+
+connect on new copy
+  ssh xxx@xxx.xxx.com
+check version on new copy (ctrl-]  then quit to exit telnet)
+  telnet xxx.xxx.com 22
+
+
+kill safety copy
+   netstat -anp --inet | grep sshd | grep 2222
+   kill 30538
+   netstat -anp --inet | grep sshd | grep 2222
+
+that's it.
+
+#-------------------------------------------------------------------------
+
+scp -o "UsePrivilegedPort=no" n9n@magrathea:oosa.mp3 .
+
+-oProtocol=1
+
+
+-o option ONLY takes options that would be in the config file
+    NOT command line options
+#-------------------------------------------------------------------------
+
+~?  help
+change passphrase: ssh-keygen -p
+
+#create initial key
+ssh-keygen -b 4096 -t dsa
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+GPG notes (move off when complete):
+
+#set gpg as setuid so that memory pages can be locked and not swapped to disk
+chmod u+s /usr/bin/gpg
+#create keys (needed even if you are just doing passphrase encryption)
+gpg --gen-key
+
+#to passphrase-encypt (symmetric cipher) a file:
+gpg -c del0021.txt
+#this creates del0021.txt.gpg, but does not delete del0021.txt
+
+#decrypt with
+gpg del0021.txt.gpg              #decrypts to file del0021.txt
+gpg -d del0021.txt.gpg           #decrypts to screen
+gpg -d del0021.txt.gpg | less    #decrypts to less (not locked in mem...)
+
+#use fwipe or wipe to delete the original file:
+#fwipe:http://www.nb.net/~lbudney/linux/software/fwipe.html
+#wipe :http://wipe.sourceforge.net/   (./configure&&make&&make install)
+
+#wrapper to passphrase-encrypt and wipe:
+vi /usr/local/bin/GPGwrap
+#--
+#!/bin/sh
+/usr/bin/gpg -c $1 &&
+/usr/local/bin/wipe $1
+#--
+chmod 0755 /usr/local/bin/GPGwrap
+
+#also see Gringotts
+http://devel.pluto.linux.it/projects/Gringotts/
+#a notepad-ish app with encryption
+
+#quick gpg setup for creating a key
+http://www.aplawrence.com/Basics/gpg.html
+gpg --gen-key
+	spits out key fingerprint
+#export out ascii-armored public key to send to someone
+gpg --armor --export whatever@whatever.com > my.public.key
+#the other end imports with
+gpg --import my.public.key
+#and lists keys with
+gpg --list-keys
+#and encrypts data with the public key
+gpg -r whatever@whatever.com --out secrets_to_whatever.gpg --encrypt secrets.doc
+#whatever decrypts with
+gpg --output secrets_to_whatever --decrypt secrets_to_whatever.gpg
+
+
+#--------------------------------
+#interesting and UNTESTED: (gpg+vi as notepad), use gringotts instead
+~/.vimrc
+" Transparent editing of gpg encrypted files.
+" By Wouter Hanegraaff <wouter@blub.net>
+augroup encrypted
+    au!
+
+    " First make sure nothing is written to ~/.viminfo while editing
+    " an encrypted file.
+    autocmd BufReadPre,FileReadPre      *.gpg set viminfo=
+    " We don't want a swap file, as it writes unencrypted data to disk
+    autocmd BufReadPre,FileReadPre      *.gpg set noswapfile
+    " Switch to binary mode to read the encrypted file
+    autocmd BufReadPre,FileReadPre      *.gpg set bin
+    autocmd BufReadPre,FileReadPre      *.gpg let ch_save = &ch|set ch=2
+    autocmd BufReadPost,FileReadPost    *.gpg '[,']!gpg --decrypt 2> /dev/null
+    " Switch to normal mode for editing
+    autocmd BufReadPost,FileReadPost    *.gpg set nobin
+    autocmd BufReadPost,FileReadPost    *.gpg let &ch = ch_save|unlet ch_save
+    autocmd BufReadPost,FileReadPost    *.gpg execute ":doautocmd BufReadPost " . expand("%:r")
+
+    " Convert all text to encrypted text before writing
+    autocmd BufWritePre,FileWritePre    *.gpg   '[,']!gpg --default-recipient-self -ae 2>/dev/null
+    " Undo the encryption so we are back in the normal text, directly
+    " after the file has been written. 
+    autocmd BufWritePost,FileWritePost    *.gpg   u
+augroup END
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+./configure 
+\
+        --sysconfdir=%{_sysconfdir}/ssh \
+        --libexecdir=%{_libexecdir}/openssh \
+        --datadir=%{_datadir}/openssh \
+        --with-tcp-wrappers \
+        --with-rsh=%{_bindir}/rsh \
+
+#-------------------------------------------------------------------------
+

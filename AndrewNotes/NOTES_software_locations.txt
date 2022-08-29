@@ -1,0 +1,418 @@
+
+#-------------------------------------------------------------------
+
+http://www.ibiblio.org/pub/Linux/system/network/daemons/!INDEX.short.html
+
+#-------------------------------------------------------------------
+
+     * Bash (2.04): [311]ftp://ftp.gnu.org/gnu/bash/
+     * Binutils (2.10.1): [312]ftp://ftp.gnu.org/gnu/binutils/
+     * Bzip2 (1.0.1): [313]ftp://sourceware.cygnus.com/pub/bzip2/
+     * Diff Utils (2.7): [314]ftp://ftp.gnu.org/gnu/diffutils/
+     * File Utils (4.0): [315]ftp://ftp.gnu.org/gnu/fileutils/
+     * GCC (2.95.2): [316]ftp://ftp.gnu.org/gnu/gcc/
+	ftp://aeneas.mit.edu/pub/gnu/gcc/gcc-3.0.3/
+     * Linux Kernel (2.2.18): [317]ftp://ftp.kernel.org/pub/linux/kernel/
+     * Glibc (2.1.3): [318]ftp://ftp.gnu.org/gnu/glibc/
+     * Glibc-crypt (2.1.3): [319]ftp://ftp.gnu.org/gnu/glibc/
+     * Glibc-linuxthreads (2.1.3): [320]ftp://ftp.gnu.org/gnu/glibc/
+     * Glibc Patch (2.1.3):
+       [321]ftp://packages.linuxfromscratch.org/pub/common-packages
+     * Grep (2.4.2): [322]ftp://ftp.gnu.org/gnu/grep/
+     * Gzip (1.2.4a): [323]ftp://ftp.gnu.org/gnu/gzip/
+     * Make (3.79.1): [324]ftp://ftp.gnu.org/gnu/make/
+     * Sed (3.02): [325]ftp://ftp.gnu.org/gnu/sed/
+     * Sh-utils (2.0): [326]ftp://ftp.gnu.org/gnu/sh-utils/
+     * Tar (1.13): [327]ftp://ftp.gnu.org/gnu/tar/
+     * Tar Patch (1.13): [328]http://sourceware.cygnus.com/bzip2/
+     * Text Utils (2.0): [329]ftp://ftp.gnu.org/gnu/textutils/
+     * MAKEDEV (2.5): [330]ftp://ftp.ihg.uni-duisburg.de/Linux/system/
+     * Bison (1.28): [331]ftp://ftp.gnu.org/gnu/bison/
+     * Mawk (1.3.3): [332]ftp://ftp.whidbey.net/pub/brennan/
+     * Patch (2.5.4): [333]ftp://ftp.gnu.org/gnu/patch/
+     * Find Utils (4.1): [334]ftp://ftp.gnu.org/gnu/findutils/
+     * Find Utils Patch (4.1):
+       [335]ftp://packages.linuxfromscratch.org/pub/common-packages
+     * Ncurses (5.2): [336]ftp://ftp.gnu.org/gnu/ncurses/
+     * Less (358): [337]ftp://ftp.gnu.org/gnu/less/
+     * Groff (1.16.1): [338]ftp://ftp.gnu.org/gnu/groff/
+     * Man (1.5h1): [339]ftp://ftp.win.tue.nl/pub/linux-local/utils/man/
+     * Perl (5.6.0): [340]http://www.perl.com
+     * M4 (1.4): [341]ftp://ftp.gnu.org/gnu/m4/
+     * Texinfo (4.0): [342]ftp://ftp.gnu.org/gnu/texinfo/
+     * Autoconf (2.13): [343]ftp://ftp.gnu.org/gnu/autoconf/
+     * Automake (1.4): [344]ftp://ftp.gnu.org/gnu/automake/
+     * Flex (2.5.4a): [345]ftp://ftp.gnu.org/non-gnu/flex/
+     * File (3.33): [346]ftp://ftp.gw.com/mirrors/pub/unix/file/
+     * Libtool (1.3.5): [347]ftp://ftp.gnu.org/gnu/libtool/
+     * Bin86 (0.15.4): [348]http://www.cix.co.uk/~mayday/
+     * Gettext (0.10.35): [349]ftp://ftp.gnu.org/gnu/gettext/
+     * Console-tools (0.2.3):
+       [350]ftp://metalab.unc.edu/pub/Linux/system/keyboards/
+     * Console-tools Patch (0.2.3):
+       [351]ftp://packages.linuxfromscratch.org/pub/common-packages
+     * Console-data (1999.08.29):
+       [352]ftp://metalab.unc.edu/pub/Linux/system/keyboards/
+     * E2fsprogs (1.19):
+       [353]ftp://download.sourceforge.net/pub/sourceforge/e2fsprogs/
+     * Ed (0.2): [354]ftp://ftp.gnu.org/gnu/ed/
+     * Ld.so (1.9.9):
+       [355]ftp://packages.linuxfromscratch.org/pub/common-packages
+ ftp://ftp.ods.com/pub/linux/
+
+     * Lilo (21.6): [356]ftp://brun.dyndns.org/pub/linux/lilo
+		ftp://metalab.unc.edu/pub/Linux/system/boot/lilo
+     * Modutils (2.4.0):
+       [357]ftp://ftp.kernel.org/pub/linux/utils/kernel/modutils
+     * Vim-rt (5.7) 1,073 KB:
+       [358]ftp://ftp.vim.org/pub/editors/vim/unix/
+     * Vim-src (5.7) 1,202 KB:
+       [359]ftp://ftp.vim.org/pub/editors/vim/unix/
+     * Procinfo (17): [360]ftp://ftp.cistron.nl/pub/people/svm/
+     * Procps (2.0.7): [361]ftp://people.redhat.com/johnsonm/procps/
+     * Psmisc (19): [362]ftp://lrcftp.epfl.ch/pub/linux/local/psmisc/
+     * Shadow Password Suite (20000902):
+       [363]ftp://ftp.ists.pwr.wroc.pl/pub/linux/shadow/
+     * Sysklogd (1.4):
+       [364]ftp://sunsite.unc.edu/pub/Linux/system/daemons/
+     * Sysklogd Patch (1.4):
+       [365]ftp://packages.linuxfromscratch.org/pub/common-packages/
+     * Sysvinit (2.78):
+       [366]ftp://ftp.cistron.nl/pub/people/miquels/sysvinit/
+     * Sysvinit Patch (2.78):
+       [367]ftp://packages.linuxfromscratch.org/pub/common-packages/
+     * Util Linux (2.10r) (contains agetty,mount,etc.):
+       [368]ftp://ftp.win.tue.nl/pub/linux-local/utils/util-linux/
+     * Man-pages (1.33):
+       [369]ftp://ftp.win.tue.nl/pub/linux-local/manpages/
+     * Netkit-base (0.17) (telnet,finger,ftp,rsh,timed,routed):
+       [370]ftp://ftp.uk.linux.org/pub/linux/Networking/netkit/
+     * Net-tools (1.57):
+       [371]http://www.tazenda.demon.co.uk/phil/net-tools/
+
+ntp
+ftp://ftp.udel.edu/pub/ntp/ntp4/
+http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.1.0.tar.gz
+
+openssl
+  http://www.openssl.org/source/
+zlib
+ ftp://ftp.uu.net/graphics/png/src/zlib-1.1.3.tar.gz
+Openssh
+ ftp://carroll.cac.psu.edu/pub/OpenBSD/OpenSSH/portable/openssh-2.9p2.tar.gz
+ ftp://ftp.tux.org/bsd/openbsd/OpenSSH/portable/openssh-2.9p2.tar.gz
+
+Which
+ ftp://ftp.gnu.org/gnu/which/which-2.12.tar.gz
+
+Screen
+ ftp://ftp.uu.net/archive/systems/gnu/screen/screen-3.9.8.tar.gz
+
+Printing:
+ LPRng
+	http://www.lprng.com/DISTRIB/LPRng/LPRng-3.8.4.tgz
+ CUPS
+	ftp://ftp.easysw.com/pub/cups/1.1.14/cups-1.1.14-source.tar.bz2
+ CUPS-PDF rpm:
+	http://cip.physik.uni-wuerzburg.de/~vrbehr/cups-pdf/
+
+libungif:
+ ftp://prtr-13.ucsc.edu/pub/libungif/
+ http://metalab.unc.edu/pub/Linux/libs/graphics/
+
+libjpg (jpeg)
+ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz
+
+libart (gnome-ish stuff)
+http://www.artofcode.com/libart/libart-2.3.3.tar.gz
+
+glut (opengl addon lib):
+ ftp://ftp.sgi.com/opengl/glut/glut-3.7.tar.gz
+
+libpopt (like getopts) (also rpm tars)
+ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.0.x/
+
+db4/db3:
+http://www.sleepycat.com/update/4.0.14/db-4.0.14.tar.gz
+http://www.sleepycat.com/update/3.3.11/db-3.3.11.tar.gz
+
+Gnome
+ftp://ftp.gnome.org/pub/GNOME/stable/latest/sources/
+ftp://ftp.gnome.org/pub/GNOME/unstable/sources/
+
+libtiff
+ftp://ftp.remotesensing.org/pub/libtiff/tiff-v3.5.7.tar.gz
+ftp://ftp.remotesensing.org/pub/libtiff/libtiff-lzw-compression-kit-1.3.tar.gz
+
+pkg-config (used by gnome)
+http://www.freedesktop.org/software/pkgconfig/
+
+zip/unzip
+http://freshmeat.net/redir/zip/12340/url_tgz/zip23.tar.gz
+
+tripwire
+http://sourceforge.net/projects/tripwire/
+http://prdownloads.sourceforge.net/tripwire/tripwire-2.3.1-2.tar.gz
+
+sysstat (sar,iostat,sa)
+http://perso.wanadoo.fr/sebastien.godard/
+ftp://ibiblio.org/pub/Linux/system/status/sysstat-4.0.3.tar.gz
+
+ifstat
+http://gael.roualland.free.fr/ifstat/ifstat-0.5.tar.gz
+
+blackdown java for linux (i386,ppc,arm)
+ftp://metalab.unc.edu/pub/linux/devel/lang/java/blackdown.org/
+
+sun java
+http://java.sun.com/j2se/1.4/download.html
+
+GMP (math library)
+http://ibiblio.org/pub/gnu/gmp/gmp-4.0.tar.gz
+
+mozilla releases:
+http://www.ibiblio.org/pub/packages/infosystems/WWW/clients/mozilla/releases/
+
+TFTPD:
+http://www.kernel.org/pub/software/network/tftp/tftp-hpa-0.30.tar.bz2
+
+PXE daemon:
+###http://www.kano.org.uk/projects/pxe/
+###http://www.kano.org.uk/projects/pxe/pxe-1.2.tar.gz
+###also need ftp://ftp.rpmfind.net/linux/rawhide/1.0/SRPMS/SRPMS/pxe-0.1-25.src.rpm
+use (pxelinux / syslinux):
+http://syslinux.zytor.com/pxe.php
+http://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-1.67.tar.gz
+
+WOL magic packet (wake-on-lan)
+http://prdownloads.sourceforge.net/ahh/wol-0.5.1.tar.gz
+
+NFS / LOTS-A-STUFF
+ftp://ftp.porcupine.org/pub/security/index.html
+http://nfs.sourceforge.net/
+http://download.sourceforge.net/nfs/nfs-utils-0.3.3.tar.gz
+
+dhcpcd
+http://www.ibiblio.org/pub/Linux/system/network/daemons/dhcpcd-1.3.22-pl1.tar.gz
+http://www.phystech.com/ftp/dhcpcd-1.3.22-pl1.tar.gz
+
+devfsd
+http://www.atnf.csiro.au/~rgooch/linux/
+http://www.ras.ucalgary.ca/~rgooch/linux/docs/devfs.html
+
+mysql (also on www.mysql.com)
+http://prdownloads.sourceforge.net/mysql/mysql-3.23.49.tar.gz
+
+cdrecord
+http://www.fokus.gmd.de/research/cc/glone/employees/joerg.schilling/private/cdrecord.html
+
+hdparm
+http://ibiblio.org/pub/Linux/system/hardware/hdparm-4.6.tar.gz
+
+tcpdump
+http://www.tcpdump.org/release/tcpdump-3.7.1.tar.gz
+http://www.tcpdump.org/release/libpcap-0.7.1.tar.gz
+
+sylpheed
+http://sylpheed.good-day.net/sylpheed/
+
+GPGME (GPG made easy)
+ftp://ftp.gnupg.org/gcrypt/alpha/gpgme/gpgme-0.3.3.tar.gz
+
+GPG
+ftp://ftp.gnupg.org/gcrypt/gnupg/gnupg-1.0.6.tar.gz
+
+GnuTLS library
+ftp://ftp.gnupg.org/pub/gcrypt/alpha/gnutls/gnutls-0.3.90.tar.gz
+
+xinetd
+http://www.xinetd.org/xinetd-2.3.3.tar.gz
+
+ACPI daemon Project (acpid)
+http://sourceforge.net/projects/acpid/
+http://prdownloads.sourceforge.net/acpid/acpid-1.0.0.tar.gz
+http://developer.intel.com/technology/iapc/acpi/downloads/pmtools-20010730.tar.gz
+
+
+DOSEMU (dosemu):
+ftp://ftp.dosemu.org/pub/dosemu/dosemu-1.0.2.tgz
+ftp://ftp.dosemu.org/pub/dosemu/fixes/patch-1.0.2.1.gz
+
+ash shell (can't get it too compile though... netbsd version is used by most instead):
+ftp://ibiblio.org/pub/Linux/system/shells
+
+dhcpd server:
+ftp://ftp.isc.org/isc/dhcp/
+
+etherboot:
+http://prdownloads.sourceforge.net/etherboot/etherboot-5.0.5.tar.gz
+http://prdownloads.sourceforge.net/etherboot/mknbi-1.2.tar.gz
+
+gimp:
+ http://ftp.sunet.se/pub/gnu/gimp/stable/
+ http://ftp.sunet.se/pub/gnu/gimp/unstable/
+
+glib,gtk+,pango,atk
+ftp://ftp.gtk.org/pub/gtk/v2.0/
+http://www.freedesktop.org/software/pkgconfig
+
+traceroute:
+ftp://ftp.ee.lbl.gov/traceroute.tar.gz
+
+nethack:
+ftp://ftp.nethack.org/pub/nethack/nh340/src/nethack-340.tgz
+
+Lesstif (Motif replacement):
+http://ftp.rge.com/pub/X/lesstif/srcdist/lesstif-0.93.18.tar.gz
+
+xdiff (like SGI gdiff) (lesstif based)
+http://homepage.mac.com/pauljlucas/software/xdiff-1.2.tar.gz
+
+txt2pdbdoc (Palm Pilot pdb doc format)
+http://homepage.mac.com/pauljlucas/software/txt2pdbdoc-1.4.2.tar.gz
+
+xxdiff (like SGI gdiff)
+http://prdownloads.sourceforge.net/xxdiff/xxdiff-2.5.tar.gz
+  needs trolltech tmake:
+	ftp://ftp.trolltech.com/freebies/tmake/tmake-1.8.tar.gz
+
+xls2csv (part of catdoc)- reads MS-Excel file and puts its content as comma-separated data on standard output
+http://www.ice.ru/~vitus/catdoc/
+
+lynx
+wget http://lynx.isc.org/current/lynx-cur.tgz
+
+cvs
+www.cvshome.org
+
+blackbox window manager
+http://prdownloads.sf.net/blackboxwm/blackbox-0.62.1.tar.gz
+bbkeys:
+http://bbkeys.sourceforge.net/downloads/bbkeys-0.8.4.tar.gz
+
+rgrep (part of the jed editor source, newer greps have the -r flag too)
+ftp://ftp.jedsoft.org/pub/davis/jed/v0.99/jed-B0.99-15.tar.bz2
+
+RAR:
+http://www.rarlab.com/rar/unrarsrc.tar.gz     #old,free(?)
+http://www.rarlab.com/rar/rarlinux-3.1.b5.tar.gz
+
+PAR (parchive)  also hosts par2cmdline
+http://parchive.sourceforge.net/
+http://sourceforge.net/project/showfiles.php?group_id=30568
+
+CFV (checks sfv files)
+http://cfv.sourceforge.net/
+##use: cfv -f abc.sfv
+
+IPTRAF (iptraf monitors total network traffic and usage)
+ftp://iptraf.seul.org/pub/iptraf/iptraf-2.7.0.tar.gz
+
+lsof (lists open files)
+ftp://vic.cc.purdue.edu/pub/tools/unix/lsof/
+
+gmemusage (shows memory usage of processes)
+http://gmemusage.sourceforge.net/
+
+imagemagick
+http://www.imagemagick.org/
+ftp://ftp.sunet.se/pub/multimedia/graphics/ImageMagick/ImageMagick-5.4.6-3.tar.gz
+
+mirror:
+http://sunsite.org.uk/packages/mirror/mirror.tar.gz
+http://sunsite.org.uk/packages/mirror/
+(unpacks in PWD :( , make a temp dir)
+
+cabextract (extracts .exe self-executable zips)
+http://www.kyz.uklinux.net/downloads/cabextract-0.5.tar.gz
+
+NOCOL (Network Monitoring & Network Management)
+http://www.netplex-tech.com/software/nocol/
+
+whois:
+http://www.linux.it/~md/software/whois_4.6.1.tar.gz
+gwhois (really good whois):
+http://whois.fqdn.org/gwhois/gwhois_20030220-1.tar.gz
+
+dos2unix:
+http://www.megaloman.com/~hany/software/hd2u/
+http://www.megaloman.com/~hany/_data/hd2u/
+
+password generator (pronouncable):
+apg:
+http://www.adel.nursat.kz/apg/download.shtml
+
+
+REISERFS (http://www.namesys.com/):
+FOR PATCHES TO KERNEL:
+ftp://ftp.namesys.com/pub/reiserfs-for-2.4/
+FOR PROGS:
+ftp://ftp.namesys.com/pub/reiserfsprogs/reiserfsprogs-3.x.0j.tar.gz
+
+libmad + libid3tag (for mp3 software)
+http://www.underbit.com/products/mad/
+libao
+http://www.xiph.org/ao/
+
+temperature:
+hddtemp (temperature of your hard drive by reading SMART)
+http://coredump.free.fr/linux/hddtemp.php
+lm_sensors (reads mobo temp sensors)
+http://www2.lm-sensors.nu/~lm78/
+#also check acpi (if enabled)
+#/proc/acpi/thermal_zone/ATF0/temperature
+#see: http://akpi.scmd.at/description.php
+
+word converter (wv)
+http://wvware.sourceforge.net/
+
+safe (phone/palm jvm password keeper GPL - IDEA cipher)
+http://www.javawi.de/
+
+sound archive:
+http://freesound.iua.upf.edu/
+
+#-------------------------------------------------------------------
+
+KERNEL.ORG MIRRORS
+
+http://ftp.yu.kernel.org/mirrors/ftp.kernel.org/pub/linux/kernel/
+
+http://www.us.kernel.org/pub/linux/
+http://www.uk.kernel.org/pub/linux/
+http://www.se.kernel.org/pub/linux/
+http://www.pl.kernel.org/pub/linux/
+http://www.no.kernel.org/pub/linux/
+http://www.nl.kernel.org/pub/linux/
+http://www.fi.kernel.org/pub/linux/
+http://www.ca.kernel.org/pub/linux/
+
+interesting branches
+mjc
+allen
+
+rml (preempt patch)
+
+the kernel nfs guy?
+http://www.fys.uio.no/~trondmy/src/
+
+#-------------------------------------------------------------------
+
+gnu mirrors
+
+
+http://metalab.unc.edu/pub/gnu/
+ftp.cis.ohio-state.edu/mirror/gnu/
+aeneas.mit.edu/pub/gnu/
+gnu.ms.uky.edu/
+ftp.ece.cornell.edu/pub/mirrors/gnu/
+
+redhat mirrors
+ftp-linux.cc.gatech.edu/pub/Linux/distributions/redhat/
+ftp://mirror.hiwaay.net/redhat/redhat/
+ftp://ftp.cise.ufl.edu/pub/mirrors/redhat/
+lynx ftp://mirror.hiwaay.net/redhat/redhat/linux/7.2/en/os/i386/RedHat/RPMS
+
+
+#-------------------------------------------------------------------
+

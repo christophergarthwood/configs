@@ -1,0 +1,217 @@
+
+#----------------------------------
+to stop X from listening on tcp:
+
+X -nolisten tcp
+
+so if gdm is your login manager
+vi /etc/X11/gdm/gdm.conf
+change
+[servers]
+0=/usr/bin/X11/X
+TO
+[servers]
+0=/usr/bin/X11/X -nolisten tcp
+
+
+for command-line X
+vi /usr/bin/X11/startx
+change
+serverargs=""
+to
+serverargs="-nolisten tcp"
+
+a better way is to stick something in
+/etc/X11/xinit/xserverrc
+but I'm not sure what
+
+SSH  x-forwarding STILL WORKS RIGHT!!!!
+
+#----------------------------------
+
+xhost +local:
+non-network local connections being added to access control list
+
+#----------------------------------
+
+^H shows up instead of backspace
+
+stty erase ^?
+
+
+#----------------------------------
+
+ssh-agent setup
+
+2 files: .xinitrc and .xsession in ~
+.xinitrc gets used under run level 5 (xdm/gdm/...)
+.xsession gets used when startx is run from runlevel 3 (CLI)
+
+both can be the same:
+vi .xinitc
+#---
+exec ssh-agent gnome-session
+#---
+
+change gnome-session to blackbox for blackbox, etc...
+
+#----------------------------------
+
+For a dumb Xterminal
+
+make default runlevel 5
+
+if xdm is display manager:
+vi /etc/X11/xdm/Xservers
+change
+:0 local /usr/X11R6/bin/X
+to
+:0 local /usr/X11R6/bin/X -query SERVER1
+
+where SERVER1 is the server that allows XDMCP requests
+
+#--
+For a normal machine running with a local desktop, etc +
+  remote Xsessions:
+start your normal desktop
+alt+ctrl+F2 for vt2, login in, then:
+/usr/X11R6/bin/X :1 -query SERVER1
+
+This XSession starts in vt8 (alt+ctrl+F8).
+On some wm's (gnome), F8 is taken, so do a
+alt+ctrl+F1 to go to vt1 then go to vt7 or vt8
+
+#--
+Xnest (in X 4.x + ) is great for this to:
+in your normal Xsession in an xterm:
+Xnest :2 -query 192.168.0.234 #defaults to 3/4 screen
+Xnest :1 -query trillian -geometry 1024x768
+#or leave a little room for the xwindow border
+Xnest :1 -query trillian -geometry 1010x740
+
+xnest is fairly unstable and will die on semi-normal key shortcuts,etc
+
+#----------------------------------
+
+FOR A BIG BOX TO SERVICE XDMCP
+
+XDM
+> You can run xdm without X? When I start xdm, there is an X server running.
+> Which happens to be fine for what I need.
+
+Canonical Linux/xdm setup is that way: :0 is mentioned in the Xservers
+file and xdm starts it up. X-terminals have their own X server and use
+XDMCP to announce themselves to xdm and have it start managing them.
+Example Xservers entries:
+
+# Local server, xdm must start it before connecting
+:0              local   /usr/X11R6/bin/X :0 -bpp 16
+
+# Foreign server on an X-terminal, xdm merely connects to it
+talbot:0        foreign
+talbot:1        foreign
+jupiter:0       foreign
+
+The foreign entries are only needed for X-terminals that don't support
+XDMCP, those that do will get the login box automatically if they are
+allowed access in the Xaccess file.
+
+GDM
+vi /etc/X11/gdm/gdm.conf
+change
+[servers]
+0=/usr/bin/X11/X
+to
+[servers]
+#0=/usr/bin/X11/X
+
+
+#----------------------------------
+
+Redhat 6.2
+
+Then  xdm runs the Xsession script as the user.  This system session file may do some additional
+       startup and typically runs the .xsession script in the user's home directory.  When the Xsession
+       script exits, the session is over.
+
+more /etc/X11/xdm/Xsession 
+
+    gnome)
+        exec gnome-session
+        ;;
+
+
+#----------------------------------
+
+List all windows:
+export ROOTWINDOWID=`xdpyinfo | grep "root window id" | awk '{print $4}'`
+xwininfo -children -id $ROOTWINDOWID
+
+#----------------------------------
+
+SCRAWL FONT:
+scrawl_s and scrawl_w are included in the game lincity:
+http://sourceforge.net/projects/lincity
+in the ./opening directory
+
+I can't tell a difference between the two.
+To put it into your systemwide console fonts (in RH):
+Gzip scrawl_s.fnt and (as root)
+cp scrawl_s.fnt.gz /lib/kbd/consolefonts
+chmod 0644 /lib/kbd/consolefonts/scrawl_s.fnt.gz
+
+to get a quick test, type (as user):
+setfont scrawl_s
+
+In RH9, login or something close to it sets the font back to the default system font.
+
+In RH9, to change the default system font:
+vi /etc/sysconfig/i18n
+SYSFONT="scrawl_s"
+
+TO use a console fnt in X:
+
+I didn't try yours but I did this to get mine going. It should be the same process. I used a
+bdf file instead a pcf since I can see what foundry, family etc is in the file. I used fontedit
+to turn the fnt file to a bdf file. I looked inside your pcf and could not find out what foundry,
+family it was using...
+
+cp scrawl_s.bdf.gz /usr/X11R6/lib/X11/fonts/misc
+cd /usr/X11R6/lib/X11/fonts/misc
+
+less scrawl_s.bdf.gz
+#---
+...
+FONT "-Console-scrawl_s-Medium-R-Normal--16-120-100-100-C-80-ISO8859-1"
+...
+#---
+vi fonts.alias
+#---
+scrawl_s     -Console-scrawl_s-Medium-R-Normal--16-120-100-100-C-80-ISO8859-1
+#---
+
+#reload fonts
+xset fp rehash   #I actually just restart X here instead
+
+now this should show up in xfontsel with foundry: console, family: scrawl_s
+hit select, go to an xterm, hold control and right mouse button, hit "selection" and
+the font should turn to scrawl.
+
+To put it as a default:
+vi ~/.Xdefaults
+#--
+#XTerm*font: -console-scrawl_s-medium-r-normal-*-12-120-75-75-c-*-iso8859-1
+XTerm*font: -console-scrawl_s-medium-r-normal-*-16-*-100-*-c-*-iso8859-1
+#--
+
+The first one is small and hard to see, but the uncommented one is nice.
+
+I realized there are about 1000 programs called fontedit:
+http://oertl.com/wolfgang/download/download.html
+
+#----------------------------------
+#----------------------------------
+#----------------------------------
+#----------------------------------
+#----------------------------------
+

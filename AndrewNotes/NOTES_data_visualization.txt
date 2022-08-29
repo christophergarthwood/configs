@@ -1,0 +1,762 @@
+
+#---------------------
+#----------------------------------------------------------------------
+
+complile PGPLOT
+
+tar xzvf pgplot5.2.tar.gz
+cd pgplot
+export PGPLdir=`pwd`
+
+su
+mkdir /usr/local/pgplot
+chmod 0777 /usr/local/pgplot
+exit
+
+cp drivers.list /usr/local/pgplot/
+vi /usr/local/pgplot/drivers.list
+#--
+ GIDRIV 1 /GIF       GIF-format file, landscape
+ GIDRIV 2 /VGIF      GIF-format file, portrait
+ GLDRIV 1 /HPGL      Hewlett-Packard HP-GL plotters, landscape          Std F77
+ GLDRIV 2 /VHPGL     Hewlett-Packard HP-GL plotters, portrait           Std F77
+ HGDRIV 0 /HPGL2     Hewlett-Packard graphics language
+ LXDRIV 0 /LATEX     LaTeX picture environment
+ NUDRIV 0 /NULL      Null device (no output)                           Std F77
+ PGDRIV 0 /PGMF      PGPLOT metafile (new format, experimental)        Std F77
+ PNDRIV 1 /PNG       Portable Network Graphics file                    C
+ PNDRIV 2 /TPNG      Portable Network Graphics file - transparent background C
+ PPDRIV 1 /PPM       Portable Pixel Map file, landscape
+ PPDRIV 2 /VPPM      Portable PIxel Map file, portrait
+ PSDRIV 1 /PS        PostScript printers, monochrome, landscape Std F77
+ PSDRIV 2 /VPS       Postscript printers, monochrome, portrait          Std F77
+ PSDRIV 3 /CPS       PostScript printers, color, landscape              Std F77
+ PSDRIV 4 /VCPS      PostScript printers, color, portrait               Std F77
+ TTDRIV 5 /XTERM     XTERM Tektronix terminal emulator                  Std F77
+ WDDRIV 1 /WD        X Window dump file, landscape
+ WDDRIV 2 /VWD       X Window dump file, portrait
+ X2DRIV 0 /XDISP     PGDISP or FIGDISP server for X workstations        C
+ XWDRIV 1 /XWINDOW   Workstations running X Window System               C
+ XWDRIV 2 /XSERVE    Persistent window on X Window System               C
+ XMDRIV 0 /XMOTIF    Motif applications containing XmPgplot widgets.   C
+ XADRIV 0 /XATHENA    Motif applications containing XaPgplot widgets.   C
+ TKDRIV 0 /XTK       X-window Tcl/Tk programs with pgplot widgets.     C
+#--
+cd /usr/local/pgplot
+$PGPLdir/makemake $PGPLdir linux g77_gcc
+
+vi makefile
+pndriv.o : /usr/include/png.h /usr/include/pngconf.h /usr/include/zlib.h /usr/include/zconf.h
+
+vi $PGPLdir/pgdispd/proccom.c
+rm line "char *malloc()"
+
+vi ~/.bashrc
+export PGPLOT_DIR=/usr/local/pgplot
+
+su
+vi /etc/ld.so.conf 
+/usr/local/pgplot
+/sbin/ldconfig
+exit
+
+test:
+./pgtkdemo.tcl 
+./pgdemo6
+	choose /XWINDOW
+./pgawdemo 
+
+make clean
+
+#----------------------------------------------------------------------
+X-Y Plots in C 
+
+The following is the C equivalent to the previous FORTRAN program: 
+
+/*
+Compile with
+cc -c -I /usr/local/pgplot c_pgplot_test.c
+f77 -o cpgdemo c_pgplot_test.o -L /usr/local/pgplot -lcpgplot -lpgplot -L /usr/X11R6/lib -lX11 -lpng
+export PGPLOT_DIR=/usr/local/pgplot
+export PGPLOT_DEV=/XSERV
+
+*/
+
+
+#include <stdio.h>
+#include <math.h>
+#include "pgplot.h"
+
+#define NPTS    51
+#define NCURVES 5
+
+int     npts=NPTS;
+int     irr=0,nxsub=1,nysub=1;
+int     just=0,axis=1;
+float   xmin=0.0,xmax=5.0,ymin=-1.0,ymax=1.0;
+
+float   x[NPTS],y[NPTS];
+int     i,j;
+
+main ()
+{
+      pgbegin_(&irr,"?",&nxsub,&nysub,1L);
+      pgenv_(&xmin,&xmax,&ymin,&ymax,&just,&axis);
+      pglabel_("x-axis","y-axis","My first graph",6L,6L,14L);
+
+      for (j=1; j<=NCURVES; j++) {
+            for (i=0; i<NPTS; i++) {
+                  x[i] = 0.1*i;
+                  y[i] = sin(0.5*j*x[i])/(float)(j);
+            }
+            pgline_(&npts,x,y);
+      }
+      pgend_();
+}
+
+The function headers for the PGPLOT subroutines are defined in "pgplot.h". Because the PGPLOT subroutines are written in FORTRAN, you will need to take the
+following precautions when calling PGPLOT from C: 
+
+     Subroutine names have appended underscores (eg. pgbegin becomes pgbegin_ etc.) 
+     If you define an array x[NPTS], the array index starts from 0 and runs up to NPTS-1. In FORTRAN, the index starts at 1 and runs up to NPTS. However, in
+     FORTRAN, when you pass the array x as a parameter, the address of x(1) is passed, which is equivalent to the the address of x[0] in C. Thus, in the example
+     above, although the index i has different ranges in the FORTRAN and C implementations, the function call 
+
+           pgline_(&npts,x,y);
+
+     will result in all NPTS points being plotted. 
+     FORTRAN strings are handled quite differently from C strings. In C, strings are terminated by a '\0' character. In FORTRAN, strings are not terminated, but
+     rather, their lengths are stored. Hence, whenever you pass a string from C to FORTRAN, you need to pass its length as well. Note that the length is a longint, and
+     a longint must be passed, otherwise you will get data alignment errors. The standard library function strlen() from <stdlib.h> is often useful. For
+     example, to pass the variables char* xlabel,ylabel,toplabel to pglabel, use: 
+
+           pglabel_(xlabel,ylabel,toplabel,
+              (long)strlen(xlabel),(long)strlen(ylabel),(long)strlen(toplabel));
+
+     In FORTRAN, all parameters for function calls are passed by reference, hence instead of just calling 
+
+           pgbegin_(irr,"?",nxsub,nysub,1L),
+
+     you must pass the addresses of the variables, hence 
+
+           pgbegin_(&irr,"?",&nxsub,&nysub,1L).
+
+     Note that #define's are handled by the pre-processor and therefore, do not actually define a variable with an address in the computer's memory. In the above
+     example, 
+
+           pgline(&NPTS,x,y);
+
+     will not work, nor will 
+
+           pgline(&51,x,y);
+
+     You will have to define a variable for each parameter that you wish to pass to PGPLOT. Note also that because x and y are defined as pointers (ie. addresses in
+     memory), they are passed as is, not as &x and &y. Strings may also be passed as is, because they are stored as type char *. 
+
+
+
+#----------------------------------------------------------------------
+#---------------------
+PDL (perl data language) and PGPLOT
+
+    # ensure the module is loaded (required for PDL versions >= 2.004)
+    use PDL::Graphics::PGPLOT;
+    # The size of the window can be specified
+    $ENV{PGPLOT_XW_WIDTH}=0.3;
+    # You can set your device explicitly
+    dev($^O =~ /MSWin32/ ? '/GW' : '/XSERVE');
+
+    # First we define some variables to use for the rest of the demo.
+    $x=sequence(10);
+    $y=2*$x**2;
+
+    # Now a simple plot with points
+    points $x, $y;
+    # Here is the same with lines
+    line $x, $y;
+
+    # If you want to overlay one plot you can use the command
+    # 'hold' to put the graphics on hold and 'release' to
+    # revert the effect
+
+    points $x, $y, {SYMBOL=>4};  # The last argument sets symboltype
+    hold;
+    # Now draw lines between the points
+    line $x, $y;
+    # Plot errorbars over the points
+    $yerr=sqrt($y);
+    errb $x, $y, $yerr;
+
+    # To revert to old behaviour, use release
+    release;
+
+    # To change plot specifics you can either use the specific PGPLOT
+    # commands - recommended if you need lots of control over your
+    # plot.
+    #
+    # Or you can use the new option specifications:
+
+    # To plot our first graph again with blue color, dashed line
+    # and a thickness of 10 we can do:
+
+    line $x, $y, {COLOR=>5, LINESTYLE=>'dashed', LINEWIDTH=>10};
+
+  #
+  # More examples of changing the plot defaults
+  # 
+  $a = 1+sequence(10);
+  $b = $a*2;
+  $bord_opt = { TYPE => 'RELATIVE', VALUE => 0.1 };
+  line log10($a), $b, { AXIS => 'LOGX', BORDER => $bord_opt };
+
+
+#----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+VIS5d vis5d
+
+http://vis5d.sourceforge.net/
+  and sample data ftp://www.ssec.wisc.edu/pub/vis5d/vis5d-data.tar.Z
+
+HDF5 seems to be a good imtermediate file format
+http://ab-initio.mit.edu/mpb/h5utils-1.6.tar.gz
+ftp://hdf.ncsa.uiuc.edu/HDF5/
+  and HDF4 (just HDF...) ftp://hdf.ncsa.uiuc.edu/HDF/
+
+#--
+compile hdf5 library
+cd ./hdf5-1.4.2-patch1
+./configure
+make
+su
+make install
+
+compile HDF4 library (without a prefix, the default is ./NewHDF/)
+cd ./HDF4.1r5
+./configure --prefix=/usr/local
+make
+su
+make install
+
+compile h5utils
+cd ./h5utils-1.6
+./configure --with-v5d=../vis5d+-1.2.1 --without-octave --without-h5fromh4
+vi Makefile
+"CFLAGS = -g -O2" TO "CFLAGS = -g -O2 -I/usr/local/include"
+make
+su
+make install
+
+compile vis5d
+cd ./vis5d+-1.2.1
+./configure
+make
+#test with: src/vis5d hole.v5d -path src
+su
+make install
+
+#RH note: requires XFree86-devel-4.2.0-52.i386.rpm
+
+uncompress sample data
+mkdir v5d_data
+cd ./v5d_data/
+tar xZvf ../vis5d-data.tar.Z 
+
+test
+vis5d ./LAMPS.v5d 
+
+file input:
+/usr/local/bin/h5fromtxt
+/usr/local/bin/h5tov5d
+
+http://www.uni-koeln.de/themen/Graphik/Visualization/Vis5D/zaik.html
+
+#--
+test v5d files (each number is the VALUE at the coordinate, the coordinate is determined
+	by the sequence (implicitly) )
+1. (2x4)
+h5fromtxt foo.h5 <<EOF
+1 2 3 4
+5 6 7 8
+EOF
+h5tov5d foo.h5
+vis5d ./foo.v5d 
+
+2. (3D)
+COORDS GO LIKE (0,0,0),(0,0,1), (0,1,0), (0,1,1), (1,0,0), (1,0,1), (1,1,0), (1,1,1)
+h5fromtxt -n 2x2x2 foo.h5 <<EOF
+0 1 2 3 4 5 6 7
+EOF
+
+2. (4D time0 = all zero ; time1 = all one)
+h5fromtxt -n 2x2x2x2 foo.h5 <<EOF
+0 0 0 0 0 0 0 0
+1 1 1 1 1 1 1 1
+EOF
+
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+OpenDX
+
+download src (must register...)
+http://www.opendx.org/dlSrc.html
+
+or skip and go to
+http://opendx.npaci.edu/source/dx-4.1.3.tar.gz
+http://www.research.ibm.com/dx/srcDownload/srcArchive/
+http://opendx.npaci.edu/source/dxsamples-4.1.3.tar.gz
+
+or CVS
+http://www.research.ibm.com/dx/cvs.html
+	nightly cvs tars (Get both dx(tardate).tar.gz and cvs_add.tar.gz):
+	http://opendx.watson.ibm.com/dx/tars 
+
+or binary
+http://opendx.npaci.edu/source/dxsamples-4.1.3.tar.gz
+
+http://opendx.npaci.edu/bin/opendx-4.1.3-3.i386.rpm
+http://opendx.npaci.edu/bin/opendx-samples-4.1.3-1.noarch.rpm
+
+WIN32
+http://opendx.npaci.edu/bin/opendx-4.1.3-2-WIN32-setup.zip
+http://opendx.npaci.edu/bin/msvcrt_dll.zip
+
+--
+can use HDF,netCDF,CDF,Imagemagick (http://opendx.org/libraries.html)
+
+--
+compile
+cd ./dx-4.1.3
+./configure
+make
+errors ->
+In file included from GroupManager.h:20,
+                 from AnnotationGroupManager.h:19,
+                 from AnnotationGroupManager.C:18:
+../base/Dictionary.h:51: friend declaration requires class-key, i.e. `friend 
+   class DictionaryIterator'
+make[3]: *** [AnnotationGroupManager.o] Error 1
+make[3]: Leaving directory `/home/n9n/downloads/dx-4.1.3/src/uipp/dxuilib'
+
+
+--
+test:
+dx
+should bring up a splash screen and a Data Explorer menu window
+
+samples are in
+/usr/local/dx/samples/   and are *.net files  (then go to execute -> execute once)
+/usr/local/dx/samples/dxlink/sealevel.net  brings up a coastline
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+Flounder
+
+download
+http://www.enel.ucalgary.ca/~vigmond/flounder/flounder.tgz
+ (example - HUGE-35MB) http://www.enel.ucalgary.ca/~vigmond/flounder/igb_eg.tgz
+
+needs FLTK toolkit
+  http://www.fltk.org/software.php
+  ftp://ftp.easysw.com/pub/fltk/1.1.0b10/fltk-1.1.0b10-source.tar.bz2
+
+  I had to
+	vi ./test/fracviewer.cxx 
+	#  include <FL/glut.h>
+	TO
+	#  include <GL/glut.h>
+
+
+
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+Apps to examine and settle on:
+
+FLOUNDER:
+Flounder is a quick way to visualize regularly spaced 4D data, i.e., a data set that is a function of x, y, z, and time.
+http://www.enel.ucalgary.ca/~vigmond/flounder/index.html
+
+OpenDX:
+http://www.opendx.org/
+package for the visualization of scientific, engineering and analytical data
+OpenDX is the open source software version of IBM's Visualization Data Explorer.
+
+MayaVi:
+http://mayavi.sourceforge.net/
+scientific data visualizer written in Python uses Visualization Toolkit (VTK) for the graphics
+
+ROOT:
+http://root.cern.ch/
+ROOT is an OO framework for large-scale scientific data analysis and data mining
+seems to be very large, very active - but too open, too low-level
+
+Visualization ToolKit (VTK):
+http://public.kitware.com/VTK/
+VTK consists of a C++ class library, and
+several interpreted interface layers including Tcl/Tk,
+Java, and Python.
+
+Less appropriate, but interesting
+GmatH:
+http://gmath.sourceforge.net/
+The idea was then to create a central GUI for
+mathematical tools. Until now, I have focused on supporting a Numerical Python Session.
+
+Kalamaris:
+Mathematica-like application - not considered stable yet
+
+SampLin:
+http://www.iaee.tuwien.ac.at/sensor/samplin/
+laboratory data acquisition framework for Linux
+
+Weka:
+http://www.cs.waikato.ac.nz/ml/weka/
+Weka is a collection of machine learning algorithms for solving real-world data mining
+problems. It is written in Java.
+
+xfig
+spyglass transform
+spyglass plot
+xmgr
+numerical recipes online: http://nr.harvard.edu/nr/bookf.html
+graphviz (visio-ish) www.research.att.com/sw/tools/graphviz
+
+---
+    * From: Jim Edwards <jedwards@inmet.gov.br>
+    * To: modules@perl.org
+    * Date: Wed, 22 Dec 1999 09:09:19 -0300
+    * Message-ID: <3860BF6F.A361F8AD@inmet.gov.br>
+
+Hi,
+
+I've written a perl module interface to a graphics package called vis5d.
+
+http://www.ssec.wisc.edu/~billh/vis5d.html
+
+vis5d is a package for visualization of scientific data primarly
+developed for and used by the atmospheric sciences community.  Anyway,
+I've been working on this module for several months now and think that
+it's about ready to add to the perl archive. I've discussed it
+publically only on a vis5d mailing list where I haven't found any perl
+programmers, so the interest level may be pretty low at least
+initially.   I thought it should go in the archive as Graphics::Vis5d 
+
+     your name : Jim Edwards
+     your email address : jedwards@inmet.gov.br
+     your homepage if you have one : www.inmet.gov.br/~jedwards
+     your preferred user-ID on CPAN: JEDWARDS
+--
+
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+From: Johannes Nix (Johannes.Nix@mail.uni-oldenburg.de)
+ Subject: Scientific Graphics Library for live graphics 
+ Newsgroups: comp.os.linux.misc
+ Date: 2000/02/04 
+
+
+Hi,
+
+I am searching for a graphics/plot library with the following
+features:
+
+- plots and diagrams, similar in functionality to gnuplot, or matlab,
+or maple graphics
+
+- has to support 2D and 3D graphics
+
+- should have C bindings, if possible also C++, Modula-3, java or
+phyton (I will likely programn most of my processing in Modula-3 which
+seems to be a pretty cool modern language for engineering). I
+acknowledge that phyton is cool also but it has to be fast.
+
+- able to update data constantly (will say, I give the Library a float
+buffer and possibly a mutex and say to it: "Hey, this is a 2 x 256
+Array of data. I want you to display that every 0.1 sec in a mesh
+plot, and you should use logarithmic axis and set the upper limit to
+10 and the lower limit to zero.")
+
+- fast (I need to display data from real-time audio-processing)
+
+
+- it has to run on the alpha CPU platform
+
+
+the following points are welcomed but not required :
+
+- As I need to publish and present my work I would like to generate
+printable output. The nonplusultra would be a print dialog which lets
+me generate Postscript Files with TeX fonts. It would be also pretty
+nice if it could generate PNG graphics for my web sites and Windows
+CGM files for my windozed coworker.
+
+- I want to size and change Windows at run-time
+
+- I would be really happy if I could have a graphics-control
+commandline while the thing is running so that I could say: "Oh no,
+the lower limit should be -2.0. Remember that!"
+
+
+- As I will have lots of windows it would be nice to support some sort
+of Window managment (perhaps remembering position or so).
+
+
+- It would be nice if I could save data to an ASCII file.
+  
+- it doesn't has to be Open Source but it should be very reliable and
+suitable for long term projects.
+
+
+I have found various items in the SAL Library (SAL-Archiv
+http://SAL.KachinaTech.COM/index.shtml), but I don't have experience
+with any lib/program except gnuplot.
+
+
+
+   [AT-red_x.gif] 74% SAL- Computer Graphics, Images & Signals - Misc -
+   XMove
+   Summary: XMove XMove is an object-oriented tool for the development of
+       dynamic graphic applications. The field of applications comprises
+       all visualization tasks where the graphic representation of
+       information or processes has to change continually according to   
+       the real process and the data flow generated by the application,
+       and/or where the user wants to control a process by mouse-click on
+       graphical objects.
+
+   [AT-red_x.gif] 74% SAL- Programming - Other Graphic Libraries - g2
+   Summary: g2 g2 is an easy to use, portable and powerful 2D graphics 
+       library. It provides a comprehensive set of functions for
+       simultaneous generation of graphical output on different types of
+       devices.
+
+any experiences ?
+
+This is a long-term question, so please if you have an idea in six
+months and read this article in deja, mail your answer to:
+
+jnix@medi.physik.uni-oldenburg.de
+
+I would suggest also that you send me a mail if you are offering
+commercial software, as commercial mail is highly unwanted in
+newsgroups.
+
+-------------------------------------
+
+further SAL spat the following large list (I encourage you to make
+comments):
+   
+   ACE/gr (xmgr, xvgr) -- general 2D XY plotting package with mouse
+   control.
+   NEW ANA -- extensive, interactive data and image processing software
+   package and language.
+   ASGL -- preparing PostScript plots from simple data files.
+   AVS5 [CM] -- powerful software suite for data visualization and
+   analysis.
+   BIRCH -- clustering and density analysis for any large dataset using
+   limited computational resources.
+   Candis -- general purpose analysis and display system for gridded
+   numerical data.
+   chart [GPL] -- simple, non-interactive program for drawing data
+   charts.
+   CViz -- Java based visualization tool for high-dimensional, large,
+   complex data sets.
+   DATAPLOT -- command driven program for data analysis.
+   DAVID -- data visualization and diagnostics system.
+   DEVise -- an environment for data exploration and visualization.
+   diag [GPL] -- converts numeric data, written in an ASCII-file into a
+   diagram in EPS-format.
+   Draco -- data reduction and analysis.
+   Envision -- management and display of large multi-dimensional arrays
+   of numerical data.
+   FC-Plot [GPL] -- a scientific analysis/visualization tool for
+   Unix/GTK.
+   Ferret -- a visualization and analysis application for analyzing large
+   and complex gridded data sets.
+   FPLOT -- plot ASCII data file into postscript file for printing or
+   viewing.
+   frame_integrate -- programs for viewing/integrating 2D x-ray or
+   neutron diffraction images.
+   FTOOLS -- utility programs used to create, examine, or modify the FITS
+   data files.
+   fv -- a graphical tool for viewing and editing the FITS format file.
+   Genplot [CM] -- powerful and flexible plotting package for
+   scientific/engineering data.
+   GiD [CM] -- a universal, adaptative and friendly pre/post-processing
+   system for engineers.
+   GLE -- publication quality graphs, diagrams, posters and slides.
+   Glove -- data acquisition, manipulation and analysis program for
+   UNIX/X.
+   GMT -- manipulating data sets and generating plots.
+   GMV -- an easy to use, 3D visualization tool for data of structured or
+   unstructured mesh.
+   Gnuplot -- visualize mathematical functions and data.
+   Xgfe [GPL] -- a GUI front end to the Gnuplot plotting package written
+   with Qt library.
+   GPLOT -- a CGM (Computer Graphics Metafile) processor.
+   Grace [GPL] -- an easy to use and powerful 2D plotting software.
+   Gri [GPL] -- programming language for drawing science-style graphs.
+   GTKWave [GPL] -- a wave viewer which reads AET files and allows their
+   viewing.
+   Guppi [GPL] -- plotting data and performing simple statistical
+   manipulations with GUI.
+   HDFLook -- a comprehensive application for viewing NCSA HDF science
+   datasets.
+   Histo-Scope/NPlot -- tools to select and display histograms, ntuples,
+   and scalar variables.
+   Horizon -- a Java package for browsing and visualizing scientific
+   data.
+   NCSA HDF Java -- Java HDF Interface (JHI) and Java-based HDF Viewer
+   (JHV).
+   IRIS Explorer [CM] -- a powerful visual programming system for data
+   visualization.
+   jgraph [GPL] -- filter for graph plotting to postscript.
+   kpl [GPL] -- two-dimensional graphical presentation of data sets and
+   functions.
+   KPlotW/KPlot [GPL] -- a plotting widget and an interface to it.
+   Khoros Pro 2000 VPE [CM] -- visual prototyping environment for data
+   processing/exploration/visualization.
+   KUPLOT -- an universal plotting program for 2D and 3D data sets.
+   LinkWinds -- visual data exploration system.
+   Mesh-TV -- visualizing and analyzing data on 2D and 3D meshes
+   Mgraph -- easy to use graphic software for fast visualization of 2D
+   scientific data.
+   NCAR Graphics [CM] -- integrated environment for data processing and
+   scientific visualization.
+   nep -- an interactive data plot program based on BLT.
+   NodPlot [GPL] -- a scientific data plotting software for 3D structured
+   meshes.
+   Open Visualization Data Explorer -- an application and development
+   software package for visualizing 2D/3D data.
+   P+owerGraph [CM] -- easy-to-use tool for making scientific graphs with
+   high quality.
+   PAW -- an instrument to assist physicists in the analysis and
+   presentation of their data.
+   PFlow [GPL] -- an X11 Qt baseed program for use in introductory fluid
+   dynamics course.
+   PHYSICA -- a high level, interactive programming environment for data
+   analysis and visualization.
+   Ploticus -- script-driven and non-interactive plotting software.
+   PLOTMTV -- various 2D and 3D plotting formats.
+   PLOTTAB -- general purpose plotting code for discrete and/or
+   continuous data.
+   plotutils [GPL] -- plotting of scientific data and the drawing of
+   vector graphics.
+   PM3D [GPL] -- a program to transform 3D data to grayscale or color
+   maps.
+   Ptool -- a software tool which provides persistence for data.
+   PXI -- n-D data plotting program.
+   PV-Wave [CM] -- analysis, visualization and application development to
+   scientific data.
+   Quickplot [GPL] -- a fast interactive 2-D plotter for large or small
+   data files.
+   robot -- scientific graph plotting and data analysis tool.
+   SaGA [SR] -- Matlab toolbox for geometrical modeling and spatial data
+   analysis.
+   SampLin [GPL] -- a scientific data acquisition and visualization
+   software.
+   SM [CM] -- an interactive plotting programme with a flexible command
+   language.
+   Spinne -- a program to check 2D representations of high-dimensional
+   data.
+   STAPLOT -- a Matlab tool for graphical analysis of hydrographic or
+   other irregularly spaced data.
+   StarChart [SR] -- X/Motif utility which generates charts from
+   datasets.
+   Tecate -- exploratory visualization system.
+   TecPlot [CM] -- plotting program for visualizing and analyzing
+   engineering and scientific data.
+   UltraScan -- data analysis package for sedimentation velocity and
+   equilibrium experiments.
+   VCS -- visualization and computation system.
+   VFleet -- a volume renderer which can run either locally or in a
+   distributed mode.
+   Vis5D [GPL] -- interactive visualization of large 5-D gridded data
+   sets.
+   vgp -- visualizing series of 3D vectors with mouse controls.
+   Vplot -- a plotting package with many screen and hardcopy devices.
+   WebWinds -- a Java based interactive science data visualization
+   system.
+   wgrib -- a program to manipulate, inventory and decode GRIB files.
+   WXP [CM] -- analyzing and displaying meteorological data and satellite
+   images.
+   Xdang -- vector, contour plots, and color maps on structured grids.
+   xfarbe -- contouring program for iso-lines.
+   XFigChart.pl [GPL] -- create bar charts in XFig files.
+   XGobi -- data exploring interactively.
+   XGraph with animation -- animations of line plots.
+   Xgraphic -- easy to use graphic software to plot curves.
+   XmdvTool -- visually explore multivariate data in a variety of
+   methods.
+   xpplot -- a quick and handy tool to plot data.
+   Xprism Pro [CM] -- a professional 2D and 3D plotting tool.
+   XYPLOT [GPL] -- a plottig and data analysis tool.
+   xyplot [GPL] -- a two-dimensional graphing and plotting package.
+   yap -- display and print 2D slices of 3D rectangular grids.
+   yplot -- scientific plots from large structured data file.
+   ZigZag [SR] -- a software for a new kind of rationally connected data
+   structure.
+   NEW zimg [GPL] -- generates png images out of almost arbitrary
+   formatted 2-D data.
+   
+   Also Check Out:
+   Amira -- visualization and reconstruction for 3D image data.
+   ATNF Visualization Software -- a set of visualization software using
+   Karma library.
+   [B/D] -- an interactive programming language allows analyses of Bayes
+   linear statistical problems.
+   CFDRC Software [CM] -- a complete CFD system with pre/post-processing
+   capabilities, like visualizing/procesing data.
+   CLASP -- a tool for visualizing and statistically analyzing data.
+   ESO-MIDAS [GPL] -- tools for image processing and data reduction with
+   emphasis on astronomical applications.
+   GrADS -- an interactive tool for the analysis and display of earth
+   science data.
+   IDL [CM] -- data analysis, visualization and application development.
+   IRAF [GPL] -- general purpose software system for the reduction and
+   analysis of scientific data.
+   LabVIEW [CM] -- graphical programming environment for data
+   acquisition/control/analysis/visualization.
+   MATCOM [CM] -- MATLAB to C++ translator and C++ matrix class library.
+   MatView -- a scalable sparse matrix viewer.
+   Megahedron [CM] -- multifaceted rendering, animation, simulation, and
+   virtual reality software.
+   polyr -- a program to make polygons from a volume.
+   RRD Tool [GPL] -- a system to store and display time-series data.
+   S-PLUS [CM] -- exploratory data analysis and statistical data mining.
+   Starlink Software Collection -- many data processing programs for
+   astronomers.
+   Yorick -- fast interpreted languages for numeric computing, analysis
+   and processing.
+   You may also want to look at the software in MATH | Array-Oriented &
+   Linear Algebra Systems
+   
+
+
+ 
+
+-- 
+Johannes Nix
+--------------------------------------------------
+jnix@medi.physik.uni-oldenburg.de
+
+AG Medizinische Physik       Fax +441 798-3698
+Universität Oldenburg        Tel +441 798-5472
+26111 Oldenburg
+--------------------------------------------------
+
+
+
+#-----------------------------------------------------------------------
+http://groups.google.com/groups?q=data+visualization+open+source+vis5d&start=50&hl=en&scoring=d&rnum=54&selm=D7vy1z.288%40cmie.ernet.in
+
+
+
+#----------------------------------------------------------------------
+

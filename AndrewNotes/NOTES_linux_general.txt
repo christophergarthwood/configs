@@ -1,0 +1,1040 @@
+
+#--------------------------
+
+#list drives on a machine
+dmesg | grep sectors | sed -e "s/SCSI device //" | uniq | awk -F':' '{system("echo " $1);}'
+
+#check for drive errors
+dmesg | grep sectors | sed -e "s/SCSI device //" | uniq | awk -F':' '{system("echo " $1 ";smartctl -H /dev/" $1);}'
+#temperature check #yum install hddtemp
+dmesg | grep sectors | sed -e "s/SCSI device //" | uniq | awk -F':' '{system("echo " $1 ";hddtemp /dev/" $1);}'
+
+#recent
+grep dma_intr /var/log/messages
+grep "SeekComplete Error" /var/log/messages
+grep smartd /var/log/messages
+
+#all
+grep dma_intr /var/log/messages*
+grep "SeekComplete Error" /var/log/messages*
+grep smartd /var/log/messages*
+
+#quick smartd check
+echo /dev/hdb -m user@home -M test | smartd -c - -q onecheck
+
+#prints out all info and status of drive
+smartctl -a /dev/hda
+
+#just print smart status
+smartctl -H /dev/hdb
+
+#howto
+http://gentoo-wiki.com/HOWTO_Monitor_your_hard_disk(s)_with_smartmontools
+
+#--------------------------
+EXT2 to EXT3 : /sbin/tune2fs -j /dev/hda1
+
+First, make sure you are running the appropriate version
+of the e2fsprogs, mount and util-linux packages: 
+
+ e2fsprogs-1.25-1    (check by typing e2fsck -V)
+ mount-2.11l-2       (check by typing mount -V)
+ util-linux-2.11l-2  (check by typing mkfs -V)
+
+Second, create journals for each partition you want to convert from
+ext2 to ext3. I am going to convert all my partitions to ext2 in one shot: 
+
+# for i in /dev/hda1 /dev/hda6 /dev/hda7 /dev/hda8 /dev/hda9 /dev/hda10;
+> do                    
+> /sbin/tune2fs -j $i
+> /sbin/tune2fs -c 49 -i 283d $i #changes checking to 49 mounts and 283 days
+> done
+
+or for only one partition:
+/sbin/tune2fs -j /dev/hda1
+/sbin/tune2fs -c 49 -i 283d /dev/hda1 #changes checking to 49 mounts and 283 days
+
+Third, edit /etc/fstab to change the filesystem type for those partitions
+from ext2 to ext3. The latest version of mount (mount-2.11l) recognises
+ext3 and can automatically choose the ext3 filesystem type, depending on
+whether or not the current kernel has support for ext3. If the filesystem
+type for a partition is listed as "auto" in /etc/fstab, the
+latest version of mount will autodetect the type of the filesystem and
+mount it appropriately. So, I will change the fs types for /, /tmp, /var,
+/home, /usr/ and /usr/local to "auto" in /etc/fstab. 
+
+Fourth, reboot the system for the changes to take effect. Note that a
+reboot is not really required for mount points like /tmp, /var, /home,
+etc. as the system can be switched to runlevel 1 and these non-root mount
+points can be remounted as ext3. Rebooting is required only to mount the
+root filesystem (/) as ext3. 
+
+Use "mount" with no options to show the filesystem type that the filesystem
+mounted as.
+
+#---
+TO format fresh as ext3:
+mke2fs -j /dev/hdz2
+tune2fs -c 49 -i 283d /dev/hdz2	#(changes checking to 49 mounts and 283 days)
+
+#--------------------------
+
+VERY, VERY SIMPLE INSTALL
+
+. "text" install means you don't need a mouse - use it for everything except workstations
+. if you have more than a 2.5GB disk: just do a "custom" installation and then select (at the
+	bottom of the list) install everything. Select auto-partition. Click next or ok on
+	all questions/screens
+. you will probably want to add yourself as a user during the install - do not worry about
+	anybody else
+. right after reboot (preferrably with no network connection, but if firewalled, ok...)
+	"/sbin/chkconfig --list | less" (look at "3:") to get a list of things to turn off
+	"/sbin/chkconfig --del service" where service is like lpd
+
+. the only things I leave running are
+	syslog
+	gpm (don't need if you don't have a mouse)
+	network
+	random
+	crond
+
+. reboot
+
+. "netstat -a --inet" should be empty (no network ports listening)
+	
+#-----------------------------------------------------------------------------------------------
+
+vi /etc/crontab
+--
+#(minute) (hour) (day of month) (month) (day of week 0-7 0and7 are Sun) USER program
+30 * * * 1-4,7     me	/program_run_every_thirty_minutes_on_M-Th_and_Sun
+0 14 * * 1-5       me	/program_run_at_twoPM_on_M-F
+
+--
+also
+--
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+HOME=/
+
+02 4 * * * root run-parts /etc/cron.daily
+--
+15 1 * * * /usr/local/bin/ntpdate eagle.tamu.edu
+30 1 * * * /sbin/hwclock --systohc
+
+*/5 * * * * /something/every/five/minutes
+
+regular user crons ( crontab -e ) do NOT get the USER column
+
+
+#-----------------------------------------------------------------------------------------------
+
+tmpfs
+
+http://www-106.ibm.com/developerworks/library/l-fs3.html
+
+Creating a tmpfs filesystem with a maximum size is easy. To create a new tmpfs filesystem with a maximum filesystem size of 32 MB, type:
+# mount tmpfs /dev/shm -t tmpfs -o size=32m
+
+This time, instead of mounting our new tmpfs filesystem at /mnt/tmpfs, we created it at /dev/shm, which is a directory that happens to be the "official" mountpoint for a tmpfs filesystem. If you happen to be using devfs, you'll find that this directory has already been created for you.
+
+Also, if we want to limit the filesystem size to 512 KB or 1 GB, we can specify size=512k and size=1g, respectively. In addition to limiting size, we can also limit the number of inodes (filesystem objects) by specifying the nr_inodes=x parameter. When using nr_inodes, x can be a simple integer, and can also be followed with a k, m, or g to specify thousands, millions, or billions (!) of inodes.
+
+Also, if you'd like to add the equivalent of the above mount tmpfs command to your /etc/fstab, it'd look like this:
+
+
+tmpfs	/dev/shm	tmpfs	size=32m	0	0
+
+Mounting on top of existing mountpoints
+Back in the 2.2 days, any attempt to mount something to a mountpoint where something had already been mounted resulted in an error. However, thanks to a rewrite of the kernel mounting code, using mountpoints multiple times is not a problem. Here's an example scenario: let's say that we have an existing filesystem mounted at /tmp. However, we decide that we'd like to start using tmpfs for /tmp storage. In the old days, your only option would be to unmount /tmp and remount your new tmpfs /tmp filesystem in its place, as follows:
+
+
+#  umount /tmp
+#  mount tmpfs /tmp -t tmpfs -o size=64m
+
+However, this solution may not work for you. Maybe there are a number of running processes that have open files in /tmp; if so, when trying to unmount /tmp, you'd get the following error:
+
+
+umount: /tmp: device is busy
+
+However, with recent 2.4 kernels, you can mount your new /tmp filesystem without getting the "device is busy" error:
+
+
+# mount tmpfs /tmp -t tmpfs -o size=64m
+
+With a single command, your new tmpfs /tmp filesystem is mounted at /tmp, on top of the already-mounted partition, which can no longer be directly accessed. However, while you can't get to the original /tmp, any processes that still have open files on this original filesystem can continue to access them. And, if you umount your tmpfs-based /tmp, your original mounted /tmp filesystem will reappear. In fact, you can mount any number of filesystems to the same mountpoint, and the mountpoint will act like a stack; unmount the current filesystem, and the last-most-recently mounted filesystem will reappear from underneath.
+
+Bind mounts
+ Using bind mounts, we can mount all, or even part of an already-mounted
+filesystem to another location, and have the filesystem accessible from both
+mountpoints at the
+ same time! For example, you can use bind mounts to mount your existing root
+filesystem to /home/drobbins/nifty, as follows: 
+
+
+  #  mount --bind / /home/drobbins/nifty
+
+
+#-----------------------------------------------------------------------------------------------
+
+8.6 What is a BogoMip?
+
+"BogoMips" is a contraction of "Bogus MIPS." MIPS stands for
+(depending who you listen to) Millions of Instructions per Second, or
+Meaningless Indication of Processor Speed.
+
+The number printed at boot time is the result of a kernel timing
+calibration, used for very short delay loops by some device drivers.
+
+As a very rough guide, the BogoMips rating for your machine will be
+approximately:
+  386SX              clock * 0.14
+  386DX              clock * 0.18
+  486Cyrix/IBM       clock * 0.33
+  486SX/DX/DX2       clock * 0.50
+  586                clock * 0.39
+
+If the number is wildly lower, you may have the Turbo button or CPU
+speed set incorrectly, or have some kind of caching problem (as
+described in "When I add more memory, the system slows to a
+crawl..")
+
+For values people have seen with other, rarer, chips, see the BogoMips
+Mini-HOWTO, on metalab.unc.edu in
+/pub/Linux/docs/howto/mini/BogoMips/.
+
+#-----------------------------------------------------------------------------------------------
+
+Kernel module locations, name,etc
+base Makefile (/usr/src/linux/Makefile)
+VERSION = 2
+PATCHLEVEL = 4
+SUBLEVEL = 16
+EXTRAVERSION = -openmosix
+
+#-----------------------------------------------------------------------------------------------
+
+SMB mounts (compile SMB network filesystems into kernel/as module)
+
+as root
+mount -t smbfs -o username=z,password=z //192.168.0.1/shareddir /mnt/smb 
+
+You can change smbmount to allow for mounting by a regular user. As root:
+	chmod 4755 /usr/bin/smbmount
+	chmod 4755 /usr/bin/smbumount
+Make sure you have permission to the mount directory (just mkdir in your home
+directory).  Make sure you have permission on the remote share.
+
+or use sudo
+
+then:
+smbmount //192.168.0.1/windows_share ~username/smb_dir -o username=z,password=z
+
+#-----------------------------------------------------------------------------------------------
+
+nfs:
+
+state on a server is around /var/lib/nfs/
+rmtab
+xtab
+
+#--
+If your distribution does not include them in the startup scripts, then then
+you should add them, configured to start in the following order:
+
+rpc.portmap                                     
+rpc.mountd, rpc.nfsd                            
+rpc.statd, rpc.lockd (if necessary), rpc.rquotad
+
+#--
+use rpcinfo -p
+to see what versions of what are running
+
+#--
+/etc/fstab
+192.168.0.99:/home/n9n  /home/n9n/nfs_magrathea nfs defaults,intr,user,noauto 0 0
+#--
+
+vi /etc/init.d/nfsall
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: nfsall (all nfs in one)
+RETVAL=0
+case "$1" in
+  start)
+        echo "Starting nfs: "
+        /etc/init.d/portmap start
+        /etc/init.d/nfs start
+        /etc/init.d/nfslock start
+        ;;
+  stop)
+        echo "Shutting down nfs: "
+#need some umounting stuff here
+        /etc/init.d/nfslock stop
+        /etc/init.d/nfs stop
+        /etc/init.d/portmap stop
+        ;;
+  *)
+        echo "Usage: nfsall {start|stop}"
+        exit 1
+esac
+#--
+chmod 0755 /etc/init.d/nfsall
+
+
+#-----------------------------------------------------------------------------------------------
+
+imagemagick/convert on entire directory
+../ contains alot of tif s and ./ is where we want smaller png s
+
+for file in `ls ../*.tif`;
+do
+newfile=`echo "$file" | sed -e "s/\.\./\./" - | sed -e "s/\.tif/\.png/" -`
+/usr/local/bin/convert -geometry 25% -quality 50 $file png:$newfile;
+done
+
+#same but just smaller size no format change
+for file in `ls ../*.jpg`;
+do
+newfile=`echo "$file" | sed -e "s/\.\./\./" -`
+convert -geometry 25% -quality 50 $file $newfile;
+done
+
+
+
+#-----------------------------------------------------------------------------------------------
+
+shmem / SysV IPC
+
+ipcs                 (8)  - provide information on ipc facilities
+ipcrm will remove the resource(s) specified by id.
+  be sure to get both the shmem and semaphore:
+  ipcrm shm my_id_here
+  ipcrm sem my_id_here
+
+clear MY shared memory stuff (probably not a good idea as root...):
+ipcs -m | grep $USER | awk '{system(sprintf("ipcrm shm %s",$2));}' &&
+  ipcs -s | grep $USER | awk '{system(sprintf("ipcrm sem %s",$2));}'
+
+#-----------------------------------------------------------------------------------------------
+
+network errors like "can't dump":
+iproute2 (/sbin/ip) requires
+CONFIG_NETLINK=y
+CONFIG_RTNETLINK=y
+CONFIG_NETLINK_DEV=y
+
+RH7+ runs /sbin/ip in the initscripts
+
+RH /etc/sysconfig/network
+NETWORKING=yes
+HOSTNAME=trillian.dentarthurdent.org
+DHCP_HOSTNAME=trillian
+
+#-----------------------------------------------------------------------------------------------
+athlon/agp bug: pass to kernel:
+append mem=nopentium
+#-----------------------------------------------------------------------------------------------
+
+ERRORS AND FIXES:
+
+in gcc (and maybe others)
+undefined reference to `dcgettext__'
+do:
+./configure --disable-nls
+
+#-----------------------------------------------------------------------------------------------
+
+cool little pdf on linux security one-liners:
+http://www.linuxsecurity.com/docs/QuickRefCard.pdf
+
+#-----------------------------------------------------------------------------------------------
+
+Process states:
+
+man top:
+STAT The state of the task is shown here. The state is either S for sleeping,
+D for uninterruptible sleep, R  for  running,  Z for zombies, or T for stopped
+or traced. These staes are modified by trailing < for a process with negative
+nice value, N for a process with positive nice value, W for a swapped out process
+(this does not work correctly for kernel  processes).
+
+#--
+1012] 3rdParty>free
+             total       used       free     shared    buffers     cached
+Mem:        998692     978660      20032          0      36420     207428
+-/+ buffers/cache:     734812     263880
+Swap:      2040244     777068    1263176
+
+The first line shows only 20M free, but the seconf line points out that 
+there is really 263M free.  Note that this is free+buffers+cached from the 
+first line.
+#--
+System Performance Tuning, 2nd Edition
+Virtual memory management in Linux
+http://www.oreilly.com/catalog/spt2/chapter/ch04.html
+
+#-----------------------------------------------------------------------------------------------
+
+installing on a mac / ppc :
+
+boot Mac OS 9 CD
+Utilities -> Drive Setup -> Click on HD -> Press Initialize
+   -> Custom Setup
+   -> 2 partitions
+      -> 1: Mac OS Standard,300 MB
+      -> 2: Unallocated,the rest of the drive 
+   -> OK
+   -> Initialize
+Mac OS install (basic install is 195M)
+
+Restart
+
+Stick in Mandrake CD
+restart
+hold down "C"
+boot: install-aty128fb OR install-text
+
+auto-allocate
+  hda10 /
+  hda11 swap
+  hda12 /home
+
+#reset OF/yaboot stuff
+Command-Option-o-f
+setenv boot-device hd:9,\\:tbxi
+shut-down
+
+#kernel recompile
+processor type: 6xx/7xx/74xx/8260
+machine type: CHRP/PowerMac/PrEP
+
+OHCI usb
+tulip NIC
+Apple Mac file system support
+Power Mac DMA sound
+Kernel automount
+Devfs automount at boot
+HID input layer support
+process accounting
+
+make dep && make zImage
+cp /usr/src/linux/vmlinux /boot/vmlinuz-2.4.19
+vi /etc/yaboot.conf
+/sbin/ybin
+
+#-----------------------------------------------------------------------------------------------
+
+/usr/sbin/tc qdisc add dev $IF root tbf rate 128kbit latency 50ms burst 1500
+
+#-----------------------------------------------------------------------------------------------
+
+window screen capture:
+xwd -out A1.xwd        #standard X11
+convert A1.xwd A1.png  #image magick
+
+#-----------------------------------------------------------------------------------------------
+
+Redhat:
+
+updates:
+ftp://ftp-linux.cc.gatech.edu/pub/Linux/distributions/redhat/linux/updates/7.3/
+ftp://ftp-linux.cc.gatech.edu/pub/Linux/distributions/redhat/linux/updates/7.3/en/os/
+
+#normal updates
+ftp://mirror.hiwaay.net/redhat/redhat/linux/updates/7.3/en/os/i386/
+ftp://mirror.hiwaay.net/redhat/redhat/linux/updates/7.3/en/os/SRPMS/
+#kernels and glibc for specific archs
+ftp://mirror.hiwaay.net/redhat/redhat/linux/updates/7.3/en/os/i686/
+
+rawhide:
+http://distro.ibiblio.org/pub/Linux/distributions/redhat/rawhide/
+http://distro.ibiblio.org/pub/Linux/distributions/redhat/rawhide/i386/RedHat/RPMS
+http://distro.ibiblio.org/pub/Linux/distributions/redhat/rawhide/i386/RedHat/base
+http://distro.ibiblio.org/pub/Linux/distributions/redhat/rawhide/SRPMS (so mkdir SRPMS)
+
+limbo:
+ftp://ftp-linux.cc.gatech.edu/pub/Linux/distributions/redhat/linux/beta/limbo/en/os/i386/
+
+#--
+Is it possible
+> to replace RH71 CDs with the new kernel rpms and its prerequisite to
+> ease the installation process to a non-technical ? If anyone has done
+> that please share. My guess is:
+> > 1. Mount the origial iso of the CD
+> 2. Replace the files.
+> I need your input what to be removed from the original and
+> what to be added to move from 2.4.2 to their current 2.4.x
+> 3. Unmount the updated iso
+> 4. Burn the iso image
+
+First of all you need to know which RPMS to remove and
+which to add. You can use the --requires option to find
+out which other packages one package depnds on:
+
+rpm -q --requires -p kernel-2.4.7-10.i386.rpm 
+
+When you have the RPMS you want the next step is to
+update RedHat/base/hdlist, you will need to use the
+genhdlist command to do this.
+
+#--
+
+#-----------------------------------------------------------------------------------------------
+VGA (640 x 480)
+SVGA (800 x 600)
+XGA (1024 x 768)
+SXGA (1280 x 1024)
+UXGA (1600 x 1200)
+resolution
+#-----------------------------------------------------------------------------------------------
+
+nifty password:
+dd if=/dev/random bs=6 count=1 2>/dev/null | uuencode -m - | sed -n -e 2p
+#X chars (change args: count=X AND cut -c-X )
+dd if=/dev/random bs=1 count=36 2>/dev/null | uuencode -m - | sed -n -e 2p | cut -c-36
+#nonblocking
+dd if=/dev/urandom bs=8 count=1 2>/dev/null|uuencode -m -|sed -n -e 2p|cut -c-8
+
+dd if=/dev/random bs=8 count=1 2>/dev/null|uuencode -m -|sed -n -e 2p|cut -c-8 #passgen
+
+#-----------------------------------------------------------------------------------------------
+
+http://www.plig.org/xwinman/
+guide to window managers and desktop environments for The X Window System
+#-----------------------------------------------------------------------------------------------
+
+The Disk.dat from linux-786-rh-64.zip is not a filesystem image. It is the
+disk image with the partition table and two partitions. You can mount linux
+partition performing losetup with offset. The correct offset is 1290240,
+i.e. to mount linux partition of disk.dat run the following commands:
+
+losetup -o 1290240 /dev/loop0 disk.dat
+mount /dev/loop0
+
+after unmounting the /dev/loop0 do not forget to run
+sync
+losetup -d /dev/loop0
+
+If you want to mount DOS (FAT12) partition, the offset is 161280.
+
+#-----------------------------------------------------------------------------------------------
+
+##find and grep
+export SEARCHSTR="jtds";
+find ./ -name "*.java" -exec grep -Hni $SEARCHSTR {} \;
+
+#-----------------------------------------------------------------------------------------------
+
+/etc/sysconfig/network-scripts/ifcfg-eth0
+#--DHCP
+DEVICE=eth0
+BOOTPROTO=dhcp
+ONBOOT=yes
+#--
+#--STATIC short
+DEVICE=eth0
+BOOTPROTO=none
+ONBOOT=yes
+IPADDR=192.168.0.64
+NETMASK=255.255.255.0
+#--
+#--STATIC long
+DEVICE="eth0"
+BOOTPROTO="none"
+ONBOOT="yes"
+IPADDR="192.168.0.64"
+NETMASK="255.255.255.0"
+IPXNETNUM_802_2=""
+IPXPRIMARY_802_2="no"
+IPXACTIVE_802_2="no"
+IPXNETNUM_802_3=""
+IPXPRIMARY_802_3="no"
+IPXACTIVE_802_3="no"
+IPXNETNUM_ETHERII=""
+IPXPRIMARY_ETHERII="no"
+IPXACTIVE_ETHERII="no"
+IPXNETNUM_SNAP=""
+IPXPRIMARY_SNAP="no"
+IPXACTIVE_SNAP="no"
+#--
+/etc/sysconfig/network
+#--
+NETWORKING=yes
+HOSTNAME="trillian.dentarthurdent.org"
+GATEWAY="192.168.0.1"
+GATEWAYDEV="eth0"
+FORWARD_IPV4="no"
+#--
+#-----------------------------------------------------------------------------------------------
+
+Simple command-line calculator for tcsh/bash/zsh :
+http://home3.inet.tele.dk/frda/src/calc_tip.html
+
+BASH:
+
+At a meeting in SSLUG (1997) I was given the idea to use functions for making a bash equivalent of the above calc alias.  In ~/.bash_profile:
+
+function calc () {
+    awk "BEGIN { print $* ; }"
+}
+
+function calcfx () { 
+    gawk -v CONVFMT="%12.2f" -v OFMT="%.9g"  "BEGIN { print $* ; }"
+}
+
+With bash it is nescesary to use quotes if the expression contains () or *. For example:
+
+    calc "(3+5) * 4/5"
+
+#-----------------------------------------------------------------------------------------------
+
+tar transfer:
+remote:
+( cd /usr/home/acoleman && tar cf - ./tomsrtbt ) | ssh scotland '( cd /home/acoleman && tar xvpf - )'
+
+local:
+( cd /mnt/tmp && tar cf - . ) | ( cd /tmp/cddump && tar xvpf - )
+
+#-----------------------------------------------------------------------------------------------
+
+sample /etc/lilo.conf:
+#--
+boot=/dev/hda
+map=/boot/map
+install=/boot/boot.b
+prompt
+timeout=50
+default=linux
+
+image=/boot/vmlinuz-2.2.14-5.0
+        label=linux2214
+        read-only
+        root=/dev/hda1
+
+image=/boot/vmlinuz-2.2.18
+        label=linux2218
+        read-only
+        root=/dev/hda1
+
+image=/boot/vmlinuz-2.4.18-pre1-mjc2
+        label=linux
+        read-only
+        root=/dev/hda1
+#--
+#-----------------------------------------------------------------------------------------------
+
+kernel upgrades:
+
+somethings break, like rpm install with 2.4-2.6
+do a:
+export LD_ASSUME_KERNEL=2.2.5 
+
+to fix
+
+ALSO if you get:
+rpmdb: Program version 4.3 doesn't match environment version
+error: db4 error(-30974) from dbenv->open: DB_VERSION_MISMATCH: Database environment version mismatch
+on an rpm -Uvh
+repair rpm db:
+cd /usr/lib/rpmdb/i386-redhat-linux/redhat/
+mkdir delete
+mv __db.00* ./delete/
+rpm --rebuilddb
+
+#-----------------------------------------------------------------------------------------------
+
+#frambuffer
+to boot with framebuffer put vga=0x314 on kernel bootline
+
+change 0x314 to:
+Colours   640x400 640x480 800x600 1024x768 1152x864 1280x1024 1600x1200
+--------+--------------------------------------------------------------
+ 4 bits |    ?       ?     0x302      ?        ?        ?         ?
+ 8 bits |  0x300   0x301   0x303    0x305    0x161    0x307     0x31C
+15 bits |    ?     0x310   0x313    0x316    0x162    0x319     0x31D
+16 bits |    ?     0x311   0x314    0x317    0x163    0x31A     0x31E
+24 bits |    ?     0x312   0x315    0x318      ?      0x31B     0x31F
+32 bits |    ?       ?       ?        ?      0x164      ?
+
+Key: 8 bits = 256 colours, 15 bits = 32,768 colours, 16 bits = 65,536 colours,
+24 bits = 16.8 million colours, 32 bits - same as 24 bits, but the extra 8
+bits can be used for other things, and fits perfectly with a 32 bit PCI/VLB/EISA bus. 
+
+use vga=ASK to get a list of supported modes
+#-----------------------------------------------------------------------------------------------
+
+#resource starvation:
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+	char *p = (char *)malloc(256*1024*1024); /*256 MB*/
+	printf( "malloc returned 0x%X\n", (unsigned long)p );
+	getchar();
+} 
+#-----------------------------------------------------------------------------------------------
+
+A pam module that runs a script at the beginning and end of a session.
+http://www.cs.sun.ac.za/~iburger/pam-script/pam-script-0.1.2.tar.gz
+
+#-----------------------------------------------------------------------------------------------
+
+http://www.westga.edu/~techlife/unix/part5_7.html
+bash 
+Start-up (in this order): 
+     /etc/profile - login shells. 
+     .bash_profile - login shells. 
+     .profile - login if no .bash_profile is present. 
+     .bashrc - interactive non-login shells. 
+     $ENV - always, if it is set. 
+
+Upon termination: 
+     .bash_logout - login shells. 
+
+#-----------------------------------------------------------------------------------------------
+
+http://www.linuxjournal.com/article.php?sid=2770
+Another facility for getting system status information is built into the virtual console driver. This depends on your
+keyboard mapping, but the default for the US keyboard is to use the Scroll-Lock key. Pressing <Alt><Scroll Lock>
+shows the current value of the CPU registers. The <Shift><Scroll Lock> combination shows memory information,
+similar to the "free" command, but more detailed. Finally, <Ctrl><Scroll Lock> will give information on individual
+processes, much like the "ps" command. 
+
+These keys can be particularly handy if your system is slow, or appears to have crashed. Note that if you are running
+the syslog daemon, this information will probably be logged to a file instead of being displayed on the console. On my
+Slackware system for example, it is logged to the file /var/adm/syslog. 
+
+#-----------------------------------------------------------------------------------------------
+
+cat5 - ita/eia 568b wiring
+
+   regular       crossover            1....8
+1  white orange  white green           ----
+2  orange        green                 |  |   clip on bottom
+3  white green   white orange          |  |
+4  blue          blue                  ----
+5  white blue    white blue              |
+6  green         orange                  |
+7  white brown   white brown
+8  brown         brown
+
+#-----------------------------------------------------------------------------------------------
+
+Have you tried magic sysreq when that machine is locked up?
+If so- ignore the next bit, if not:
+it's outlined in /usr/src/linux/Documentation/sysrq.txt
+but the basics are press alt+(print screen/sysreq)+(magic key) while
+you are on a console (no X, no ssh) and the kernel does some magic.
+With magic key="s", the discs will sync.
+u unmounts, and b reboots (!! WITHOUT SYNCING !! so press alt+sysrq+s first)
+
+Just looked on a fairly stock rh 8 box and it's compiled in,
+but disabled by default. As root:
+echo 1 > /proc/sys/kernel/sysrq
+to enable until next reboot (will not hurt anything on a physically secure box)
+or change /etc/sysctl.conf -> kernel.sysrq = 1 and reboot to enable always.
+
+To test, press alt+sysrq+t (dumps task list to screen or something), or
+sync with alt+sysreq+s (says emergency sync and syncs - doesn't hurt anything,
+buts ups load for a couple seconds)
+
+#-----------------------------------------------------------------------------------------------
+
+#restarting a process: (autostart, monitor, process watch)
+vi /root/bin/mpg321_localstream.sh
+#--
+#!/bin/bash
+
+while true;
+do
+        nice -19 mpg321 http://localhost:9000/stream.mp3 ;
+done
+#--
+chmod 0755 /root/bin/mpg321_localstream.sh
+#also can wrap that in an init script
+vi /etc/init.d/mpg321_localstream
+#--
+#!/bin/bash
+# chkconfig: - 98 74
+# description:  Starts /root/bin/mpg321_localstream.sh script \
+#     which plays local mp3 stream to local output to radio
+# processname: mpg321
+
+# Source function library.
+. /etc/init.d/functions
+
+RETVAL=0
+prog=mpg321_localstream.sh
+
+start () {
+    echo -n $"Starting $prog: "
+    daemon /root/bin/mpg321_localstream.sh &
+    RETVAL=$?
+    echo
+    return $RETVAL
+}
+
+stop () {
+    echo -n $"Stopping $prog: "
+    killall /root/bin/mpg321_localstream.sh
+    killall mpg321
+    RETVAL=$?
+    echo
+    return $RETVAL
+}
+# See how we were called.
+case "$1" in
+    start)
+        start
+        RETVAL=$?
+        ;;
+    stop)
+        stop
+        RETVAL=$?
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop}"
+        RETVAL=1
+        ;;
+esac
+exit $RETVAL
+#--
+chmod 0755 /etc/init.d/mpg321_localstream
+
+#-----------------------------------------------------------------------------------------------
+
+boot ACPI off
+
+acpi=off
+
+#-----------------------------------------------------------------------------------------------
+
+SElinux
+
+A workaround is to disable SELinux by running "/usr/sbin/setenforce Permissive"
+
+#To check if SELinux is enabled, run '/usr/sbin/selinuxenabled && echo "yes"'
+#/usr/sbin/getenforce is better, it tells permissive too
+
+
+
+#-- DELETE LATER
+RHEL4 ships with a package "selinux-policy-targeted-sources" that already
+includes a policy for MySQL. However, these policies are designed for the MySQL
+RPM that ships with RHEL4, they don't exactly match the MySQL RPMs for RHEL4
+from MySQL AB. They can be found here:
+
+/etc/selinux/targeted/src/policy/domains/program/mysqld.te
+/etc/selinux/targeted/src/policy/file_contexts/program/mysqld.fc
+
+Here is a patch, which after applying I got
+MySQL-server-pro-gpl-4.1.15-0.rhel4.i386.rpm
+installed without errors, or warnings.
+
+------------------------------------- Beginning of the patch
+-------------------------------------
+*** domains/program/mysqld.te   2005-09-03 20:07:32.028517426 +0200
+--- domains/program/mysqld.te.fixed     2005-09-03 20:04:13.468426479 +0200
+***************
+*** 87,89 ****
+--- 87,93 ----
+  # because Fedora has the sock_file in the database directory
+  file_type_auto_trans(mysqld_t, mysqld_db_t, mysqld_var_run_t, sock_file)
+  ')
++
++ allow mysqld_t var_lib_t:dir { write add_name remove_name };
++ allow mysqld_t var_lib_t:file { append create lock read write getattr unlink
+};
++ allow mysqld_t var_lib_t:sock_file create;
+--------------------------------- end of the patch
+-----------------------------------------------
+
+Here is how to apply:
+
+cd /etc/selinux/targeted/src/policy
+patch -p0 < mysql-selinux.patch
+make load
+
+Basically what the patch does, is that it gives mysqld executable all required
+privileges
+to manage files in the datadirectory, /var/lib/mysql
+This is needed when installing the grant tables. I am not sure how Redhat has
+built their
+corresponding MySQL rpms, but most likely they do grant table installation
+differently.
+Applying the patch should not be any security risk, because it only affects the
+mysqld binary
+and it's own privileges in the database directory.
+
+#--
+
+checkpolicy, the SELinux policy compiler
+
+#--
+I can no longer build my custom selinux policy with recent upgrades (SE
+policy source replaced with SE policy).
+What is the new way (used to be make reload)?
+
+Build a policy module, and then insert it into the policy module store.
+audit2allow has been updated (by Dan Walsh) to support policy module
+generation; see its man page.
+
+You need to use loadable modules. Take a look a the man page for audit2allow, for some explanation. I don't know if we have a good description available yet for loadable policy.
+
+The hardest part of converting your local.te into a loadable module will be writing the require section. You need to define all types, class and roles in this section in order to get the loadable module.
+
+==================================================================================
+      module local 1.0;
+
+      require {
+              role system_r;
+
+              class fifo_file {  getattr ioctl };
+
+              type cupsd_config_t;
+              type unconfined_t;
+       };
+
+      allow cupsd_config_t unconfined_t:fifo_file { getattr ioctl };
+==================================================================================
+#--
+
+The  best  way to relabel the file system is to create the flag file /.autorelabel and reboot.
+touch /.autorelabel
+ls -la /.autorelabel
+
+#--
+Following up on some instructions I found in the list archives (posted by Stephen Smalley), I set up the following policy (local.te) for a stock RHEL AS 4 build (using the targeted policy source)
+
+# Allow all user domains to create and modify these files.
+allow userdomain audited_file_t:dir create_dir_perms;
+allow userdomain audited_file_t:{ file lnk_file } create_file_perms;
+# Audit all accesses by user domains to these files.
+auditallow userdomain audited_file_t:{ dir file lnk_file } *
+
+I also set my grub.conf to set audit=1 and also set 'auditctl -e 1'
+
+I created a directory off of root called /testdir and assigned it the following context: user_u:object_r:audited_file_t
+
+I was hoping that all file activity in this directory would be logged but this does not seem to be happening.  Is there something I am missing?
+
+
+
+I suspect that the problem here is that you are using targeted policy,
+and targeted policy doesn't deal with user domains.  Targeted policy
+only tries to confine specific daemons, not users.  Hence, you likely
+want your auditallow rule to be in terms of unconfined_t rather than
+userdomain.
+
+But note that RHEL4 Update ?2? should include enhanced auditing support,
+so you shouldn't even need SELinux per se to apply auditing if that is
+all you want (i.e. you don't care about mandatory access control).
+auditctl and auditd should let you configure your auditing directly
+without dealing with SELinux policy.
+
+-- 
+Stephen Smalley
+
+As Stephen said, RHEL4 has file auditing in it if you upgrade to U2. There is a
+file /etc/audit.rules where you would put any audit rules that you want. There is
+another file, capp.rules that is put in the audit package's docs dir that gives
+you a sample CAPP configuration. In any event, to watch write's to passwd, you
+would add the following line to /etc/audit.rules.
+
+-w /etc/passwd -p w
+
+If you put the watch to a directory, you will get updates to the directory
+entries which may miss events.
+
+Fedora does not have the ability to watch files at this point because the patch
+was rejected due to overlapping hooks with inotify. A new patch will be sent
+upstream soon so that fedora will have this ability at some point.
+#--
+
+
+
+#-----------------------------------------------------------------------------------------------
+
+strace -o strace.out -f smbd -D
+
+#-----------------------------------------------------------------------------------------------
+
+FUNNY BASH FORKBOMB:
+In case anyone is interested, here's the obfuscated fork bomb: :(){ :&:;};:
+
+just don't leave your box unlocked and have some "funny" person drop it in your .login or .bash_rc files.
+
+CURL curl uses
+
+curl http://comics.com/{snoopy,arlo}/[01-12]/archive[1-99].jpg -o "#1#2-#3.jpg"
+#-----------------------------------------------------------------------------------------------
+
+firefox turn off middlemouse search
+about:config
+middlemouse.contentLoadURL false
+
+#-----------------------------------------------------------------------------------------------
+
+minicom setup for switches etc
+minicom as root
+ctrl-A z then O for config
+serial port setup
+A -    Serial Device      : /dev/ttyS0
+E -    Bps/Par/Bits       : 38400 8N1
+F - Hardware Flow Control : No
+G - Software Flow Control : No
+
+then
+Save setup as dfl
+
+then enter several times
+
+#flow control stops the initial connection!
+
+#-----------------------------------------------------------------------------------------------
+
+bzip2 and tar
+
+create a bzip2-compressed tar-file you can do this: 
+tar cvf - filenames | bzip2 -9 > archivefile.tar.bz2
+
+GNU tar supports a -j flag, which allows you to make tar.bz2 in one go
+tar -cvjf archivefile.tar.bz2 file-list
+
+#-----------------------------------------------------------------------------------------------
+
+tar xjvf linux-2.4.32.tar.bz2
+cd linux-2.4.32
+make mrproper
+make menuconfig
+make dep
+make modules
+make all
+make modules_install
+#ls -al /lib/modules/2.4.32/
+make install
+#ls -al /boot/vmlinuz-2.4.32
+less /etc/lilo.conf  #run lilo
+OR
+less /etc/grub.conf
+
+#-----------------------------------------------------------------------------------------------
+
+vi /usr/local/bin/print
+#--
+#!/bin/sh
+
+fold -s -w72 $1 | lpr
+#--
+chmod 0755 /usr/local/bin/print
+
+#-----------------------------------------------------------------------------------------------
+
+find and change directories to all plus write
+find /export2/CDimages -type d -ls
+find /export2/CDimages -type d -exec chmod o+w {} \;
+
+#-----------------------------------------------------------------------------------------------

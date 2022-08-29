@@ -1,0 +1,89 @@
+
+ERD / erd / entity-relationship diagrams
+
+#-----------------------------------------------------------------------
+
+in ascii for databases
+
+entities
+#--
+each table is clearly separated from other tables
+
+each table lists out all the field names (and optionally type
+   right next to the name). ONE field per line (and the entire
+   field and type should be on one line). spaces between lines
+   sometimes make it easier to draw teh relationship lines.
+
+the primary key of the table has a * before the name (if the
+   primary key is comprised of multiple fields, each field will
+   get a *)
+#--
+
+relationships
+#--
+              |
+use ----- and |  to show relationships between tables (make sure the vertical
+              |      (lines are long since a single | has a different meaning)
+
+if the fields involved in the relationship are obvious (primary key CUSTID in the
+  customer table is related to the field CUSTID in the invoice table) link the
+  relationship lines at the table name, otherwise link the fields involved.
+
+
+modality (minimum number of times an identifier in one table MUST be in another table)
+cardinality (maximum number of times an identifier in one table CAN be in another table)
+
+modality is noted by:
+---1-  (or ---|-) must be atleast one instance of the other end of the relationship
+---0-  (or ---o-) can be zero instances of the other end of the relationship
+
+
+cardinality is noted by:
+---<-  there can be many instances (on this end) of the other end of the relationship
+---<3- there can be at most 3 instances (on this end) of the other end of the relationship
+
+When there is confusion, put both modality and cardinality.
+*Usually* modality and cardinality are assumed 1 if not specified
+
+
+A-11------1<-B   one and only one A relates to one or more Bs
+A-11------0<-B   one and only one A relates to zero or more Bs
+A-01------0<-B   zero or one A relates to zero or more Bs
+                  (this demostrates a situation where the relationship is
+                   supposed to be one-to-many but on either end things might
+                   be iffy: customers without invoices, and even invoices
+                   without matching customers)
+
+A->1------1<-B   one or more As relate to one or more Bs
+A-3>1------1<5-B   one to three As relate to one to five Bs
+#--
+
+#-----------------------------------------------------------------------
+
+example
+
+CUSTOMER-11----------1<-INVOICE            here every customer MUST have
+*CUSTID                 *INVOICEID         atleast one invoice and every
+NAME                    CUSTID             invoice must have a custid THAT
+ADDRESS                 ITEM1              IS in the customer table.
+PHONE                   ITEM2
+AGE                     AMOUNT             Note the relationship line is
+                        DATE               between table names because
+                                           CUSTID is named the same in each
+                                           table
+
+#-----------------------------------------------------------------------
+
+overview of different methods:
+http://www.umsl.edu/~sauter/analysis/dfd/DiagrammingMethods.html
+
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+
+
+

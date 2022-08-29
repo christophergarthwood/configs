@@ -1,0 +1,8 @@
+screen watch -n .5 "qstat -u alfa| head"
+split
+focus down
+screen watch -n .5 "qstat -u beta | head"
+split
+focus down
+screen watch -n .5 "qstat -u ops | head"
+focus bottom

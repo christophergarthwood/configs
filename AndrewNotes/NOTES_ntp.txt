@@ -1,0 +1,160 @@
+
+http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/
+
+ntp-4.0.99k
+
+./configure
+make
+make install
+
+vi /etc/ntp.conf
+
+FOR A TIME SERVER (needs to have udp access to port 123)
+#--
+server eagle.tamu.edu
+server harbor.ecn.purdue.edu
+broadcast 192.168.0.255
+#--
+FOR A CLIENT MACHINE
+#--
+server ntp.dentarthurdent.net
+#--
+#-----
+man pages don't exist with the distribution,
+  make them using lynx as html2txt (as root):
+cd ./html
+lynx -dump quick.htm > /usr/local/man/man8/ntp.8
+lynx -dump genkeys.htm > /usr/local/man/man8/ntp-genkeys.8
+lynx -dump ntpd.htm > /usr/local/man/man8/ntpd.8
+lynx -dump ntpdate.htm > /usr/local/man/man8/ntpdate.8
+lynx -dump ntpdc.htm > /usr/local/man/man8/ntpdc.8
+lynx -dump ntpq.htm > /usr/local/man/man8/ntpq.8
+lynx -dump ntptime.htm > /usr/local/man/man8/ntptime.8
+lynx -dump ntptrace.htm > /usr/local/man/man8/ntptrace.8
+lynx -dump confopt.htm > /usr/local/man/man8/ntp.conf.8
+lynx -dump authopt.htm >> /usr/local/man/man8/ntp.conf.8
+
+#-----
+vi /etc/init.d/ntpd
+chmod 0755 /etc/init.d/ntpd
+----------
+#!/bin/sh
+# chkconfig: - 55 10
+# description: ntpd is the NTPv4 daemon.
+RETVAL=0
+case "$1" in
+  start)
+        echo "Starting ntpd: "
+        /usr/local/bin/ntpd -A
+        ;;
+  stop)
+        echo "Shutting down ntpd: "
+        killall ntpd
+        ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage: xntpd {start|stop|restart}"
+        exit 1
+esac
+#-----------
+#----------------------------------------------------------------------------------------
+quick date sync
+
+/usr/local/bin/ntpdate eagle.tamu.edu harbor.ecn.purdue.edu
+/sbin/hwclock --systohc
+
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+
+MAKING WINDOWS CLIENTS USE AN NTP SERVER
+
+NT:
+
+The NT logon scripts (samba) include the line:
+
+net time \\firewall-1 /set /yes
+
+This forces anybody that logs on to correct their time, even if they don't
+have an ntp package installed.
+
+--
+2k/XP:
+
+With W2k/XP you use the command discussed in this thread to
+point the local NTP time client software at a time server.
+That is the use of
+net time /setsntp:<timesource fqdn> #net time /setsntp:ntp.mydomain.com
+To set the time one uses
+net time /set
+For further info try the command
+net time /help
+
+use 'w32tm -once' to verify operation
+
+The service "Windows Time" (W32Time) must be running.
+See KB Q223184 for registry settings. Default is sync 3 times/day.
+Also KB Q224799 and Q285641
+
+*possibly* for XP:
+w32tm /config /syncfromflags:manual /manualpeerlist:12.34.56.78
+w32tm /config /update
+
+--
+98:
+scheduled shell script:
+net time \\pcA /set /y
+
+
+#----------------------------------------------------------------------------------------
+
+This is a good script to run at startup (as /etc/init.d/ntpdate) or in cron (like:
+34 03 * * * /etc/init.d/ntpdate > dev/null
+
+The date set is there b/c if the date is way off (like 1904,1930,etc) ntp will not sync right.
+
+#--
+vi /etc/init.d/ntpdate
+#--
+#!/bin/sh
+# chkconfig: - 55 10
+# description: ntpdate is a one-time clock set
+date
+if ( date +%Y | grep -e "19" ) then
+        date -s "Jan 01 20:00 CST 2002"
+        /usr/sbin/ntpdate eagle.tamu.edu harbor.ecn.purdue.edu > /dev/null
+        /sbin/hwclock --systohc > /dev/null
+        if ( date +%Y | grep -e "19" ) then
+                date -s "Jan 01 20:00 CST 2002"
+                /usr/sbin/ntpdate eagle.tamu.edu harbor.ecn.purdue.edu > /dev/null
+				/usr/sbin/ntpdate us.pool.ntp.org 1.pool.ntp.org > /dev/null
+        	/sbin/hwclock --systohc > /dev/null
+        fi
+else
+		/usr/sbin/ntpdate us.pool.ntp.org 1.pool.ntp.org > /dev/null
+        /sbin/hwclock --systohc > /dev/null
+fi
+date
+#--
+chmod 0755 /etc/init.d/ntpdate
+
+#----------------------------------------------------------------------------------------
+
+alternatives (physical devices that recieve time syncs)
+http://www.gpsclock.com/specs.html
+http://www.hamstation.com/azpicclock.htm (RS232 model)
+http://www.radiocontrolledclock.com/noname4.html
+
+
+#----------------------------------------------------------------------------------------
+
+also see:
+http://www.clevervest.com/htp/development.html
+HTP in C
+HTTP Time Protocol is a time synchronization tool
+that uses Web server responses (HTTP headers) instead of the NTP protocol.
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+

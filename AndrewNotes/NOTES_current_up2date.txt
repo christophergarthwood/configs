@@ -1,0 +1,501 @@
+
+#---------------------------------------------
+Tested:
+Server: RH7.3 and current-1.4.2  ok
+Client: RH7.3                    ok
+
+
+
+#---------------------------------------------
+http://www.biology.duke.edu/computer/unix/current/
+ftp://ftp.biology.duke.edu/pub/admin/current
+ftp://ftp.biology.duke.edu/pub/admin/current/devel/
+
+tar xzvf current-1.4.2.tar.gz
+cd current-1.4.2
+make
+su
+checkinstall -Ry   # or make install
+
+vi /etc/current/current.conf
+#--minimal config - you MUST change the secret and id, even for a test
+[current]
+valid_channels = redhat-8.0-i386
+log_file = /var/log/current/current.log
+log_level = 0
+apache_config_file = /etc/httpd/conf/current.httpd.conf
+access_check_type = user
+access_check_arg = apache
+server_secret = YOUR_SECRET_STRING_HERE
+server_id = YOUR_HOSTNAME_HERE
+current_dir = /var/current
+
+welcome_message = "Welcome message here."
+privacy_statement = "Privacy Statement here."
+
+[redhat-8.0-i386]
+name = Red Hat Linux 8.0
+parent_channel =
+arch = i386
+os_release = 8.0
+description = Red Hat Linux 8.0
+srpm_check = 0
+
+#rpm_dirs = /var/current/redhat-8.0-i386/RedHat/RPMS
+#           /var/current/redhat-8.0-i386/rh-updates
+#src_dirs = /var/current/redhat-8.0-i386/SRPMS
+rpm_dirs = /var/current/redhat80/RedHat/RPMS
+           /var/current/redhat80-updates
+src_dirs = /var/current/redhat80/SRPMS
+#--
+
+mkdir /var/log/current/
+touch /var/log/current/current.log
+chown apache:apache /var/log/current/current.log
+mkdir /var/current/
+??? chown ???
+
+#--had to do ??
+rpmbuild --rebuild up2date-2.7.86-7.x.3_current.src.rpm
+rpmbuild --rebuild rhn_register-2.7.21-7.x.3_current.src.rpm
+rpm -Uvh /usr/src/redhat/RPMS/i386/up2date-2.7.86-7.x.3_current.i386.rpm
+rpm -Uvh /usr/src/redhat/RPMS/i386/up2date-gnome-2.7.86-7.x.3_current.i386.rpm
+rpm -Uvh /usr/src/redhat/RPMS/i386/rhn_register-2.7.21-7.x.3_current.i386.rpm
+rpm -Uvh /usr/src/redhat/RPMS/i386/rhn_register-gnome-2.7.21-7.x.3_current.i386.rpm
+#--
+
+/usr/sbin/cadmin create_apache_config
+#creates /etc/httpd/conf/current.httpd.conf
+vi /etc/httpd/conf/httpd.conf
+#add at the very end of httpd.conf:
+Include /etc/httpd/conf/current.httpd.conf 
+
+/usr/sbin/cadmin create_certificate
+#asks questions for info on the cert(country,organziation,email)
+#put something for common name and email even if bogus
+#creates (in /etc/current) RHNS-CA-CERT  server.crt  server.key
+mv /etc/httpd/conf/ssl.crt/server.crt /etc/httpd/conf/ssl.crt/server.crt.bak
+cp /etc/current/server.crt /etc/httpd/conf/ssl.crt/server.crt
+chown root:root /etc/httpd/conf/ssl.crt/server.crt
+chmod 0600 /etc/httpd/conf/ssl.crt/server.crt
+mv /etc/httpd/conf/ssl.key/server.key /etc/httpd/conf/ssl.key/server.key.bak
+cp /etc/current/server.key /etc/httpd/conf/ssl.key/server.key
+chown root:root /etc/httpd/conf/ssl.key/server.key
+chmod 0600 /etc/httpd/conf/ssl.key/server.key
+#RHNS-CA-CERT is distributed to the clients and put as /usr/share/rhn/CURRENT-CA-CERT
+#  the name change is just so the RHNS can stay in place on the client machines
+
+/usr/sbin/cadmin print_channels
+#should print out the valid_channels in current.conf
+#for each channel
+
+/usr/sbin/cadmin create
+#should only print out lots of lines like (instead of errors)
+#jade = ['openjade', '1.3.1', '4', '', 'i386', 'jade', '', '0']
+#creates info under $current_dir/db/
+
+/usr/sbin/cadmin checkperms
+/usr/sbin/cadmin checkdb    #spits out errors if there are any
+/usr/sbin/cadmin print_config
+
+#--
+
+#stop boa if I was using it to serve install directories
+/etc/init.d/boa stop
+#start apache
+/sbin/service httpd start
+
+#netstat -anp --inet | grep -e ":80 " -e ":443 "
+#tcp  0  0    0.0.0.0:80    0.0.0.0:*   LISTEN   8197/httpd
+#tcp  0  0    0.0.0.0:443   0.0.0.0:*   LISTEN   8197/httpd
+
+lynx --dump http://localhost/XMLRPC
+#should give
+#Bad Request
+#Your browser sent a request that this server could not understand.
+#if anything else your current configuration is screwed up
+
+#---------------------------------------------
+CLIENT
+
+#place the RHNS-CA-CERT from *our* current server as /usr/share/rhn/CURRENT-CA-CERT
+#just for the server itself, this is:
+#cp /etc/current/RHNS-CA-CERT /usr/share/rhn/CURRENT-CA-CERT
+chown root:root /usr/share/rhn/CURRENT-CA-CERT
+chmod 0644 /usr/share/rhn/CURRENT-CA-CERT
+
+#rhn_register
+#only exists if you have registered this machine with RH
+#mv /etc/sysconfig/rhn/rhn_register /etc/sysconfig/rhn/rhn_register.bak
+vi /etc/sysconfig/rhn/rhn_register
+#--
+enableProxyAuth[comment]=To use an authenticated proxy or not
+enableProxyAuth=0
+
+noSSLServerURL[comment]=Remote server URL without SSL
+noSSLServerURL=http://localhost/XMLRPC
+
+oemInfoFile[comment]=A config file for oemSpecific info
+oemInfoFile=/etc/sysconfig/rhn/oeminfo
+
+enableProxy[comment]=Use a HTTP Proxy
+enableProxy=0
+
+networkSetup[comment]=None
+networkSetup=1
+
+httpProxy[comment]=HTTP proxy in host:port format, e.g. squid.redhat.com:3128
+httpProxy=
+
+proxyUser[comment]=The username for an authenticated proxy
+proxyUser=
+
+serverURL[comment]=Remote server URL
+serverURL=https://localhost/XMLRPC
+
+proxyPassword[comment]=The password for an authenticated proxy
+proxyPassword=
+
+debug[comment]=Whether or not debugging is enabled
+debug=0
+
+sslCACert[comment]=A ssl certificate authority file
+sslCACert=/usr/share/rhn/CURRENT-CA-CERT
+
+networkRetries[comment]=Something
+networkRetries=1
+#--
+chmod 0644 /etc/sysconfig/rhn/rhn_register
+
+#up2date
+cp /etc/sysconfig/rhn/up2date /etc/sysconfig/rhn/up2date.bak
+vi /etc/sysconfig/rhn/up2date
+Change to:
+#--
+noSSLServerURL=http://localhost/XMLRPC
+serverURL=https://localhost/XMLRPC
+adminAddress=root@localhost;
+#--
+AND add the following two lines:
+#--
+sslCACert[comment]=A ssl certificate authority file
+sslCACert=/usr/share/rhn/CURRENT-CA-CERT
+#--
+
+#now register:
+#backup and existing systemid first
+#mv /etc/sysconfig/rhn/systemid /etc/sysconfig/rhn/systemid.bak
+/usr/sbin/rhn_register     #or /usr/sbin/rhn_register --nox
+
+#All errors about an initial connection begin with:
+#Fatal error retrieving welcome message.
+#It's the message after that that is the actual error
+
+#check for systemid creation
+ls -la /etc/sysconfig/rhn/systemid #should be today
+
+#now actually update (this step is all we need in the future)
+/usr/sbin/up2date  #or /usr/sbin/up2date --nox
+
+
+#---------------------------------------------
+??????
+python-xmlrpc:
+http://sourceforge.net/projects/py-xmlrpc/
+
+python -V  #gives python version
+?????? needed ????
+#---------------------------------------------
+
+https://lists.dulug.duke.edu/pipermail/current-server/2002-August/000500.html
+
+Ray, 
+
+Our docs are in a state of flux right now, as we fully transition to the
+mod_python system. 
+
+Even the postscript/html docs, which are better than the text
+documentation, are a little out of date (and they are only 2 weeks old).
+
+Ok, here's the short form for Current 1.3 right now.
+
+Download and install Current rpm, apache, mod_ssl, and mod_python.
+(The apache, mod_* pkgs from redhat work great).
+
+Modify the config file /etc/current/current.conf to suite your site.
+   Important points here are how your channel(s) are setup,
+   and where you want the current_dir to be.
+
+Run cadmin create_apache_config
+    This will create the apache config snippet that relates to current 
+    in /etc/httpd/conf/current.httpd.conf (typically). You still need 
+    the /etc/httpd/conf/httpd.conf that red hat shipped.
+
+    The only editing you have to do yourself is to add the single line
+Include /etc/httpd/conf/current.httpd.conf 
+    to your /etc/httpd/conf/httpd.conf. (at the end is best).
+
+Run cadmin create_certificate
+    This will create the current.crt and current.key which should 
+    install into apache, so that mod_ssl can use them.
+
+    It will also create the CURRENT-CA-CERT which you will copy to all
+    of your clients as /usr/share/rhn/RHNS-CA-CERT
+
+    Watch out: The file names in 1.3.11 will match EXACTLY with what
+    apache expects, due to popular demand.
+
+
+Run cadmin create_channel $CHANNEL_NAME
+    This will create the database and web tree for the server.
+    Where $CHANNEL_NAME is the names of your channels from current.conf.
+    You can get a list of these with cadmin print_channels
+
+chmod ugo+rx $current_dir  
+     where current_dir is whatever value you had in   
+     /etc/current/current.conf
+
+/sbin/service httpd start
+
+You're live.
+
+There is a bug (a major one, I'm wearing a brown paper bag even as I
+type this) in the latest snapshot. There will be a new release 1.3.11,
+which I hope everyone will be willing to try tomorrow.
+
+
+On Wed, 2002-08-21 at 14:21, Ray Parish wrote:
+> I downloaded the tar.gz src.rpm and noarch.rpm
+> 
+> I installed the noarch.rpm and reading the installation.txt file.
+> It refers to current init script. This file doesn't exist?
+> Looking into the spec file, i see the cp current.init is remarked out.
+> 
+> What is the next step for installation of the 1.5 serveR?
+> 
+> _______________________________________________
+> Current-server mailing list
+> http://lists.dulug.duke.edu/mailman/listinfo/current-server
+> 
+> 
+-- 
+Hunter Matthews                          Unix / Network Administrator
+Office: BioScience 145/244               Duke Univ. Biology Department
+Key: F0F88438 / FFB5 34C0 B350 99A4 BB02  9779 A5DB 8B09 F0F8 8438
+Never take candy from strangers. Especially on the internet.
+#---------------------------------------------
+cadmin [options] COMMAND args
+options include only -v (verbose) for now
+
+Where COMMANDS are:
+create -- optional arg is the channel_id to create
+          otherwise, create all of them
+create_apache_config -- create the apache config
+checkdb -- check the database for consistency
+           otherwise, check all of them
+checkperms -- check the permissions of files in the channel
+           otherwise, check all of the channels
+update -- update an existing channel
+          otherwise, update all of them
+create_certificate -- create new ssl key and RHNS-CA-CERT
+print_config -- no args
+print_channels -- no args
+info -- optional arg is a list of particular info
+help -- print this quick help
+
+#---------------------------------------------
+man rhnreg_ks
+man rhn_register
+man up2date
+
+/etc/sysconfig/rhn/systemid
+
+
+/usr/sbin/up2date-config
+#  ??just exits if current server is not running, no errors/warnings
+
+n9n       2952     1  0 21:38 ?        00:00:00 /usr/bin/up2date
+root      2953  2952  0 21:38 ?        00:00:00 /usr/sbin/userhelper -w up2date
+root      2956  2953  6 21:38 ?        00:00:01 /usr/bin/python -u /usr/sbin/up2date
+
+/usr/sbin/up2date --nox --register
+#creates /etc/sysconfig/rhn/systemid
+/usr/sbin/up2date --nox --showall
+
+
+/var/spool/up2date
+man rhnsd
+
+#if you really change things, like locations, you need to recreate
+#/etc/httpd/conf/current.httpd.conf
+
+#---------------------------------------------
+
+WHEN YOU ADD PACKAGES TO THE CURRENT SERVER:
+/sbin/service httpd stop
+
+/usr/sbin/cadmin update
+/usr/sbin/cadmin checkdb
+/usr/sbin/cadmin checkperms
+
+/sbin/service httpd start
+
+#---------------------------------------------
+
+random notes 2002-11-23
+RH8.0 ships with up2date-3.0.7-1
+
+
+
+#---------------------------------------------
+
+TRY1:
+
+[current]
+valid_channels = redhat-7.3-i386
+log_file = /var/log/current/current.log
+log_level = 5
+apache_config_file = /etc/httpd/conf/current.httpd.conf
+access_check_type = user
+access_check_arg = apache
+server_secret = d1234changed_this1234
+server_id = trillian
+current_dir = /var/proftpd_dump
+
+welcome_message = "Welcome message here."
+privacy_statement = "Privacy Statement here."
+
+[redhat-7.3-i386]
+name = Red Hat Linux 7.3
+parent_channel =
+arch = i386
+os_release = 7.3
+description = Red Hat Linux 7.3
+srpm_check = 0
+rpm_dirs = /var/proftpd_dump/redhat73/RedHat/RPMS
+           /var/proftpd_dump/redhat73/updates
+src_dirs = /var/proftpd_dump/redhat73/SRPMS
+           /var/proftpd_dump/redhat73/updates-SRPMS
+
+#---------------------------------------------
+
+MOSTLY automated client setup:
+#client:
+echo "64.79.238.228 rhnserver" >> /etc/hosts
+
+mv /etc/sysconfig/rhn/rhn_register /etc/sysconfig/rhn/rhn_register.bak
+mv /etc/sysconfig/rhn/up2date /etc/sysconfig/rhn/up2date.bak
+mv /etc/sysconfig/rhn/systemid /etc/sysconfig/rhn/systemid.bak
+
+wget -O /usr/share/rhn/CURRENT-CA-CERT http://rhnserver/current/CURRENT-CA-CERT
+wget -O /etc/sysconfig/rhn/rhn_register http://rhnserver/current/rhn_register
+wget -O /etc/sysconfig/rhn/up2date http://rhnserver/current/up2date
+
+/usr/sbin/rhn_register     #or /usr/sbin/rhn_register --nox
+
+#All errors about an initial connection begin with:
+#Fatal error retrieving welcome message.
+#It's the message after that that is the actual error
+
+#check for systemid creation
+ls -la /etc/sysconfig/rhn/systemid #should be today
+
+#now actually update (this step is all we need in the future)
+/usr/sbin/up2date -uv #or /usr/sbin/up2date -uv --nox
+
+#up2date seems to really,really slow down on
+# "Getting headers for available packages"
+#for really large updates
+#ctrl-c and run up2date again - it starts where
+# it left off, and runs faster
+
+
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+
+Alternatives to current:
+openup
+http://openup.colug.net/
+tar xzvf openup-0.8.tar.gz && cd ./openup-0.8
+
+
+#--
+OpenUp uses the up2date client with a few minor modifications. In order to use
+it, the following need to be done:
+
+   1. If you have registered for RHN, back up your /etc/sysconfig/rhn/systemid
+file.
+   2. Run rhn_register --nox --configure and change the serverURL to
+https://openup.mullicrusher.org/XMLRPC and the noSSLServerURL to
+http://openup.mullicrusher.org/XMLRPC (Note that you can also edit
+/etc/sysconfig/rhn/rhn_register by hand)
+   3. Run up2date --nox --configure and and change the serverURL to
+https://openup.mullicrusher.org/XMLRPC and the noSSLServerURL to
+http://openup.mullicrusher.org/XMLRPC (Note that you can also edit
+/etc/sysconfig/rhn/up2date by hand)
+   4. In /usr/share/rhn/register/rhnreg.py and
+/usr/share/rhn/up2date_client/up2date.py, comment out
+s.use_CA_chain(rhns_ca_cert) using a # character.
+   5. Run rhn_register. All data that is submitted is redirected to /dev/null,
+so fake values should work just fine.
+
+You are now configured to use OpenUp. To update your system, run up2date.
+#--
+
+#---------------------------------------------
+
+Alternatives to current:
+nrh-up2date
+http://www.nrh-up2date.org/
+tar xzvf nrh-up2date-1.1.tar.gz && cd nrh-up2date
+
+
+#---------------------------------------------
+
+YUM:
+Yellow Dog Updater, Modified...
+http://www.linux.duke.edu/projects/yum/index.ptml
+
+Download:
+http://www.linux.duke.edu/projects/yum/download.ptml 
+
+Install:
+[root@RH-9 dragon]#rpm -ivh yum*.noarch.rpm 
+
+# yum update
+This will download and update all relevant updates for the system,
+just like the first time connecting to rhn would
+
+# yum update sendmail
+just sendmail
+
+# yum install xine
+
+Yum can also be set up in local repositories and your own
+custom rpm's added to it, this way you can install and update
+business apps on the local network. Using the configuration
+(/etc/yum.conf) file you can set up multiple mirrors for updates,
+os (yes you can upgrade Red Hat with yum) and freshrpms, you
+can also add your own rpm repositories. The man pages are complete
+for both the binary and configuration file.
+man yum and man yum.conf for complete details.
+
+TO MAKE UPDATE NON_INTERACTIVE:
+vi /etc/yum.conf
+add to [main] section
+assume-yes=1
+
+
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------

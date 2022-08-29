@@ -1,0 +1,34 @@
+
+#--------------------------------------------------
+floppy boot disks are called DCA disks
+Device Configuration Assistant Boot Diskette
+
+http://SolDC.Sun.COM/support/drivers/dca_diskettes/
+
+#--------------------------------------------------
+
+Keep up with the CD release date as well as the version
+ like Solaris 8 x86 (10/01)
+
+#--------------------------------------------------
+
+prtconf is the equiv of hinv/gfxinv (prints hardware list)
+  sysdef gives more info
+
+??/usr/platform/sun4u/sbin/prtdiag ??
+
+cpu info: psrinfo -v
+
+/usr/platform/i86pc/sbin/eeprom gives boot info
+
+#--------------------------------------------------
+
+resources
+http://lists.sunhelp.org
+
+comp.unix.solaris
+alt.solaris.x86
+comp.sys.sun.admin
+comp.sys.sun.hardware
+#--------------------------------------------------
+#--------------------------------------------------
