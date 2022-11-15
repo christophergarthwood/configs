@@ -82,8 +82,7 @@ if has("gui_running")
 else
 	 "Options are:blue.vim, darkblue.vim ,default.vim ,delek.vim ,desert.vim ,elflord.vim ,evening.vim ,koehler.vim ,morning.vim ,murphy.vim ,pablo.vim ,peachpuff.vim ,ron.vim ,shine.vim ,slate.vim ,torte.vim ,zellner.vim
      " Added solarized, monokai
-     colorscheme monokai                    "use this color scheme
-     " colorscheme default
+     colorscheme default
      set background=dark                    "adapt colors for background
      set t_Co=256                           "added for lightline
 endif
