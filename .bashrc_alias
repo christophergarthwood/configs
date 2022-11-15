@@ -1,0 +1,25 @@
+#set history = 200
+alias vi='vim'
+alias type='cat | more \!*'
+alias howlong='uptime'
+alias ll='ls -alFhp --color'
+alias dir='ls -alp \!* | more'
+alias mv='mv -i'
+alias del='rm -i'
+alias edit='vim'
+alias copy='cp -i'
+alias ren='mv -i'
+alias md='mkdir'
+alias rd='rmdir'
+alias cls='clear'
+alias df='df -h'
+alias du='du -h'
+alias less='less -r'                          # raw control characters
+alias nrlwho='/net/americium/export/sw/Linux-i686/bin/nrlwhois'
+alias show_stats='dstat -tcndylp --top-cpu 2'
+alias run_mpd='/common/intel/composer_xe_2015.2.164/mpirt/bin/intel64/mpd'
+alias tree="ls -R ./ | grep ':$' | sed -e 's/:$//;s/[^-][^\/]*\//--/g;s/^/ /;s/-/|/'"
+alias git_report="git log --graph --decorate --pretty=format:'%C(yellow)%h %Cred%cr %Cblue(%an)%C(cyan)%d%Creset %s' --abbrev-commit |head -40"
+alias watch_gpu="watch -n 1 nvidia-smi"
+alias run_jupyter_ofm="source ~/.bashrc_tods_anaconda; conda activate ofm; jupyter notebook --ip=0.0.0.0 --port=8080"
+alias run_jupyter_ml="source ~/.bashrc_anaconda; conda activate machine_learning; jupyter notebook --ip=0.0.0.0 --port=8080"

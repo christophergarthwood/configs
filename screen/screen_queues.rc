@@ -1,0 +1,8 @@
+screen watch -n .5 "qstat -u jcm-alfa | head"
+split
+focus down
+screen watch -n .5 "qstat -u jcm-beta | head"
+split
+focus down
+screen watch -n .5 "qstat -u jcm | head"
+focus bottom

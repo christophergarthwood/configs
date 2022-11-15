@@ -1,0 +1,1 @@
+source ~/.bashrc_mine

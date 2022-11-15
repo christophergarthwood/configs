@@ -1,0 +1,23 @@
+#PROJECT ALIAS
+alias goiridium='ssh -Y -t cwood@iridium.nrlssc.navy.mil "cd ~; bash --login"'
+alias goicobod='ssh -Y -t cwood@krypton.nrlssc.navy.mil "cd /export/ICoBOD; bash --login"'
+alias govisor='ssh -Y -t cwood@tomcat.nrlssc.navy.mil "cd /projects/socom; bash --login"'
+alias gotods='ssh -Y -t cwood@tods.nrlssc.navy.mil "cd /projects/tods-rt; bash --login"'
+alias gointro='ssh -Y -t cwood@olivaw.nrlssc.navy.mil "cd /projects/intro/; bash --login"'
+alias gorecon='ssh -Y -t cwood@skyray.nrlssc.navy.mil "cd /net/starlifter/export/recon_machine_learning; bash --login"'
+alias gollama='ssh -Y -t cwood@llama "cd /net/starlifter/export/recon_machine_learning; bash --login"'
+alias goaronnax='ssh -Y -t cwood@aronnax.nrlssc.navy.mil "cd /home/cwood; bash --login"'
+alias gopegasus='ssh -Y -t cwood@pegasus.nrlssc.navy.mil "cd ~; bash --login"'
+alias gogalactica='ssh -Y -t cwood@galactica.nrlssc.navy.mil "cd ~; bash --login"'
+
+alias goconrad='kssh -Y cwood@conrad.navydsrc.hpc.mil'
+alias gogordon='kssh -Y cwood@gordon.navydsrc.hpc.mil'
+alias gokoehr='kssh -Y cwood@koehr.navydsrc.hpc.mil'
+alias gogaffney='kssh -Y cwood@gaffney.navydsrc.hpc.mil'
+alias goarchive='kssh -Y cwood@st-vsm1.navydsrc.hpc.mil'
+
+#PROJECT FOLDERS
+TODS_WORK=/export/tods-rt/cwood; export TODS_WORK
+SOCOM_WORK=/projects/socom; export SOCOM_WORK
+RECON_WORK=/net/starlifter/export/recon_machine_learning/; export RECON_WORK
+INTRO_WORK=/projects/intro; export INTRO_WORK
