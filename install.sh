@@ -29,6 +29,8 @@ export THE_APP="conda";
 ${CONDA_EXE} config --set report_errors false
 ${CONDA_EXE} init bash 
 
+echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
+
 status=$?
 if [ "${status}" -ne 0 ];
 then
