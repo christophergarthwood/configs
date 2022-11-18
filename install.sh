@@ -20,4 +20,4 @@ create_symlinks
 
 #now provide some conda inputs (checking for existence)
 CONDA_EXE=$(which conda)
-sudo ${CONDA_EXE} init bash
+${CONDA_EXE} init bash
