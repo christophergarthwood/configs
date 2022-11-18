@@ -19,5 +19,26 @@ create_symlinks() {
 create_symlinks
 
 #now provide some conda inputs (checking for existence)
-CONDA_EXE=$(which conda)
-${CONDA_EXE} init bash
+
+export CONDA_EXE="";
+CONDA_EXE=$(which conda);
+export CONDA_DIR="/opt/conda";
+export THE_RC="~/.bashrc";
+export THE_APP="conda";
+
+${CONDA_EXE} config --set report_errors false
+${CONDA_EXE} init bash 
+
+status=$?
+if [ "${status}" -ne 0 ];
+then
+    echo "Failed to init the bash for conda.";
+    echo "...updating your bashrc directly.";
+    if [ -f "${THE_RC}" ];
+    then
+	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
+	echo "${THE_APP} activate base" >> "${THE_RC}";
+    fi
+fi
+
+
