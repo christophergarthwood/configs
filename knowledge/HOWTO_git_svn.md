@@ -41,6 +41,10 @@ GIT LOG
  #limit output
  git log --graph --oneline --decorate -10
 
+GIT PERMISSIONS
+Set execute bit on a file
+git add install.sh --chmod=+x
+
 Reference for Best Practices: https://www.dune-project.org/doc/guides/git_best_practices/
 
 GIT SSL ISSUES
