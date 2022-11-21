@@ -1,5 +1,11 @@
 #!/bin/bash
 
+####################################################################
+#- Script designed to support GitHub Codespaces.  Creates symbolic
+#- links of your .rc's and checks to see if conda is installed, if 
+#- so basic conda components are installed.
+####################################################################
+
 create_symlinks() {
     # Get the directory in which this script lives.
     script_dir=$(dirname "$(readlink -f "$0")")
