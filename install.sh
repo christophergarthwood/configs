@@ -26,6 +26,7 @@ create_symlinks
 
 #now provide some conda inputs (checking for existence)
 
+echo "Install dotfiles -> Establishing variables.";
 export CONDA_EXE="";
 CONDA_EXE=$(which conda);
 export CONDA_DIR="/opt/conda";
@@ -37,20 +38,23 @@ export THE_APP="conda";
 sleep 5
 
 
-echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
 
+echo "Install dotfiles -> searching for ${THE_RC}";
 if [ -f "${THE_RC}" ];
 then
+	echo "Install dotfiles -> found ${THE_RC}, updating for conda.";
+	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
 	${CONDA_EXE} config --set report_errors false
 	${CONDA_EXE} init bash 
 else
-    echo "Failed to init the bash for conda as ~/.bashrc was not there.";
-    echo "...updating your bashrc directly.";
+    echo "Install dotfiles -> Failed to init the bash for conda as ~/.bashrc was not there.";
+    echo "Install dotfiles -> ...updating your bashrc directly.";
     if [ -f "${ALTERNATE_RC}" ];
     then
 	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${ALTERNATE_RC}";
 	echo "${THE_APP} activate base" >> "${ALTERNATE_RC}";
     fi
+    echo "Install dotfiles -> updated ${ALTERNATE_RC}.";
 fi
 
 
