@@ -30,22 +30,26 @@ export CONDA_EXE="";
 CONDA_EXE=$(which conda);
 export CONDA_DIR="/opt/conda";
 export THE_RC="~/.bashrc";
+export ALTERNATE_RC="/workspaces/.codespaces/.persistedshare/.bashrc";
 export THE_APP="conda";
 
-${CONDA_EXE} config --set report_errors false
-${CONDA_EXE} init bash 
+#maybe let I/O catch up for the symlink build?
+sleep 5
+
 
 echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
 
-status=$?
-if [ "${status}" -ne 0 ];
+if [ -f "${THE_RC}" ];
 then
-    echo "Failed to init the bash for conda.";
+	${CONDA_EXE} config --set report_errors false
+	${CONDA_EXE} init bash 
+else
+    echo "Failed to init the bash for conda as ~/.bashrc was not there.";
     echo "...updating your bashrc directly.";
-    if [ -f "${THE_RC}" ];
+    if [ -f "${ALTERNATE_RC}" ];
     then
-	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
-	echo "${THE_APP} activate base" >> "${THE_RC}";
+	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${ALTERNATE_RC}";
+	echo "${THE_APP} activate base" >> "${ALTERNATE_RC}";
     fi
 fi
 
