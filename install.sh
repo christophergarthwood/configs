@@ -25,17 +25,17 @@ create_symlinks() {
 create_symlinks
 
 #now provide some conda inputs (checking for existence)
-
 echo "Install dotfiles -> Establishing variables.";
 export CONDA_EXE="";
 CONDA_EXE=$(which conda);
 export CONDA_DIR="/opt/conda";
 export THE_RC="~/.bashrc";
-export ALTERNATE_RC="/workspaces/.codespaces/.persistedshare/.bashrc";
+export ALTERNATE_RC="/workspaces/.codespaces/.persistedshare/dotfiles/.bashrc";
 export THE_APP="conda";
 
 #maybe let I/O catch up for the symlink build?
 sleep 5
+
 
 
 
