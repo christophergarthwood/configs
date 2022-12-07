@@ -17,6 +17,7 @@ ALT+B  - Move backwards one word
 ## Editing
 
 CTRL+U - Erase everything from the current cursor position to the beginning of the line
+
 CTRL+K - Erase everything from the current cursor position to the end of the line
 
 ## Multiple Comamnds in a Single line
