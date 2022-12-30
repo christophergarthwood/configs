@@ -42,10 +42,15 @@ sleep 5
 echo "Install dotfiles -> searching for ${THE_RC}";
 if [ -f "${THE_RC}" ];
 then
-	echo "Install dotfiles -> found ${THE_RC}, updating for conda.";
-	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
-	${CONDA_EXE} config --set report_errors false
-	${CONDA_EXE} init bash 
+	if [ -d "${CONDA_DIR}" ];
+	then
+		echo "Install dotfiles -> found ${THE_RC}, updating for conda.";
+		echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
+		${CONDA_EXE} config --set report_errors false;
+		${CONDA_EXE} init bash;
+	else
+		echo "No Anaconda environment detected, bashrc will not be updated.";
+	fi
 else
     echo "Install dotfiles -> Failed to init the bash for conda as ~/.bashrc was not there.";
     echo "Install dotfiles -> ...updating your bashrc directly.";
