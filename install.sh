@@ -37,29 +37,27 @@ export THE_APP="conda";
 sleep 5
 
 
-
-
-echo "Install dotfiles -> searching for ${THE_RC}";
-if [ -f "${THE_RC}" ];
+if [ -d "${CONDA_DIR}" ];
 then
-	if [ -d "${CONDA_DIR}" ];
+	echo "Install dotfiles -> searching for ${THE_RC}";
+	if [ -f "${THE_RC}" ];
 	then
 		echo "Install dotfiles -> found ${THE_RC}, updating for conda.";
 		echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${THE_RC}";
 		${CONDA_EXE} config --set report_errors false;
 		${CONDA_EXE} init bash;
 	else
-		echo "No Anaconda environment detected, bashrc will not be updated.";
+	    echo "Install dotfiles -> Failed to init the bash for conda as ~/.bashrc was not there.";
+	    echo "Install dotfiles -> ...updating your bashrc directly.";
+	    if [ -f "${ALTERNATE_RC}" ];
+	    then
+		echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${ALTERNATE_RC}";
+		echo "${THE_APP} activate base" >> "${ALTERNATE_RC}";
+	    fi
+	    echo "Install dotfiles -> updated ${ALTERNATE_RC}.";
 	fi
 else
-    echo "Install dotfiles -> Failed to init the bash for conda as ~/.bashrc was not there.";
-    echo "Install dotfiles -> ...updating your bashrc directly.";
-    if [ -f "${ALTERNATE_RC}" ];
-    then
-	echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> "${ALTERNATE_RC}";
-	echo "${THE_APP} activate base" >> "${ALTERNATE_RC}";
-    fi
-    echo "Install dotfiles -> updated ${ALTERNATE_RC}.";
+    echo "No Anaconda environment detected, bashrc will not be updated.";
 fi
 
 
