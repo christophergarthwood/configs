@@ -429,6 +429,7 @@ function install_network_tools {
         fi
     done
     [[ ! -z "$arg_debug" ]] && msg_debug "Exited install_network_tools";
+    echo " ";
 }
 
 function layer0 {
@@ -455,12 +456,14 @@ function layer0 {
     fi
     msg_debug " ";
     [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer0";
+    echo " ";
 }
 
 function layer1 {
     #===============================================================================
     #-- Network device information and status (hardware)
     #===============================================================================
+    [[ ! -z "$arg_debug" ]] && msg_debug "Entered layer1";
     banner "Layer1: The Physical Layer";
     if [ -f $command_ip ];
     then
@@ -480,12 +483,15 @@ function layer1 {
     else
 	msg_warning "......FAIL, could not find ethtool (network) command";
     fi
+    [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer1";
+    echo " ";
 }
 
 function layer2 {
     #===============================================================================
     #-- Data Link Layer
     #===============================================================================
+    [[ ! -z "$arg_debug" ]] && msg_debug "Entered layer2";
     banner "Layer2: The data link layer";
     if [ -f $command_ip ];
     then
@@ -493,12 +499,15 @@ function layer2 {
     else
 	msg_warning "......FAIL, could not find ip (network) command";
     fi
+    [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer2";
+    echo " ";
 }
 
 function layer3 {
     #===============================================================================
     #-- Routing layer
     #===============================================================================
+    [[ ! -z "$arg_debug" ]] && msg_debug "Entered layer3";
     banner "Layer 3: The network/internet layer";
     if [ -f $command_ip ];
     then
@@ -552,12 +561,15 @@ function layer3 {
     else
 	msg_warning "......FAIL, could not find nslookup command.";
     fi
+    [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer3";
+    echo " ";
 }
 
 function layer4 {
     #===============================================================================
     #-- Communications (Traffic)
     #===============================================================================
+    [[ ! -z "$arg_debug" ]] && msg_debug "Entered layer4";
     banner "Layer 4: The transport layer";
     msg_debug "...show all potential data exchanges";
     if [ -f $command_netstat ];
@@ -567,6 +579,8 @@ function layer4 {
     else
 	msg_warning "......FAIL, could not find netstat command.";
     fi
+    [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer4";
+    echo " ";
 }
 
 #*** MAIN ***
