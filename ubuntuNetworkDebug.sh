@@ -115,6 +115,7 @@ export command_cat=$(which cat);
 export command_traceroute=$(which traceroute);
 export command_nslookup=$(which nslookup);
 export command_netstat=$(which netstat);
+export the_commands=( ${command_apt} ${command_ping} ${command_ufw} ${command_ls} ${command_ip} ${command_ethtool} ${command_cat} ${command_traceroute} ${command_nslookup} ${command_netstat} )
 
 # - INCLUDES
 ############################################################################################################################################
@@ -362,6 +363,15 @@ function validate_program {
         msg_emerg "This script is not authorized to run as root."
     fi
 
+    #test for existence of all commands, if one is missing ensure invoker understands this.
+    for the_command in ${the_commands[@]}
+    do
+        if ! [ -f ${the_command} ];
+        then
+    	    msg_warning "...FAILED to find ${the_command}";
+        fi
+    done
+
     #if [[ -z $arg_incoming_argument ]];
     #then
     #    msg_error "Cannot find an argument variable  Without the argument variable no processing can occur.  Aborting...";
@@ -379,7 +389,7 @@ function prototype {
     [[ ! -z "$arg_debug" ]] && msg_debug "Entered prototype";
 
     export the_function="${1:-"no argument passed"}";
-	msg_info "Processing (argument 1) \"${the_function}\".";
+    msg_info "Processing (argument 1) \"${the_function}\".";
 
     #execute a comand and save it to an array
     the_results=( $(ls -1 ~) );
