@@ -440,13 +440,18 @@ function layer0 {
     banner "Variables and Firewall Down";
     msg_debug "...establishing target NAME [${target_name}]";
     msg_debug "...establishing target IP [${target_ip}]";
-    sudo $command_ufw disable;
-    status=$?;
-    if [ "${status}" -ne 0 ];
+    if [ -f $command_ufw ];
     then
-        msg_debug "......SUCCESS disabled firewall.";
+	    sudo $command_ufw disable;
+	    status=$?;
+	    if [ "${status}" -ne 0 ];
+	    then
+		msg_debug "......SUCCESS disabled firewall.";
+	    else
+		msg_warning "......FAIL to disable firewall.";
+	    fi
     else
-        msg_warning "......FAIL to disable firewall.";
+	    msg_warning "......FAIL, could not find firewall command.";
     fi
     msg_debug " ";
     [[ ! -z "$arg_debug" ]] && msg_debug "Exited layer0";
@@ -457,13 +462,24 @@ function layer1 {
     #-- Network device information and status (hardware)
     #===============================================================================
     banner "Layer1: The Physical Layer";
-    sudo $command_ip link set "${the_network_device}" up;
-    sudo $command_ip addr | grep "${the_network_device}";
-    msg_debug "...${the_network_device} UP";
-    msg_debug "...${the_network_device} status";
-    sudo $command_ip -s link show "${the_network_device}"
-    msg_debug "...${the_network_device} details";
-    sudo $command_ethtool "${the_network_device}";
+    if [ -f $command_ip ];
+    then
+        sudo $command_ip link set "${the_network_device}" up;
+        sudo $command_ip addr | grep "${the_network_device}";
+        msg_debug "...${the_network_device} UP";
+        msg_debug "...${the_network_device} status";
+        sudo $command_ip -s link show "${the_network_device}"
+    else
+	msg_warning "......FAIL, could not find ip (network) command";
+    fi
+
+    if [ -f $command_ethtool ];
+    then
+        msg_debug "...${the_network_device} details";
+        sudo $command_ethtool "${the_network_device}";
+    else
+	msg_warning "......FAIL, could not find ethtool (network) command";
+    fi
 }
 
 function layer2 {
@@ -471,7 +487,12 @@ function layer2 {
     #-- Data Link Layer
     #===============================================================================
     banner "Layer2: The data link layer";
-    sudo $command_ip neighbor show
+    if [ -f $command_ip ];
+    then
+        sudo $command_ip neighbor show
+    else
+	msg_warning "......FAIL, could not find ip (network) command";
+    fi
 }
 
 function layer3 {
@@ -479,27 +500,58 @@ function layer3 {
     #-- Routing layer
     #===============================================================================
     banner "Layer 3: The network/internet layer";
-    sudo $command_ip -br address show;
-    msg_debug "...${command_ping} -c ${the_hops} ${target_ip}";
-    $command_ping -c "${the_hops}" "${target_ip}";
+    if [ -f $command_ip ];
+    then
+        sudo $command_ip -br address show;
+    else
+	msg_warning "......FAIL, could not find ip (network) command";
+    fi
 
-    msg_debug "...${command_ping} -c ${the_hops} ${target_name}";
-    $command_ping -c "${the_hops}" "${target_name}";
+    if [ -f $command_ping ];
+    then
+        msg_debug "...${command_ping} -c ${the_hops} ${target_ip}";
+        $command_ping -c "${the_hops}" "${target_ip}";
 
-    msg_debug "...DNS settings.";
-    $command_cat /etc/resolv.conf;
+        msg_debug "...${command_ping} -c ${the_hops} ${target_name}";
+        $command_ping -c "${the_hops}" "${target_name}";
+    else
+	msg_warning "......FAIL, could not find ping command";
+    fi
 
-    msg_debug "...${command_traceroute} ${the_hops} ${target_ip}";
-    $command_traceroute -"${the_hops}" "${target_ip}";
+    if [ -f /etc/resolv.conf ];
+    then
+        msg_debug "...DNS settings.";
+        $command_cat /etc/resolv.conf;
+    else
+	msg_warning "......FAIL, could not find /etc/resolv.conf";
+    fi
 
-    msg_debug "...${command_traceroute} ${the_hops} ${target_name}";
-    $command_traceroute -"${the_hops}" "${target_name}";
+    if [ -f $command_traceroute ];
+    then
+        msg_debug "...${command_traceroute} ${the_hops} ${target_ip}";
+        $command_traceroute -"${the_hops}" "${target_ip}";
 
-    msg_debug "...${command_ip} route show";
-    sudo $command_ip route show;
+        msg_debug "...${command_traceroute} ${the_hops} ${target_name}";
+        $command_traceroute -"${the_hops}" "${target_name}";
+    else
+	msg_warning "......FAIL, could not find traceroute command.";
+    fi
 
-    msg_debug "...${command_nslookup} ${target_name}";
-    sudo $command_nslookup "${target_name}";
+    if [ -f $command_ip ];
+    then
+        msg_debug "...${command_ip} route show";
+        sudo $command_ip route show;
+    else
+	msg_warning "......FAIL, could not find ip (network) command.";
+    fi
+
+    if [ -f $command_nslookup ];
+    then
+        msg_debug "...${command_nslookup} ${target_name}";
+        sudo $command_nslookup "${target_name}";
+    else
+	msg_warning "......FAIL, could not find nslookup command.";
+    fi
 }
 
 function layer4 {
@@ -508,8 +560,13 @@ function layer4 {
     #===============================================================================
     banner "Layer 4: The transport layer";
     msg_debug "...show all potential data exchanges";
-    #sudo ss -tunlp4
-    sudo $command_netstat -tulnp
+    if [ -f $command_netstat ];
+    then
+        #sudo ss -tunlp4
+        sudo $command_netstat -tulnp
+    else
+	msg_warning "......FAIL, could not find netstat command.";
+    fi
 }
 
 #*** MAIN ***
