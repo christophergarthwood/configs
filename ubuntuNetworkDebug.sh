@@ -101,12 +101,20 @@ export arg_debug="0";
 export target_name="www.google.com";
 export target_ip="8.8.8.8";
 export the_tools=( net-tools iftop vnstat iptraf hping3 dstat slum bmon nmap );
+export the_network_device="eth0";
+export the_hops=4;
 
 #setup paths for executables.
 export command_apt=$(which apt);
 export command_ping=$(which ping);
 export command_ufw=$(which ufw);
 export command_ls=$(which ls);
+export command_ip=$(which ip);
+export command_ethtool=$(which ethtool);
+export command_cat=$(which cat);
+export command_traceroute=$(which traceroute);
+export command_nslookup=$(which nslookup);
+export command_netstat=$(which netstat);
 
 # - INCLUDES
 ############################################################################################################################################
@@ -309,7 +317,7 @@ function error_exit {
 
 function usage {
     cat <<@EOF
-    usage: <script name> -a <sample argument> -d
+    usage: <script name> -d
     Options:
     -d      Enable debug output [DEBUG].
 
@@ -438,71 +446,60 @@ function layer1 {
     #===============================================================================
     #-- Network device information and status (hardware)
     #===============================================================================
-    #echo "################################";
-    echo "Layer1: The Physical Layer";
-    #echo " ";
-    #sudo ip link set eth0 up;
-    #ip addr | grep eth0;
-    #echo "...etho UP";
-    #echo "...etho status";
-    #sudo ip -s link show eth0
-    #echo "...etho details";
-    #sudo ethtool eth0
-    #echo "################################";
-    #echo " ";
+    banner "Layer1: The Physical Layer";
+    sudo $command_ip link set "${the_network_device}" up;
+    sudo $command_ip addr | grep "${the_network_device}";
+    msg_debug "...${the_network_device} UP";
+    msg_debug "...${the_network_device} status";
+    sudo $command_ip -s link show "${the_network_device}"
+    msg_debug "...${the_network_device} details";
+    sudo $command_ethtool "${the_network_device}";
 }
 
 function layer2 {
     #===============================================================================
     #-- Data Link Layer
     #===============================================================================
-    #echo "################################";
-    echo "Layer2: The data link layer";
-    #echo " ";
-    #sudo ip neighbor show
-    #echo "################################";
-    #echo " ";
+    banner "Layer2: The data link layer";
+    sudo $command_ip neighbor show
 }
 
 function layer3 {
     #===============================================================================
     #-- Routing layer
     #===============================================================================
-    #echo "################################";
-    echo "Layer 3: The network/internet layer";
-    #echo " ";
-    #sudo ip -br address show
-    #echo "...ping ${target_ip}";
-    #ping -c 4 "${target_ip}"
-    #echo "DNS check";
-    #echo "...ping ${target_name}";
-    #ping -c 4 "${target_name}";
-    #echo "...DNS settings.";
-    #cat /etc/resolv.conf
-    #echo "...tracing route of ${target_ip}";
-    #traceroute -4 "${target_ip}"
-    #echo "...tracing route of ${target_name}";
-    #traceroute -4 "${target_name}"
-    #echo "...routing table";
-    #sudo ip route show;
-    #echo "...nslookup ${target_name}";
-    #sudo nslookup "${target_name}";
-    #echo "################################";
-    #echo " ";
+    banner "Layer 3: The network/internet layer";
+    sudo $command_ip -br address show;
+    msg_debug "...${command_ping} -c ${the_hops} ${target_ip}";
+    $command_ping -c "${the_hops}" "${target_ip}";
+
+    msg_debug "...${command_ping} -c ${the_hops} ${target_name}";
+    $command_ping -c "${the_hops}" "${target_name}";
+
+    msg_debug "...DNS settings.";
+    $command_cat /etc/resolv.conf;
+
+    msg_debug "...${command_traceroute} ${the_hops} ${target_ip}";
+    $command_traceroute -"${the_hops}" "${target_ip}";
+
+    msg_debug "...${command_traceroute} ${the_hops} ${target_name}";
+    $command_traceroute -"${the_hops}" "${target_name}";
+
+    msg_debug "...${command_ip} route show";
+    sudo $command_ip route show;
+
+    msg_debug "...${command_nslookup} ${target_name}";
+    sudo $command_nslookup "${target_name}";
 }
 
 function layer4 {
     #===============================================================================
     #-- Communications (Traffic)
     #===============================================================================
-    #echo "################################";
-    echo "Layer 4: The transport layer";
-    #echo " ";
-    #echo "...show all potential data exchanges";
+    banner "Layer 4: The transport layer";
+    msg_debug "...show all potential data exchanges";
     #sudo ss -tunlp4
-    #sudo netstat -tulnp
-    #echo "################################";
-    #echo " ";
+    sudo $command_netstat -tulnp
 }
 
 #*** MAIN ***
@@ -561,10 +558,10 @@ function main {
         #prototype "${arg_incoming_argument}"
 	install_network_tools
 	layer0
-	#layer1
-	#layer2
-	#layer3
-	#layer4
+	layer1
+	layer2
+	layer3
+	layer4
 
         end_time=$(date +%s);
         msg_info "Execution time for ${script_name} was $((end_time - start_time)) s.";
