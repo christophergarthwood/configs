@@ -30,7 +30,7 @@ alias git_publish="push -u origin head";
 alias git_pullBranches="git fetch && git switch -C ${1} origin/${1} && echo \"Pulled\""
 #        deploySandbox = push origin head:sandbox
 alias git_refresh="git stash && git fetch && git switch -C ${1} origin/${1} && git switch - && git stash pop"
-alias git_openChangedFiles="pathToRoot=$(git rev-parse --show-toplevel); allPaths=$(git diff  --name-only \"${1:-origin/development}\") ; if [ ${#allPaths} -ne 0 ] ; then  echo 'opening...'; echo \"$allPaths\"; code $allPaths ; else echo 'No changes found' ; fi ; #"
+#alias git_openChangedFiles="pathToRoot=$(git rev-parse --show-toplevel); allPaths=$(git diff  --name-only \"${1:-origin/development}\") ; if [ ${#allPaths} -ne 0 ] ; then  echo 'opening...'; echo \"$allPaths\"; code $allPaths ; else echo 'No changes found' ; fi ; #"
 
 ###############################
 ##- AI/ML
