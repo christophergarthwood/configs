@@ -19,7 +19,22 @@ alias nrlwho='/net/americium/export/sw/Linux-i686/bin/nrlwhois'
 alias show_stats='dstat -tcndylp --top-cpu 2'
 alias run_mpd='/common/intel/composer_xe_2015.2.164/mpirt/bin/intel64/mpd'
 alias tree="ls -R ./ | grep ':$' | sed -e 's/:$//;s/[^-][^\/]*\//--/g;s/^/ /;s/-/|/'"
-alias git_report="git log --graph --decorate --pretty=format:'%C(yellow)%h %Cred%cr %Cblue(%an)%C(cyan)%d%Creset %s' --abbrev-commit |head -40"
+
+###############################
+##- GIT
+###############################
+alias git_report="git log --graph --decorate --pretty=format:'%C(yellow)%h %Cred%cr %Cblue(%an)%C(cyan)%d%Creset %s' --abbrev-commit |head -40";
+alias git_list="git log --all --oneline --graph --decorate";
+alias git_fetch_list="git fetch && git log --all --oneline --decorate --graph";
+alias git_publish="push -u origin head";
+alias git_pullBranches="git fetch && git switch -C ${1} origin/${1} && echo \"Pulled\""
+#        deploySandbox = push origin head:sandbox
+alias git_refresh="git stash && git fetch && git switch -C ${1} origin/${1} && git switch - && git stash pop"
+alias git_openChangedFiles="pathToRoot=$(git rev-parse --show-toplevel); allPaths=$(git diff  --name-only \"${1:-origin/development}\") ; if [ ${#allPaths} -ne 0 ] ; then  echo 'opening...'; echo \"$allPaths\"; code $allPaths ; else echo 'No changes found' ; fi ; #"
+
+###############################
+##- AI/ML
+###############################
 alias watch_gpu="watch -n 1 nvidia-smi"
 alias run_jupyter_ofm="source ~/.bashrc_tods_anaconda; conda activate ofm; jupyter notebook --ip=0.0.0.0 --port=8080"
 alias run_jupyter_ml="source ~/.bashrc_anaconda; conda activate machine_learning; jupyter notebook --ip=0.0.0.0 --port=8080"
