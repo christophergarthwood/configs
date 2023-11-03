@@ -17,6 +17,7 @@ alias gogaffney='kssh -Y cwood@gaffney.navydsrc.hpc.mil'
 alias goarchive='kssh -Y cwood@st-vsm1.navydsrc.hpc.mil'
 
 #PROJECT FOLDERS
+alias gowork='cd /projects/work/chris'
 TODS_WORK=/export/tods-rt/cwood; export TODS_WORK
 SOCOM_WORK=/projects/socom; export SOCOM_WORK
 RECON_WORK=/net/starlifter/export/recon_machine_learning/; export RECON_WORK
