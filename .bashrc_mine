@@ -28,16 +28,16 @@ fi
 #################################################################
 #-PATHS
 #################################################################
+export PATH_ROOT="/projects/app";
 #export CORE_PATH=${HOME}/bin:${HOME}/.local/bin:/opt/homebrew/bin:/usr/bin:/sw/bin:${APS_BIN}:${M2_HOME};
-#export LD_LIBRARY_PATH="/usr/lib:/usr/lib64:/projects/app/anaconda/envs/machine_learning/lib";
+export LD_LIBRARY_PATH="/usr/lib:/usr/lib64";
 #export PATH="${KRB_PATH}:${CORE_PATH}:${PATH}"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib:/usr/lib64:/usr/local/cuda-11.1/lib64";
-export PATH="$PATH:~/.local/bin";
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib:/usr/lib64:${PATH_ROOT}/.local/lib/python3.9/site-packages/nvidia/cudnn/lib:${PATH_ROOT}/.local/lib/python3.9/site-packages/tensorrt_libs";
+export PATH="$PATH:${PATH_ROOT}/.local/bin:${PATH_ROOT}/pandoc/bin";
 
 #################################################################
 #-CLOUD SERVICE PROVIDERS PATHS
 #################################################################
-export PATH_ROOT="/projects/app";
 # The next line updates PATH for the Azure CLI
 if [ -f "${PATH_ROOT}/azure-cli" ];
 then

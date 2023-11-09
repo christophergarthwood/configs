@@ -1,0 +1,9 @@
+#screen watch -n .25 "ls -arlh /export/projects/socom/aops_data/l3mapgen/tests/*.out | head -2"
+screen watch -n .25 "qstat -u cwood"
+split
+focus down
+screen watch -n .25 "free -h"
+split
+focus down
+screen dstat -tcndylp --top-cpu 1
+focus bottom
