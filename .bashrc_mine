@@ -35,6 +35,13 @@ export LD_LIBRARY_PATH="/usr/lib:/usr/lib64";
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib:/usr/lib64:${PATH_ROOT}/.local/lib/python3.9/site-packages/nvidia/cudnn/lib:${PATH_ROOT}/.local/lib/python3.9/site-packages/tensorrt_libs";
 export PATH="$PATH:${PATH_ROOT}/.local/bin:${PATH_ROOT}/pandoc/bin";
 
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/christopherwood/projects/apps/google-cloud-sdk/path.bash.inc' ]; then . '/Users/christopherwood/projects/apps/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/christopherwood/projects/apps/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/christopherwood/projects/apps/google-cloud-sdk/completion.bash.inc'; fi
+
+
 #################################################################
 #-CLOUD SERVICE PROVIDERS PATHS
 #################################################################
@@ -123,10 +130,10 @@ fi
   re_color="\[\033[0;37m\]"  #grey
 
 #Heavy
-#export PS1="\n$sq_color[\!]--[$re_color\u@\h$sq_color]--[$re_color\t$sq_color]--[$re_color$(date +"%A %d %b %Y")$sq_color]\n\342\224\224\342\224\200\342\224\200\342\225\274> $re_Color \W ($(ls -1 | /usr/bin/wc -l | /bin/sed 's: ::g') files \[\033[1;33m\]\$(/bin/ls -lah | /bin/grep -m 1 total | /bin/sed 's/total //')b)$sq_color \$$re_color"
+#export PS1="\n$sq_color[\!]--[$re_color\u@\h$sq_color]--[$re_color\t$sq_color]--[$re_color$(date +"%A %d %b %Y")$sq_color]\n\342\224\224\342\224\200\342\224\200\342\225\274> $re_Color \W ($(ls -1 | /usr/bin/wc -l | /usr/bin/sed 's: ::g') files \[\033[1;33m\]\$(/bin/ls -lah | /bin/grep -m 1 total | /usr/bin/sed 's/total //')b)$sq_color \$$re_color"
 
 #Involved
-export PS1="\n$sq_color[\!]--[$re_color\u@\h$sq_color]--[$re_color\t$sq_color]--[$re_color$(date +"%A %d %b %Y")$sq_color]\n\342\224\224\342\224\200\342\224\200\342\225\274> $re_Color \W ($(ls -1a | /usr/bin/wc -l | /bin/sed 's: ::g') files \[\033[1;33m\]\$(/bin/ls -lah | head -1 | /bin/sed 's/total //')b)$sq_color \$$re_color"
+export PS1="\n$sq_color[\!]--[$re_color\u@\h$sq_color]--[$re_color\t$sq_color]--[$re_color$(date +"%A %d %b %Y")$sq_color]\n\342\224\224\342\224\200\342\224\200\342\225\274> $re_Color \W ($(ls -1a | /usr/bin/wc -l | /usr/bin/sed 's: ::g') files \[\033[1;33m\]\$(/bin/ls -lah | head -1 | /usr/bin/sed 's/total //')b)$sq_color \$$re_color"
 
 #Simple
 #export PS1="\n$sq_color[$re_color\u@\h (\W)]\$$re_color"
@@ -155,4 +162,3 @@ else
 fi
 unset __conda_setup
 #<<< conda initialize <<<
-
