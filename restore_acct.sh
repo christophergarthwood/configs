@@ -2,8 +2,7 @@
 #================================================================
 # HEADER
 #
-# @file Template shell for future expansion of code.
-# @brief Template shell for future expansion of code base and/or inclusion of new nodes in the "workflow"
+# Creates environment sufficient for JBooks AI/ML efforts.
 #================================================================
 
 #*** VARIABLES ***
@@ -37,8 +36,10 @@ export STATE_DIR="./";
 GLOBAL_DTG=${GLOBAL_DTG};
 GLOBAL_YMD=${GLOBAL_YMD};
 
-repos=( git@github.com:christophergarthwood/jbooks.git git@github.com:christophergarthwood/configs.git git@github.com:christophergarthwood/ai_multivariate.git git@github.com:christophergarthwood/ai_computer_vision.git git@github.com:christophergarthwood/ai_basic.git git@github.com:christophergarthwood/my_code.git git@github.com:USDAForestService/network_metrics.git git@github.com:USDAForestService/jbooks.git )
-repos_names=( my_jbooks my_configs ai_multivariate ai_computer_vision ai_basic my_code usda_network_metrics usda_jbooks )
+#repos=( git@github.com:christophergarthwood/jbooks.git git@github.com:christophergarthwood/configs.git git@github.com:christophergarthwood/ai_multivariate.git git@github.com:christophergarthwood/ai_computer_vision.git git@github.com:christophergarthwood/ai_basic.git git@github.com:christophergarthwood/my_code.git git@github.com:USDAForestService/network_metrics.git git@github.com:USDAForestService/jbooks.git )
+#repos_names=( my_jbooks my_configs ai_multivariate ai_computer_vision ai_basic my_code usda_network_metrics usda_jbooks )
+repos=( git@github.com:christophergarthwood/jbooks.git git@github.com:christophergarthwood/configs.git git@github.com:christophergarthwood/ai_multivariate.git git@github.com:christophergarthwood/ai_computer_vision.git git@github.com:christophergarthwood/ai_basic.git git@github.com:USDAForestService/network_metrics.git git@github.com:USDAForestService/jbooks.git )
+repos_names=( my_jbooks my_configs ai_multivariate ai_computer_vision ai_basic usda_network_metrics usda_jbooks )
 
 #define the arrays that will hold 'jobs' which correlate to each array position above (key to the dictionary)
 typeset -A JOBS;
@@ -407,8 +408,8 @@ prep_template () {
     banner "template:prep_template";
 
     msg_info "Making save folders:"
-    #mkdir -p "${DATA_FOLDER}";
-    #mkdir -p "${WORK_FOLDER}";
+    mkdir -p "${DATA_FOLDER}";
+    mkdir -p "${WORK_FOLDER}";
     msg_debug "";
 
 
@@ -436,21 +437,21 @@ run_template () {
     for repo in "${repos[@]}"
     do
       msg_debug "git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}"
-      #git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}
+      git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}
       (( COUNTER++ ))
     done
 
 
     msg_debug "gsutil of target bucket to local machine..."
     msg_debug "...gsutil -m cp -r gs://${TARGET_BUCKET}/ ${DATA_FOLDER}"
-    #gsutil -m cp -r "gs://${TARGET_BUCKET}/" "${DATA_FOLDER}"
+    gsutil -m cp -r "gs://${TARGET_BUCKET}/" "${DATA_FOLDER}"
 
     msg_info ".RC file copy:"
     configs_to_copy=( .bashrc_mine .bashrc_alias .bashrc_keys .bashrc_machines .vimrc .inputrc .gitignore )
     for config in "${configs_to_copy[@]}"
     do
         msg_debug "...copying ${config} to ~";
-        #cp "$WORK_FOLDER/my_configs/${config}" ~;
+        cp "$WORK_FOLDER/my_configs/${config}" ~;
     done
 }
 
