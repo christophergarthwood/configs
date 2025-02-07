@@ -180,6 +180,7 @@ validate () {
         fi
     done
 
+    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc
     the_rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
     for the_rc in ${the_rcs[@]}
     do
