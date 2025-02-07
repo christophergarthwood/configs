@@ -20,7 +20,7 @@ for repo in ${repos[@]}
 do
   echo "Cloning ${repo}"
   #Reference: https://stackoverflow.com/questions/2505096/clone-a-private-repository-github
-  git clone https://"${USERNAME}":"${PAT}"@${repo} || echo "WARNING - Failed to perform the git clone.";
+  git clone https://"${USERNAME}":"${PAT}"@${repo} /home/jupyter/projects/work/ || echo "WARNING - Failed to perform the git clone.";
   echo "...git clone https://${USERNAME}:${PAT}@${repo}";
 
 done
