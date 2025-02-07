@@ -9,7 +9,8 @@ export repos=(code.fs.usda.gov/forest-service/CIO_CDO_Collaboration.git code.fs.
 export PAT="${GITHUB_PAT}"
 
 #find your USERNAME from your profile in code.fs.usda.gov
-export USERNAME="Christopher-Wood3"
+#export USERNAME="Christopher-Wood3"
+#Now assumes set in .bashrc_mine
 
 for repo in ${repos[@]}
 do
