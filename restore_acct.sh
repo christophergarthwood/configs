@@ -27,19 +27,18 @@ this_script=restore_account;
 execute=0;
 
 #application specific
+export BIN_FOLDER="/home/jupyter/bin";
 export TARGET_FOLDER="/home/jupyter/projects";
 export DATA_FOLDER="${TARGET_FOLDER}/data";
 export WORK_FOLDER="${TARGET_FOLDER}/work";
-export TARGET_BUCKET="usfs-gcp-rand-test3-data-usc1";
+export TARGET_BUCKET="general-335aun";
 export STATE_DIR="./";
 #arg_incoming_region passed by way of arguments
 GLOBAL_DTG=${GLOBAL_DTG};
 GLOBAL_YMD=${GLOBAL_YMD};
 
-#repos=( git@github.com:christophergarthwood/jbooks.git git@github.com:christophergarthwood/configs.git git@github.com:christophergarthwood/ai_multivariate.git git@github.com:christophergarthwood/ai_computer_vision.git git@github.com:christophergarthwood/ai_basic.git git@github.com:christophergarthwood/my_code.git git@github.com:USDAForestService/network_metrics.git git@github.com:USDAForestService/jbooks.git )
-#repos_names=( my_jbooks my_configs ai_multivariate ai_computer_vision ai_basic my_code usda_network_metrics usda_jbooks )
-repos=( git@github.com:christophergarthwood/jbooks.git git@github.com:christophergarthwood/configs.git git@github.com:christophergarthwood/ai_multivariate.git git@github.com:christophergarthwood/ai_computer_vision.git git@github.com:christophergarthwood/ai_basic.git git@github.com:USDAForestService/network_metrics.git git@github.com:USDAForestService/jbooks.git )
-repos_names=( my_jbooks my_configs ai_multivariate ai_computer_vision ai_basic usda_network_metrics usda_jbooks )
+repos=( git@github.com:christophergarthwood/jbooks.git )
+repos_names=( sample_jbooks )
 
 #define the arrays that will hold 'jobs' which correlate to each array position above (key to the dictionary)
 typeset -A JOBS;
@@ -379,7 +378,7 @@ validate_arguments () {
 # @noargs
 #
 # @see main
-validate_template () {
+validate () {
 
     #==============================================================================="
     #-- Validate conditions for success
@@ -388,7 +387,36 @@ validate_template () {
     #then
     #    msg_emerg "${this_script} failed.  ${BIOCAST_EXE} does not exist, cannot proceed for this run.";
     #fi
-    msg_debug "Consider validation of incoming / minimal requirements completed.";
+    msg_info "Validating install."; 
+    the_dirs=( ${BIN_FOLDER} ${DATA_FOLDER} ${WORK_FOLDER} )
+    for the_dir in ${the_dirs[@]}
+    do
+        if [ -d "${the_dir}" ]; then
+            msg_debug "...success, ${the_dir} checks out.";
+        else
+            msg_debug "...FAILURE, ${the_dir} is not present and might be an issue.";
+        fi
+    done
+
+    the_rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
+    for the_rc in ${the_rcs[@]}
+    do
+        if [ -f "/home/jupyter/${the_rc}" ]; then
+            msg_debug "...success, /home/jupyter/${the_rc} is present.";
+        else
+            msg_debug "...FAILURE, /home/jupyter/${the_rc} is not present and might be an issue.";
+        fi
+    done
+
+    the_scripts=( ${BIN_FOLDER}/mountGCS-checkpoint.sh ${BIN_FOLDER}/setGitDetails.sh ${BIN_FOLDER}/pullPrivateInternalREPOS.sh )
+    for the_script in ${the_scripts[@]}
+    do
+        if [ -f "${BIN_FOLDER}/${the_script}" ]; then
+            msg_debug "...success, ${BIN_FOLDER}/${the_script} is present.";
+        else
+            msg_debug "...FAILURE, ${BIN_FOLDER}/${the_script} is not present and might be an issue.";
+        fi
+    done
 
 }
 
@@ -399,19 +427,46 @@ validate_template () {
 # @noargs
 #
 # @see main
-prep_template () {
+prep () {
 
 
     #==============================================================================="
     #-- used to "prepare" whatever is necessary prior to run (full blown execution).
     #==============================================================================="
-    banner "template:prep_template";
+    banner "prep";
 
-    msg_info "Making save folders:"
+    msg_info "Making strategic folders:"
+    mkdir -p "${BIN_FOLDER}";
+    chmod ugo+rx "${BIN_FOLDER}";
+    msg_debug "...${BIN_FOLDER} created and perms updated.";
+
+    msg_info "Setting up the Google Cloud Fuse for your Cloud Storage";
+    msg_debug "...downloading GCS Mount script.";
+    /usr/binwget --no-check-certificate https://code.fs.usda.gov/raw/forest-service/CIO_CDO_Collaboration/main/shared/mountGCS-checkpoint.sh?token=GHSAT0AAAAAAAAAYYII4U3XCJ5QLWQPM6EUZ5GM6CQ -O ${BIN_FOLDER}/mountGCS-checkpoint.sh
+    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh";
+    msg_debug "...~/bin/mountGCS-checkpoint.sh created and perms updated.";
+
+    msg_info "Creating initial folders."
     mkdir -p "${DATA_FOLDER}";
     mkdir -p "${WORK_FOLDER}";
+    chmod -R u+rwx "${TARGET_FOLDER}"
+    msg_debug "...${TARGET_FOLDER} created and perms updated.";
     msg_debug "";
 
+    msg_info "Sample rc's";
+    mkdir -p /home/jupyter/temp
+    cd /home/jupyter/temp
+    git clone https://github.com/christophergarthwood/configs
+    echo "Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
+    rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
+    for rc in ${rcs[@]}
+    do
+        msg_debug "...copying ${rc} to ~"
+        cp "/home/jupyter/temp/configs/${rc}" "/home/jupyter/"
+    done
+
+    msg_info "Sourcing your /home/jupyter/.bashrc"
+    source /home/jupyter/.bashrc
 
 }
 
@@ -421,18 +476,21 @@ prep_template () {
 # @noargs
 #
 # @see main
-run_template () {
+run () {
 
     #==============================================================================="
     #-- Execute main mechanism
     #==============================================================================="
-    banner "template:run_template";
+    banner "run";
     export OUT_DATE="";
     get_ISO8601;
     OUT_DATE="${funct_result}";
-    msg_debug "${OUT_DATE}";
 
-    msg_info "Creating repositories"
+    msg_debug "...copying useful scripts to ~/bin";
+    cp /home/jupyter/temp/configs/setGitDetails.sh "${BIN_FOLDER}/"; 
+    cp /home/jupyter/temp/configs/pullPrivateInternalREPOS.sh "${BIN_FOLDER}/"; 
+
+    msg_info "Creating repositories in ${WORK_FOLDER}"
     export COUNTER=0
     for repo in "${repos[@]}"
     do
@@ -441,18 +499,11 @@ run_template () {
       (( COUNTER++ ))
     done
 
+    #useful commands to remember for transfer data without gcsfuse
+    #msg_debug "gsutil of target bucket to local machine..."
+    #msg_debug "...gsutil -m cp -r gs://${TARGET_BUCKET}/ ${DATA_FOLDER}"
+    #gsutil -m cp -r "gs://${TARGET_BUCKET}/" "${DATA_FOLDER}"
 
-    msg_debug "gsutil of target bucket to local machine..."
-    msg_debug "...gsutil -m cp -r gs://${TARGET_BUCKET}/ ${DATA_FOLDER}"
-    gsutil -m cp -r "gs://${TARGET_BUCKET}/" "${DATA_FOLDER}"
-
-    msg_info ".RC file copy:"
-    configs_to_copy=( .bashrc_mine .bashrc_alias .bashrc_keys .bashrc_machines .vimrc .inputrc .gitignore )
-    for config in "${configs_to_copy[@]}"
-    do
-        msg_debug "...copying ${config} to ~";
-        cp "$WORK_FOLDER/my_configs/${config}" ~;
-    done
 }
 
 # @description This function represents the final tasks performed after a "run".
@@ -462,16 +513,27 @@ run_template () {
 # @noargs
 #
 # @see main
-post_template () {
+post () {
 
     #==============================================================================="
     #-- Perform clean-up functions appropriate for biocast completion
     #==============================================================================="
-    banner "template:post_template";
-    msg_debug "Consider post cleanup functions completed.";
-    job_complete "${this_script}";
+    banner "post";
 
-    msg_debug "";
+    msg_info "Git Setup"
+    msg_debug "Ensure you update the GIT_* environment variables and then run ~/bin/setGitDetails.sh";
+    msg_debug "Calling ~/bin/setGitDetails.sh after updating your ~/.bashrc_mine will align git to your account.";
+    echo " "
+
+    msg_info "GitHub PAT";
+    msg_debug "...obtain a GIT PAT from https://code.fs.usda.gov/settings/tokens and update ~/.bashrc_keys";
+    msg_debug "...then `source ~/.bashrc` to include the keys into your environment.";
+
+    msg_info "Setup your REPO";
+    msg_debug "...perform a git clone of the CIO_CDO_Collaboration Repo.";
+    msg_debug "...see ~/bin/pullPrivateInternalREPOS.sh and execute aftger reviewing.";
+    msg_debug "...Check for the repos var on line 6 and USERNAME on line 12, adjust accordingly.";
+    msg_debug "...If you don't take this step good luck trying to download the repo on your own.";
 }
 
 #*** MAIN ***
@@ -496,26 +558,20 @@ fi
 #==============================================================================="
 #-- Source Configuration files passed in
 #==============================================================================="
-job_start "${this_script}"
+#job_start "${this_script}"
 
 #==============================================================================="
 #-- EXECUTE"
 #==============================================================================="
-echo "Begin"
-printf "Begin"
 msg_info "Begin"
 
-prep_template
-validate_template
-run_template
-post_template
+prep
+validate
+run
+post
 
 end_time=$(date +%s);
 msg_info "Execution time was $((end_time - start_time)) s.";
 get_date;
 msg_info "END ${this_script} at ${funct_result}";
-job_stop "${this_script}"
-
-
-
-
+#job_stop "${this_script}"

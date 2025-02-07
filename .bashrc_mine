@@ -29,18 +29,10 @@ fi
 #-PATHS
 #################################################################
 export PATH_ROOT="/projects/app";
-#export CORE_PATH=${HOME}/bin:${HOME}/.local/bin:/opt/homebrew/bin:/usr/bin:/sw/bin:${APS_BIN}:${M2_HOME};
 export LD_LIBRARY_PATH="/usr/lib:/usr/lib64";
-#export PATH="${KRB_PATH}:${CORE_PATH}:${PATH}"
+
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib:/usr/lib64:${PATH_ROOT}/.local/lib/python3.9/site-packages/nvidia/cudnn/lib:${PATH_ROOT}/.local/lib/python3.9/site-packages/tensorrt_libs";
 export PATH="$PATH:${PATH_ROOT}/.local/bin:${PATH_ROOT}/pandoc/bin";
-
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/christopherwood/projects/apps/google-cloud-sdk/path.bash.inc' ]; then . '/Users/christopherwood/projects/apps/google-cloud-sdk/path.bash.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/Users/christopherwood/projects/apps/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/christopherwood/projects/apps/google-cloud-sdk/completion.bash.inc'; fi
-
 
 #################################################################
 #-CLOUD SERVICE PROVIDERS PATHS
@@ -76,8 +68,8 @@ export GIT_EDITOR=vim;
 #################################################################
 #-REPOSITORY
 #################################################################
-export GIT_AUTHOR_NAME="christopher.wood"; 
-export GIT_AUTHOR_EMAIL="christopher.wood@nrlssc.navy.mil"; 
+export GIT_AUTHOR_NAME="christophergarthwood"; 
+export GIT_AUTHOR_EMAIL="christopher.g.wood@gmail.com"; 
 export GIT_COMMITTER_NAME=${GIT_AUTHOR_NAME}; 
 export GIT_COMMITTER_EMAIL=${GIT_AUTHOR_EMAIL}; 
 
@@ -85,36 +77,12 @@ export GIT_COMMITTER_EMAIL=${GIT_AUTHOR_EMAIL};
 #-COMPILERS
 #################################################################
 #export PGI_COMPILER=/common/pgi/14.7/linux86-64/14.7/bin; 
-#export INTEL_COMPILER=/common/intel/bin; 
-#export INTEL_COMPILER=/common/utilities/bin; 
-#export INTEL_COMPILER=/common/intel/composer_xe_2015.2.164/bin/intel64/; 
-#export COMPILER="/common/intel/composer_xe_2015.2.164/bin/intel64/"; 
 #export LIBS="/common/intel/composer_xe_2015.2.164/compiler/lib/intel64/";
 #export LM_LICENSE_FILE="/common/utilities/intel_compilers/licenses"; 
 
 #################################################################
-#-NCAR STUFF
-#################################################################
-#export NCARG_ROOT="/common/NCL_6.5.0_gcc485"; 
-#export NCARG_LIBS="${NCARG_ROOT}/lib/";
-
-#################################################################
-#-MPI Stuff
-#################################################################
-#export OPENMPI_BIN="/usr/lib64/openmpi/bin";
-#export OPENMPI_LIB="/usr/lib64/openmpi/lib:/usr/lib64/openmpi/lib/openmpi";
-#export INTELMPI_BIN="/common/intel/impi/5.0.3.048/intel64/bin/";
-#export INTELMPI_LIB="/common/intel/impi/5.0.3.048/intel64/lib/";
-
-#################################################################
 #-SOFTWARE
 #################################################################
-#export SW_DIR=/net/americium/export/sw/Linux-i686/bin
-#export APS_ETC=/projects/ZAPS/aps_v6.10/etc; 
-#export APS_DATA=/projects/ZAPS/aps_v6.10/data; 
-#export APS_DIR=/projects/ZAPS/aps_v6.10; 
-#export APS_BIN=/projects/ZAPS/aps_v6.10/bin; 
-#export M2_HOME=$HOME/Documents/apps/mvn/bin; 
 #export KRB5_HOME=/common/krb5; 
 #export GOPATH=$HOME/Documents/apps/go;
 
@@ -162,3 +130,10 @@ else
 fi
 unset __conda_setup
 #<<< conda initialize <<<
+
+if -f ~/bin/mountGCS-checkpoint.sh; then
+    ~/bin/mountGCS-checkpoint.sh
+    echo "Executed the fuser for Google Cloud."
+else
+    echo "Did not execute the fuser for Google Cloud, be aware."
+fi

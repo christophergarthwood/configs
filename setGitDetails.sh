@@ -1,7 +1,4 @@
 #!/bin/sh
 
-whoami_email="christopher.g.wood@gmail.com";
-whoami_name="Christopher G Wood";
-
-git config --global user.email "${whoami_email}"
-git config --global user.name "${whoami_name}"
+git config --global user.email "${GIT_AUTHOR_EMAIL}"
+git config --global user.name "${GIT_AUTHOR_NAME}"
