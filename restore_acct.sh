@@ -223,35 +223,35 @@ prep () {
     echo " ";
     banner "prep";
     echo "INFO:  Making strategic folders:"
-    mkdir -p "${BIN_FOLDER}";
-    chmod ugo+rx "${BIN_FOLDER}";
+    mkdir -p "${BIN_FOLDER}" || echo "WARNING:...mkdir failed."
+    chmod ugo+rx "${BIN_FOLDER}" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...${BIN_FOLDER} created and perms updated.";
 
     echo "INFO:  Setting up the Google Cloud Fuse for your Cloud Storage";
     echo "DEBUG: ...copying the GCS Mount script.";
-    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/"; 
-    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh";
+    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/" || echo "WARNING:...copy failed."; 
+    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
 
     echo "INFO:  Creating initial folders."
-    mkdir -p "${DATA_FOLDER}";
-    mkdir -p "${WORK_FOLDER}";
-    chmod -R u+rwx "${TARGET_FOLDER}"
+    mkdir -p "${DATA_FOLDER}" || echo "WARNING:...mkdir failed.";
+    mkdir -p "${WORK_FOLDER}" || echo "WARNING:...mkdir failed.";
+    chmod -R u+rwx "${TARGET_FOLDER}" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...${TARGET_FOLDER} created and perms updated.";
     echo " ";
 
     echo "INFO:  Sample rc's";
-    mkdir -p /home/jupyter/temp
+    mkdir -p /home/jupyter/temp || echo "WARNING:...mkdir failed.";
     cd /home/jupyter/temp
-    git clone https://github.com/christophergarthwood/configs
+    git clone https://github.com/christophergarthwood/configs || echo "WARNING:...git clone of configs failed.";
     echo  "DEBUG: Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
     echo "DEBUG: ...backed up your original .bashrc to .old_bashrc";
-    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc
+    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc || echo "WARNING:...mv of .bashrc failed.";
     rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_logout .inputrc .gitignore )
     for rc in ${rcs[@]}
     do
         echo "DEBUG: ...copying ${rc} to ~"
-        cp "/home/jupyter/temp/configs/${rc}" "/home/jupyter/"
+        cp "/home/jupyter/temp/configs/${rc}" "/home/jupyter/" || echo "WARNING:...cp of ${rc} failed.";
     done
 
     echo "INFO:  Sourcing your /home/jupyter/.bashrc"
@@ -279,15 +279,15 @@ run () {
     OUT_DATE="${funct_result}";
 
     echo "DEBUG: ...copying useful scripts to ~/bin";
-    cp /home/jupyter/temp/configs/setGitDetails.sh "${BIN_FOLDER}/"; 
-    cp /home/jupyter/temp/configs/pullPrivateInternalREPOS.sh "${BIN_FOLDER}/"; 
+    cp /home/jupyter/temp/configs/setGitDetails.sh "${BIN_FOLDER}/" || echo "WARNING:...cp of setGitDetails failed."; 
+    cp /home/jupyter/temp/configs/pullPrivateInternalREPOS.sh "${BIN_FOLDER}/" || echo "WARNING:...cp of pullPrivateInternalREPOS failed."; 
 
     echo "INFO:  Creating repositories in ${WORK_FOLDER}"
     export COUNTER=0
     for repo in "${repos[@]}"
     do
       echo "DEBUG: git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}"
-      git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}
+      git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]} || echo "WARNING:...git clone of ${repos_name[$COUNTER]} failed.";
       (( COUNTER++ ))
     done
 
