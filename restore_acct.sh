@@ -442,7 +442,7 @@ prep () {
 
     msg_info "Setting up the Google Cloud Fuse for your Cloud Storage";
     msg_debug "...downloading GCS Mount script.";
-    /usr/binwget --no-check-certificate https://code.fs.usda.gov/raw/forest-service/CIO_CDO_Collaboration/main/shared/mountGCS-checkpoint.sh?token=GHSAT0AAAAAAAAAYYII4U3XCJ5QLWQPM6EUZ5GM6CQ -O ${BIN_FOLDER}/mountGCS-checkpoint.sh
+    /usr/bin/wget --no-check-certificate https://code.fs.usda.gov/raw/forest-service/CIO_CDO_Collaboration/main/shared/mountGCS-checkpoint.sh?token=GHSAT0AAAAAAAAAYYII4U3XCJ5QLWQPM6EUZ5GM6CQ -O ${BIN_FOLDER}/mountGCS-checkpoint.sh
     chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh";
     msg_debug "...~/bin/mountGCS-checkpoint.sh created and perms updated.";
 
