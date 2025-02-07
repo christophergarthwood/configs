@@ -236,9 +236,6 @@ prep () {
     mkdir -p /home/jupyter/temp || echo "WARNING:...mkdir failed.";
     cd /home/jupyter/temp
     git clone https://github.com/christophergarthwood/configs || echo "WARNING:...git clone of configs failed.";
-    echo "DEBUG: ...copying the GCS Mount script.";
-    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/" || echo "WARNING:...copy failed."; 
-    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
     echo " ";
 
@@ -282,6 +279,9 @@ run () {
     echo "DEBUG: ...copying useful scripts to ~/bin";
     cp /home/jupyter/temp/configs/setGitDetails.sh "${BIN_FOLDER}/" || echo "WARNING:...cp of setGitDetails failed."; 
     cp /home/jupyter/temp/configs/pullPrivateInternalREPOS.sh "${BIN_FOLDER}/" || echo "WARNING:...cp of pullPrivateInternalREPOS failed."; 
+    echo "DEBUG: ...copying the GCS Mount script.";
+    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/" || echo "WARNING:...copy failed."; 
+    chmod ugo+x "${BIN_FOLDER}/*.sh" || echo "WARNING:...chmod failed.";
 
     echo "INFO:  Creating repositories in ${WORK_FOLDER}"
     export COUNTER=0
