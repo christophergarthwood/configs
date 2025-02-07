@@ -10,6 +10,11 @@ export GCS_BUCKET="general-335aun";
 export GCS_MOUNT_POINT="/home/jupyter/projects/gcs";
 
 cd ~/ # This should take you to /home/jupyter/
+if ! [ -f "${EXE_GCSFUSE}" ];
+then
+  echo "FAILURE, ${EXE_GCSFUSE} not found, aborting..."
+  exit 1;
+fi
 
 #is the mount point present?
 if ! [ -d "${GCS_MOUNT_POINT}" ];
