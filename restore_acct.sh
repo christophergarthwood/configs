@@ -24,7 +24,7 @@ export WORK_FOLDER="${TARGET_FOLDER}/work";
 export TARGET_BUCKET="general-335aun";
 export STATE_DIR="./";
 
-repos=( git@github.com:christophergarthwood/jbooks.git )
+repos=( https://github.com/christophergarthwood/jbooks.git )
 repos_names=( sample_jbooks )
 
 #Paths
@@ -228,8 +228,8 @@ prep () {
     echo "DEBUG: ...${BIN_FOLDER} created and perms updated.";
 
     echo "INFO:  Setting up the Google Cloud Fuse for your Cloud Storage";
-    echo "DEBUG: ...downloading GCS Mount script.";
-    /usr/bin/wget --no-check-certificate https://code.fs.usda.gov/raw/forest-service/CIO_CDO_Collaboration/main/shared/mountGCS-checkpoint.sh?token=GHSAT0AAAAAAAAAYYII4U3XCJ5QLWQPM6EUZ5GM6CQ -O ${BIN_FOLDER}/mountGCS-checkpoint.sh
+    echo "DEBUG: ...copying the GCS Mount script.";
+    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/"; 
     chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh";
     echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
 
