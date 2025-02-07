@@ -363,8 +363,8 @@ fi
 echo "INFO:Begin"
 
 prep
-validate
 run
+validate
 post
 
 end_time=$(date +%s);
