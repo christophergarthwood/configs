@@ -132,8 +132,8 @@ fi
 unset __conda_setup
 #<<< conda initialize <<<
 
-if -f ~/bin/mountGCS-checkpoint.sh; then
-    ~/bin/mountGCS-checkpoint.sh
+if [ -f "~/bin/mountGCS-checkpoint.sh" ]; then
+    ~/bin/mountGCS-checkpoint.sh || echo "Failed to run ~/bin/mountGCS-checkpoint.sh";
     echo "Executed the fuser for Google Cloud."
 else
     echo "Did not execute the fuser for Google Cloud, be aware."

@@ -171,7 +171,7 @@ validate () {
     #==============================================================================="
     echo " ";
     echo " ";
-    banner "prep";
+    banner "VALIDATE";
     echo "INFO:Validating install."; 
     the_dirs=( ${BIN_FOLDER} ${DATA_FOLDER} ${WORK_FOLDER} )
     for the_dir in ${the_dirs[@]}
@@ -221,7 +221,7 @@ prep () {
     #-- used to "prepare" whatever is necessary prior to run (full blown execution).
     #==============================================================================="
     echo " ";
-    banner "prep";
+    banner "PREP";
     echo "INFO:  Making strategic folders:"
     mkdir -p "${BIN_FOLDER}" || echo "WARNING:...mkdir failed."
     chmod ugo+rx "${BIN_FOLDER}" || echo "WARNING:...chmod failed.";
@@ -269,7 +269,7 @@ run () {
     #-- Execute main mechanism
     #==============================================================================="
     echo " ";
-    banner "run";
+    banner "RUN";
     export OUT_DATE="";
     get_ISO8601;
     OUT_DATE="${funct_result}";
@@ -313,7 +313,7 @@ post () {
     #==============================================================================="
     echo " "
     echo " "
-    banner "post";
+    banner "POST";
 
     echo "INFO:  Git Setup"
     echo "DEBUG: Ensure you update the GIT_* environment variables and then run ~/bin/setGitDetails.sh";
