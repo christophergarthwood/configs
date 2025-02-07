@@ -247,7 +247,7 @@ prep () {
     echo  "DEBUG: Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
     echo "DEBUG: ...backed up your original .bashrc to .old_bashrc";
     mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc
-    rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
+    rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_logout .inputrc .gitignore )
     for rc in ${rcs[@]}
     do
         echo "DEBUG: ...copying ${rc} to ~"
