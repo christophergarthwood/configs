@@ -169,19 +169,21 @@ validate () {
     #==============================================================================="
     #-- Validate conditions for success
     #==============================================================================="
+    echo " ";
+    echo " ";
+    banner "prep";
     echo "INFO:Validating install."; 
     the_dirs=( ${BIN_FOLDER} ${DATA_FOLDER} ${WORK_FOLDER} )
     for the_dir in ${the_dirs[@]}
     do
         if [ -d "${the_dir}" ]; then
-            echo "DEBUG:...success, ${the_dir} checks out.";
+            echo "DEBUG: ...success, ${the_dir} checks out.";
         else
-            echo "DEBUG:...FAILURE, ${the_dir} is not present and might be an issue.";
+            echo "DEBUG: ...FAILURE, ${the_dir} is not present and might be an issue.";
         fi
     done
 
-    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc
-    the_rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
+    the_rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_logout .inputrc .gitignore )
     for the_rc in ${the_rcs[@]}
     do
         if [ -f "/home/jupyter/${the_rc}" ]; then
@@ -194,10 +196,10 @@ validate () {
     the_scripts=( ${BIN_FOLDER}/mountGCS-checkpoint.sh ${BIN_FOLDER}/setGitDetails.sh ${BIN_FOLDER}/pullPrivateInternalREPOS.sh )
     for the_script in ${the_scripts[@]}
     do
-        if [ -f "${BIN_FOLDER}/${the_script}" ]; then
-            echo "DEBUG:...success, ${BIN_FOLDER}/${the_script} is present.";
+        if [ -f "${the_script}" ]; then
+            echo "DEBUG: ...success, ${the_script} is present.";
         else
-            echo "DEBUG:...FAILURE, ${BIN_FOLDER}/${the_script} is not present and might be an issue.";
+            echo "DEBUG: ...FAILURE, ${the_script} is not present and might be an issue.";
         fi
     done
 
@@ -218,39 +220,41 @@ prep () {
     #==============================================================================="
     #-- used to "prepare" whatever is necessary prior to run (full blown execution).
     #==============================================================================="
+    echo " ";
     banner "prep";
-
-    echo "INFO:Making strategic folders:"
+    echo "INFO:  Making strategic folders:"
     mkdir -p "${BIN_FOLDER}";
     chmod ugo+rx "${BIN_FOLDER}";
-    echo "DEBUG:...${BIN_FOLDER} created and perms updated.";
+    echo "DEBUG: ...${BIN_FOLDER} created and perms updated.";
 
-    echo "INFO:Setting up the Google Cloud Fuse for your Cloud Storage";
-    echo "DEBUG:...downloading GCS Mount script.";
+    echo "INFO:  Setting up the Google Cloud Fuse for your Cloud Storage";
+    echo "DEBUG: ...downloading GCS Mount script.";
     /usr/bin/wget --no-check-certificate https://code.fs.usda.gov/raw/forest-service/CIO_CDO_Collaboration/main/shared/mountGCS-checkpoint.sh?token=GHSAT0AAAAAAAAAYYII4U3XCJ5QLWQPM6EUZ5GM6CQ -O ${BIN_FOLDER}/mountGCS-checkpoint.sh
     chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh";
-    echo "DEBUG:...~/bin/mountGCS-checkpoint.sh created and perms updated.";
+    echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
 
-    echo "INFO:Creating initial folders."
+    echo "INFO:  Creating initial folders."
     mkdir -p "${DATA_FOLDER}";
     mkdir -p "${WORK_FOLDER}";
     chmod -R u+rwx "${TARGET_FOLDER}"
-    echo "DEBUG:...${TARGET_FOLDER} created and perms updated.";
-    echo "DEBUG:";
+    echo "DEBUG: ...${TARGET_FOLDER} created and perms updated.";
+    echo " ";
 
-    echo "INFO:Sample rc's";
+    echo "INFO:  Sample rc's";
     mkdir -p /home/jupyter/temp
     cd /home/jupyter/temp
     git clone https://github.com/christophergarthwood/configs
-    echo "Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
+    echo  "DEBUG: Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
+    echo "DEBUG: ...backed up your original .bashrc to .old_bashrc";
+    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc
     rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_login .inputrc .gitignore )
     for rc in ${rcs[@]}
     do
-        echo "DEBUG:...copying ${rc} to ~"
+        echo "DEBUG: ...copying ${rc} to ~"
         cp "/home/jupyter/temp/configs/${rc}" "/home/jupyter/"
     done
 
-    echo "INFO:Sourcing your /home/jupyter/.bashrc"
+    echo "INFO:  Sourcing your /home/jupyter/.bashrc"
     source /home/jupyter/.bashrc
 
 }
@@ -268,20 +272,21 @@ run () {
     #==============================================================================="
     #-- Execute main mechanism
     #==============================================================================="
+    echo " ";
     banner "run";
     export OUT_DATE="";
     get_ISO8601;
     OUT_DATE="${funct_result}";
 
-    echo "DEBUG:...copying useful scripts to ~/bin";
+    echo "DEBUG: ...copying useful scripts to ~/bin";
     cp /home/jupyter/temp/configs/setGitDetails.sh "${BIN_FOLDER}/"; 
     cp /home/jupyter/temp/configs/pullPrivateInternalREPOS.sh "${BIN_FOLDER}/"; 
 
-    echo "INFO:Creating repositories in ${WORK_FOLDER}"
+    echo "INFO:  Creating repositories in ${WORK_FOLDER}"
     export COUNTER=0
     for repo in "${repos[@]}"
     do
-      echo "DEBUG:git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}"
+      echo "DEBUG: git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}"
       git clone ${repo} ${WORK_FOLDER}/${repos_names[$COUNTER]}
       (( COUNTER++ ))
     done
@@ -307,22 +312,25 @@ post () {
     #==============================================================================="
     #-- Perform clean-up functions appropriate for biocast completion
     #==============================================================================="
+    echo " "
+    echo " "
     banner "post";
 
-    echo "INFO:Git Setup"
-    echo "DEBUG:Ensure you update the GIT_* environment variables and then run ~/bin/setGitDetails.sh";
-    echo "DEBUG:Calling ~/bin/setGitDetails.sh after updating your ~/.bashrc_mine will align git to your account.";
+    echo "INFO:  Git Setup"
+    echo "DEBUG: Ensure you update the GIT_* environment variables and then run ~/bin/setGitDetails.sh";
+    echo "DEBUG: Calling ~/bin/setGitDetails.sh after updating your ~/.bashrc_mine will align git to your account.";
     echo " "
 
-    echo "INFO:GitHub PAT";
-    echo "DEBUG:...obtain a GIT PAT from https://code.fs.usda.gov/settings/tokens and update ~/.bashrc_keys";
-    echo "DEBUG:...then `source ~/.bashrc` to include the keys into your environment.";
+    echo "INFO:  GitHub PAT";
+    echo "DEBUG: ...obtain a GIT PAT from https://code.fs.usda.gov/settings/tokens and update ~/.bashrc_keys";
+    echo "DEBUG: ...then `source ~/.bashrc` to include the keys into your environment.";
+    echo " "
 
-    echo "INFO:Setup your REPO";
-    echo "DEBUG:...perform a git clone of the CIO_CDO_Collaboration Repo.";
-    echo "DEBUG:...see ~/bin/pullPrivateInternalREPOS.sh and execute aftger reviewing.";
-    echo "DEBUG:...Check for the repos var on line 6 and USERNAME on line 12, adjust accordingly.";
-    echo "DEBUG:...If you don't take this step good luck trying to download the repo on your own.";
+    echo "INFO:  Setup your REPO";
+    echo "DEBUG: ...perform a git clone of the CIO_CDO_Collaboration Repo.";
+    echo "DEBUG: ...see ~/bin/pullPrivateInternalREPOS.sh and execute aftger reviewing.";
+    echo "DEBUG: ...Check for the repos var on line 6 and USERNAME on line 12, adjust accordingly.";
+    echo "DEBUG: ...If you don't take this step good luck trying to download the repo on your own.";
 }
 
 #*** MAIN ***
