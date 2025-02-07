@@ -1,3 +1,5 @@
+#!/bin/sh
+
 sudo apt-get install net-tools
 sudo apt install iftop
 sudo apt install vnstat
