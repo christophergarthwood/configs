@@ -226,27 +226,28 @@ prep () {
     mkdir -p "${BIN_FOLDER}" || echo "WARNING:...mkdir failed."
     chmod ugo+rx "${BIN_FOLDER}" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...${BIN_FOLDER} created and perms updated.";
-
-    echo "INFO:  Setting up the Google Cloud Fuse for your Cloud Storage";
-    echo "DEBUG: ...copying the GCS Mount script.";
-    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/" || echo "WARNING:...copy failed."; 
-    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh" || echo "WARNING:...chmod failed.";
-    echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
-
-    echo "INFO:  Creating initial folders."
     mkdir -p "${DATA_FOLDER}" || echo "WARNING:...mkdir failed.";
     mkdir -p "${WORK_FOLDER}" || echo "WARNING:...mkdir failed.";
     chmod -R u+rwx "${TARGET_FOLDER}" || echo "WARNING:...chmod failed.";
     echo "DEBUG: ...${TARGET_FOLDER} created and perms updated.";
     echo " ";
 
-    echo "INFO:  Sample rc's";
+    echo "INFO:  Setting up the Google Cloud Fuse for your Cloud Storage and example *.rc files.";
     mkdir -p /home/jupyter/temp || echo "WARNING:...mkdir failed.";
     cd /home/jupyter/temp
     git clone https://github.com/christophergarthwood/configs || echo "WARNING:...git clone of configs failed.";
+    echo "DEBUG: ...copying the GCS Mount script.";
+    cp /home/jupyter/temp/configs/mountGCS-checkpoint.sh "${BIN_FOLDER}/" || echo "WARNING:...copy failed."; 
+    chmod ugo+x "${BIN_FOLDER}/mountGCS-checkpooint.sh" || echo "WARNING:...chmod failed.";
+    echo "DEBUG: ...~/bin/mountGCS-checkpoint.sh created and perms updated.";
+    echo " ";
+
+    echo "INFO:  Sample rc's";
     echo  "DEBUG: Downloaded a sample set of configuration files, copying *.rc's to your /home/jupyter, modify as you see fit."
     echo "DEBUG: ...backed up your original .bashrc to .old_bashrc";
-    mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc || echo "WARNING:...mv of .bashrc failed.";
+    if [ -f /home/jupyter/.bashrc ]; then
+        mv /home/jupyter/.bashrc /home/jupyter/.old_bashrc || echo "WARNING:...mv of .bashrc failed.";
+    fi
     rcs=( .bashrc .bashrc_mine .bashrc_keys .bashrc_alias .bashrc_machines .bash_profile .bash_logout .inputrc .gitignore )
     for rc in ${rcs[@]}
     do
