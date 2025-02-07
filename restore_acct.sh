@@ -252,8 +252,6 @@ prep () {
         cp "/home/jupyter/temp/configs/${rc}" "/home/jupyter/" || echo "WARNING:...cp of ${rc} failed.";
     done
 
-    echo "INFO:  Sourcing your /home/jupyter/.bashrc"
-    source /home/jupyter/.bashrc
 
 }
 
@@ -366,8 +364,10 @@ prep
 run
 validate
 post
+echo "INFO:  Sourcing your /home/jupyter/.bashrc"
+source /home/jupyter/.bashrc
 
 end_time=$(date +%s);
-echo "INFO:Execution time was $((end_time - start_time)) s.";
+echo "INFO:  Execution time was $((end_time - start_time)) s.";
 get_date;
-echo "INFO:END ${this_script} at ${funct_result}";
+echo "INFO:  END ${this_script} at ${funct_result}";
