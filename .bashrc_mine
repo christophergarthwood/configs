@@ -132,9 +132,34 @@ fi
 unset __conda_setup
 #<<< conda initialize <<<
 
-if [ -f "~/bin/mountGCS-checkpoint.sh" ]; then
-    ~/bin/mountGCS-checkpoint.sh || echo "Failed to run ~/bin/mountGCS-checkpoint.sh";
-    echo "Executed the fuser for Google Cloud."
+roject_id=${GOOGLE_CLOUD_PROJECT};
+exe_gcsfuse=$(which gcsfuse);
+exe_mount_script="${HOME}/bin/mountGCS-checkpoint.sh";
+dir_mount_point="${HOME}/projects/gcs";
+if [ -f "${exe_gcsfuse}" ] && ! [ -z ${GOOGLE_CLOUD_PROJECT+x} ];
+then
+    if [ -f "${exe_mount_script}" ];
+    then
+       if [ -d "${dir_mount_point}" ];
+       then
+           num_dirs=$(ls -1 ${dir_mount_point} | wc -l)
+           if [ "${num_dirs}" -gt 1 ];
+           then
+               echo -e "Mount point \e[1;34m(${dir_mount_point})\e[0m already present, no fusing."
+               ls -alFh ${dir_mount_point} | tail -"${num_dirs}";
+           else
+               echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point (\e[1;34m (${dir_mount_point}) \e[0m) not mounted, executing fuse..."
+               ${exe_mount_script} || echo -e "e[31;43mWARNING\e[0m - your (${exe_mount_script} exited with a status of: $?"; 
+           fi
+       else
+           echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point non-existent, executing fuse..."
+           ${exe_mount_script} || echo -e "e[31;43mWARNING\e[0m - your (${exe_mount_script} exited with a status of: $?"; 
+       fi
+    else
+       echo -e "\e[31;43mWARNING\e[0m - your (${exe_mount_script} is not present, can't mount the Google Cloud Storage (GCS)."
+       echo -e "\e[0m"
+    fi
 else
-    echo "Did not execute the fuser for Google Cloud, be aware."
+    echo "Google Cloud Provider (GCP) environment not detected, not mounting cloud storage.";
 fi
+
