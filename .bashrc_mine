@@ -132,7 +132,7 @@ fi
 unset __conda_setup
 #<<< conda initialize <<<
 
-roject_id=${GOOGLE_CLOUD_PROJECT};
+project_id=${GOOGLE_CLOUD_PROJECT};
 exe_gcsfuse=$(which gcsfuse);
 exe_mount_script="${HOME}/bin/mountGCS-checkpoint.sh";
 dir_mount_point="${HOME}/projects/gcs";
