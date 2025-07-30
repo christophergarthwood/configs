@@ -3,6 +3,8 @@
 ##########################################################
 # API Keys
 **/*_key*
+**/.bashrc_keys
+bash/.bashrc_keys
 
 # Node rules:
 ## Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
