@@ -2,7 +2,7 @@
 # - Universal
 ##########################################################
 # API Keys
-.bashrc_keys
+**/*_key*
 
 # Node rules:
 ## Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
