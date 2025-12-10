@@ -484,3 +484,6 @@ To monitor the existing process's CPU affinity, you can use this command:
 taskset -cp $(pgrep -f executable)
 
 note that the executable identity you will pass to this command can be './executable' if you started it that way.
+
+CERTIFICATE CHECKING
+openssl s_client --connect <your_server:443> -cert <path to pem> -key <path to key> -CAfile <path to bundle>
