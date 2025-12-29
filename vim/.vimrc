@@ -1,3 +1,4 @@
+
 "Display Settings
 " Show absolute line numbers
 set number
@@ -7,8 +8,6 @@ set relativenumber
 
 set cursorline
 
-" Highlight search results
-set hlsearch
 
 syntax on
 
@@ -21,16 +20,49 @@ set cursorline
 set mouse=r
 set ruler
 set visualbell
+set visualbell t_vb=                       " turn off error beep/flash¬
 set noerrorbells
+set novisualbell                            "turn off visual bell¬
 set laststatus=2
 
+set paste                                   "2019/12/09 - enables consistent pastes¬
+set ls=2                                    "allways show status line¬
+set shiftwidth=4                            "numbers of spaces to (auto)indent¬
+set nocindent
 
+" ================================
+" CGW
+" ================================
+set sm                                      "show matching braces, somewhat annoying...¬
+set showcmd                                 " display incomplete commands¬
+set nobackup                                "do not keep a backup file¬
+set title                                   "show title in console title bar¬
+set ttyfast                                 "smoother changes¬
+set modeline                                "last lines in document sets vim mode¬
+set modelines=3                             "number lines checked for modelines¬
+set shortmess=atI                           "Abbreviate messages¬
+set nostartofline                           "don't jump to first character when paging¬
 
 " ================================
 " COLOR SCHEME
 " ================================
-colorscheme desert
-set background=dark
+if has("gui_running")
+    "See ~/.gvimrc¬
+    set guifont=Consolas:h14:cANSI¬
+    set lines=50           " height = 50 lines¬
+    set columns=200        " width = 200 columns¬
+    set background=dark   " adapt colors for background¬
+    set selectmode=mouse,key,cmd¬
+    colorscheme ron¬
+else
+    "Options are:blue.vim, darkblue.vim ,default.vim ,delek.vim ,desert.vim ,elflord.vim ,evening.vim ,koehler.vim ,morning.vim ,
+    "murphy.vim ,pablo.vim ,peachpuff.vim ,ron.vim ,shine.vim ,slate.vim ,torte.vim ,zellner.vim
+    colorscheme default
+    " Adapt colors for background
+    set background=dark
+    " Added for lightline
+    set t_Co=256
+endif
 
 " ================================
 " INDENTATION & FORMATTING
@@ -50,6 +82,8 @@ set softtabstop=4
 
 " Enable smart indentation (good for code/scripts)
 set smartindent
+"always set autoindenting on¬
+set autoindent
 
 
 
@@ -57,6 +91,11 @@ set smartindent
 " BASIC QUALITY OF SEARCH SETTINGS
 " ================================
 
+" Highlight search results
+set hlsearch
+" Case insensitive searches
+"
+set ic
 " Show matches as you type
 set incsearch
 
@@ -84,5 +123,5 @@ set sidescrolloff=5
 set list
 set listchars=tab:▸\ ,trail:·,eol:¬
 
-" Set stored history amount 
+" Set stored history amount
 set history=1000
