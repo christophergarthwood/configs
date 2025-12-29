@@ -3,7 +3,7 @@ alias gopegasus='ssh -Y -t cwood@pegasus.nrlssc.navy.mil "cd ~; bash --login"'
 alias gogalactica='ssh -Y -t cwood@galactica.nrlssc.navy.mil "cd ~; bash --login"'
 
 #PROJECT FOLDERS
-export WORK_DIR="/home/jupyter/projects/work";
+export WORK_DIR="/mnt/c/Users/cwood/Downloads/WORK/REPOS/";
 alias gowork='cd ${WORK_DIR}'
 
 export DATA_DIR="/home/jupyter/projects/gcs";
