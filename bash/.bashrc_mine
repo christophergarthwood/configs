@@ -125,34 +125,45 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-project_id=${GOOGLE_CLOUD_PROJECT};
-exe_gcsfuse=$(which gcsfuse);
-exe_mount_script="${HOME}/bin/mountGCS-checkpoint.sh";
-dir_mount_point="${HOME}/projects/gcs";
-if [ -f "${exe_gcsfuse}" ] && ! [ -z ${GOOGLE_CLOUD_PROJECT+x} ];
-then
-    if [ -f "${exe_mount_script}" ];
+if [[ $- == *i* ]]; then
+    project_id=${GOOGLE_CLOUD_PROJECT};
+    exe_gcsfuse=$(which gcsfuse 2>/dev/null);
+    exe_mount_script="${HOME}/bin/mountGCS-checkpoint.sh";
+    dir_mount_point="${HOME}/projects/gcs";
+    if [ -f "${exe_gcsfuse}" ] && ! [ -z ${GOOGLE_CLOUD_PROJECT+x} ];
     then
-       if [ -d "${dir_mount_point}" ];
-       then
-           num_dirs=$(ls -1 ${dir_mount_point} | wc -l)
-           if [ "${num_dirs}" -gt 1 ];
+        if [ -f "${exe_mount_script}" ];
+        then
+           if [ -d "${dir_mount_point}" ];
            then
-               echo -e "Mount point \e[1;34m(${dir_mount_point})\e[0m already present, no fusing."
-               ls -alFh ${dir_mount_point} | tail -"${num_dirs}";
+               num_dirs=$(ls -1 ${dir_mount_point} | wc -l)
+               if [ "${num_dirs}" -gt 1 ];
+               then
+                   echo -e "Mount point \e[1;34m(${dir_mount_point})\e[0m already present, no fusing."
+                   ls -alFh ${dir_mount_point} | tail -"${num_dirs}";
+               else
+                   echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point (\e[1;34m (${dir_mount_point}) \e[0m) not mounted, executing fuse..."
+                   ${exe_mount_script} || echo -e "e[31;43mWARNING\e[0m - your (${exe_mount_script} exited with a status of: $?"; 
+               fi
            else
-               echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point (\e[1;34m (${dir_mount_point}) \e[0m) not mounted, executing fuse..."
+               echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point non-existent, executing fuse..."
                ${exe_mount_script} || echo -e "e[31;43mWARNING\e[0m - your (${exe_mount_script} exited with a status of: $?"; 
            fi
-       else
-           echo -e "Confirmed \e[1;34m (${exec_mount_script}) \e[0m and mount point non-existent, executing fuse..."
-           ${exe_mount_script} || echo -e "e[31;43mWARNING\e[0m - your (${exe_mount_script} exited with a status of: $?"; 
-       fi
+        else
+           echo -e "\e[31;43mWARNING\e[0m - your (${exe_mount_script} is not present, can't mount the Google Cloud Storage (GCS)."
+           echo -e "\e[0m"
+        fi
     else
-       echo -e "\e[31;43mWARNING\e[0m - your (${exe_mount_script} is not present, can't mount the Google Cloud Storage (GCS)."
-       echo -e "\e[0m"
+        echo "Google Cloud Provider (GCP) environment not detected, not mounting cloud storage.";
     fi
-else
-    echo "Google Cloud Provider (GCP) environment not detected, not mounting cloud storage.";
-fi
 
+    if [ "$(hostname)" == "gcsn6.osd.nrlssc.navy.mil" ];
+    then
+       #NRL specific for Podman/Kubernetes
+       echo "Registering NRL account with podman registry.";
+       eval "$(ssh-agent -s)"
+       ssh-add ~/.ssh/id_rsa
+       source ~/.bashrc_keys
+       podman login --username "christopher.g.wood.ctr" --password "${NRL_REPO_PAT}" registry.nrlssc.org
+    fi
+fi
