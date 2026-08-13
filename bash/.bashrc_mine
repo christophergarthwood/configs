@@ -158,7 +158,7 @@ if [[ $- == *i* ]]; then
     fi
 
     export the_hostname=$(hostname);
-    if [ "${the_hostname}"=="${NRL_REPO_SERVERNAME}" ];
+    if [ "${the_hostname}" == "${NRL_REPO_SERVERNAME}" ];
     then
        #NRL specific for Podman/Kubernetes
        echo "NRL podman registry login.";

@@ -1,6 +1,7 @@
 #PROJECT ALIAS
 alias gopegasus='ssh -Y -t cwood@pegasus.nrlssc.navy.mil "cd ~; bash --login"'
 alias gogalactica='ssh -Y -t cwood@galactica.nrlssc.navy.mil "cd ~; bash --login"'
+alias gollm='ssh cwood@gcsn6'
 
 #PROJECT FOLDERS
 export WORK_DIR="/mnt/c/Users/cwood/Downloads/WORK/REPOS/";
