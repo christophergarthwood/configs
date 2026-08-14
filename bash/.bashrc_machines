@@ -4,8 +4,8 @@ alias gogalactica='ssh -Y -t cwood@galactica.nrlssc.navy.mil "cd ~; bash --login
 alias gollm='ssh cwood@gcsn6'
 
 #PROJECT FOLDERS
-export WORK_DIR="/mnt/c/Users/cwood/Downloads/WORK/REPOS/";
+export WORK_DIR="/home/cwood/Documents/navo-se";
 alias gowork='cd ${WORK_DIR}'
 
-export DATA_DIR="/home/jupyter/projects/gcs";
+export DATA_DIR="/mnt/vaultnfs/pfs/users/cwood";
 alias godata='cd ${DATA_DIR}'
