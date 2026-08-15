@@ -1,5 +1,6 @@
 #set history = 200
 alias vi='vim'
+alias kubectl='microk8s kubectl'
 alias type='cat | more \!*'
 alias howlong='uptime'
 alias ll='ls -alFhp --color'
