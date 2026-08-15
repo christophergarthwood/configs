@@ -4,25 +4,27 @@
 #################################################################
 #-INCLUDES
 #################################################################
-if [ -f ~/.bashrc_alias ];
-then
-    source ~/.bashrc_alias
-else
-    echo "WARNING: ~/.bashrc_alias not referenced and not found.";
-fi
+if [[ $- == *i* ]]; then
+    if [ -f ~/.bashrc_alias ];
+    then
+        source ~/.bashrc_alias
+    else
+        echo "WARNING: ~/.bashrc_alias not referenced and not found.";
+    fi
 
-if [ -f ~/.bashrc_machines ];
-then
-    source ~/.bashrc_machines
-else
-    echo "WARNING: ~/.bashrc_machines not referenced and not found.";
-fi
+    if [ -f ~/.bashrc_machines ];
+    then
+        source ~/.bashrc_machines
+    else
+        echo "WARNING: ~/.bashrc_machines not referenced and not found.";
+    fi
 
-if [ -f ~/.bashrc_keys ];
-then
-    source ~/.bashrc_keys
-else
-    echo "WARNING: ~/.bashrc_keys not referenced and not found.";
+    if [ -f ~/.bashrc_keys ];
+    then
+        source ~/.bashrc_keys
+    else
+        echo "WARNING: ~/.bashrc_keys not referenced and not found.";
+    fi
 fi
 
 #################################################################
