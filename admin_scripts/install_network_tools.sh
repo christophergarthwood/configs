@@ -1,4 +1,10 @@
-#!/bin/sh
+#!/usr/bin/bash
+
+if sudo -n true 2>/dev/null; then
+    echo "Sudo access active (or cached)"
+else
+    echo "Password required or no sudo access."
+fi
 
 sudo apt-get install net-tools
 sudo apt install iftop
