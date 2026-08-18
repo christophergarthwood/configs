@@ -29,3 +29,9 @@ Use `;` so separate commands as follows:
 # References
 
 Navigate Linux Terminal Faster [https://opensource.com/article/22/11/navigate-linux-terminal-faster]
+
+# Truly Useful Packages
+
++ **stow** - aligns `.rc` files, when categorized, into their respective $HOME location thus allowing you to 
+
++ **bpytop** - `pip install bpttop --user` installs a Python based BashTop equipvalent into your user space.

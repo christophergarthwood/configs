@@ -18,6 +18,7 @@ alias du='du -h'
 alias less='less -r'                          # raw control characters
 alias nrlwho='/net/americium/export/sw/Linux-i686/bin/nrlwhois'
 alias show_stats='dstat -tcndylp --top-cpu 2'
+alias show_top='bpytop'
 alias run_mpd='/common/intel/composer_xe_2015.2.164/mpirt/bin/intel64/mpd'
 alias tree="ls -R ./ | grep ':$' | sed -e 's/:$//;s/[^-][^\/]*\//--/g;s/^/ /;s/-/|/'"
 alias python="/usr/bin/python3.11"
