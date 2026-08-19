@@ -21,7 +21,7 @@ fi
 #additional Git Repository details
 export GITLAB_GROUPS=( "navo-se" );
 #must be lowercase with dashed regarless of what you see in an output
-export GITLAB_REPOS=( "erddap-mcp" "erddapy" "langgraph-multi-agent-workflow" "wade-docs" "inference-engines" "open-webui" );
+export GITLAB_REPOS=( "erddap-mcp" "erddapy" "langgraph-mult-agent-workflow" "wade-docs" "inference-engines" "open-webui" );
 export BRANCH="main";
 export SHALLOW_DEPTH=100;
 export DAYS_AGO=$(date -d "30 days ago" +%Y-%m-%d)
