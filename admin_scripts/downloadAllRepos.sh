@@ -3,7 +3,7 @@
 ##########################################################
 #- Application Variables (change as needed)
 ##########################################################
-if ! [ -d $HOME/.bashrc_keys ];
+if ! [ -f $HOME/.bashrc_keys ];
 then
    echo "ERROR: This script assumes the existence of a ~/.bashrc_keys file.";
    echo "Preference is to keep your details hidden from prying eyes.";
