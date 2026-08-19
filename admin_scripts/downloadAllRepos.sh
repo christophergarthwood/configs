@@ -3,22 +3,25 @@
 ##########################################################
 #- Application Variables (change as needed)
 ##########################################################
-if ! [ -d $HOME/.bashrc_keys ];
+if [ -f "${HOME}/.bashrc_keys" ];
 then
-   echo "ERROR: This script assumes the existence of a ~/.bashrc_keys file.";
-   echo "Preference is to keep your details hidden from prying eyes.";
-   echo "You need a GIT_AUTHOR_NAME, GIT_URL, and PAT";
-   echo "Aborting execution...";
-   exit 1;
+    #get the hidden details
+    echo "Sourcing your ~/.bashrc_keys to obtain your Personal Access Token";
+    source "${HOME}/.bashrc_keys";
+else
+    echo "";
+    echo "ERROR: This script assumes the existence of a ~/.bashrc_keys file.";
+    echo "Preference is to keep your details hidden from prying eyes.";
+    echo "You need a GIT_AUTHOR_NAME, GIT_URL, and PAT";
+    echo "Aborting execution...";
+    exit 1;
 fi
 
-#get the hidden details
-echo "Sourcing your ~/.bashrc_keys to obtain your Personal Access Token";
-source ~/.bashrc_keys
 
 #additional Git Repository details
 export GITLAB_GROUPS=( "navo-se" );
-export GITLAB_REPOS=( "erddap-mcp" "Erddapy" "LangGraph Mult-Agent Workflow" "wade-docs" );
+#must be lowercase with dashed regarless of what you see in an output
+export GITLAB_REPOS=( "erddap-mcp" "erddapy" "langgraph-multi-agent-workflow" "wade-docs" "inference-engines" "open-webui" );
 export BRANCH="main";
 export SHALLOW_DEPTH=100;
 export DAYS_AGO=$(date -d "30 days ago" +%Y-%m-%d)
@@ -78,16 +81,16 @@ do
     export PROJECT_ID;
     # URL encode the project ID if it contains slashes
     PROJECT_ID_ENCODED=$(echo "$the_group" | sed 's/\//%2F/g');
-    echo "${PROJECT_ID}";
+    echo "Processing ${PROJECT_ID}";
     echo ""
-    if ! [ -d "${the_group}" ]; 
+    if ! [ -d "${HOME}/${the_group}" ]; 
     then 
-       echo "WARNING: (${the_group}) is not a directory, creating...";
-       mkdir -p "$HOME/${the_group}";
+       echo "WARNING: (${HOME}/${the_group}) is not a directory, creating...";
+       mkdir -p "${HOME}/${the_group}";
        status=$?;
        if [ "${status}" -ne 0 ];
        then
-		  echo "ERROR: Unable to mkdir -p $HOME/${the_group}, check perms.";
+		  echo "ERROR: Unable to mkdir -p ${HOME}/${the_group}, check perms.";
           echo "ERROR: Aborting operation...";
           exit 1;
        fi
@@ -144,7 +147,7 @@ do
 			has_more=false;
 		else
 			# Save repository information to a file
-			echo "$response" >> "${the_group}/repos_list.json";
+			echo "$response" >> "${HOME}/${the_group}/repos_list.json";
 			page=$((page + 1));
 		fi
 	done
@@ -152,8 +155,8 @@ do
     echo "...processing repositories within project";
 
     # Parse the JSON and extract repository information
-    repos=$(cat ${the_group}/repos_list.json 2>/dev/null || echo "[]")
-	repo_count=$(cat ${the_group}/repos_list.json | grep -o '"id":' | wc -l)
+    repos=$(cat ${HOME}/${the_group}/repos_list.json 2>/dev/null || echo "[]")
+	repo_count=$(cat ${HOME}/${the_group}/repos_list.json | grep -o '"id":' | wc -l)
 
 	if [ "$repo_count" -eq 0 ]; then
 		echo "WARNING: No repositories found in this project."
@@ -196,8 +199,8 @@ do
 		#echo "   REPO_SNAME:${repo_sname}";
 		#echo "REPO_DIR_NAME:${repo_dir_name}";
 
-        echo "......checking existence of ${repo_dir_name}/${repo_name}/.git";
-        if [ -d "${repo_dir_name}/${repo_name}/.git" ];
+        echo "......checking existence of ${HOME}/${repo_dir_name}/${repo_name}/.git";
+        if [ -d "${HOME}/${repo_dir_name}/${repo_name}/.git" ];
         then
             echo "......cd into $HOME/${repo_dir_name}/${repo_name} and fetch --all";
             cd "${HOME}/${repo_dir_name}/${repo_name}" > /dev/null 2>&1 || echo "ERROR: Failed to change directories, cannot fetch -all repo information, aborting..." || exit 1;
@@ -212,8 +215,8 @@ do
         else
             echo "......clone the repository";
             if [ ! -d "${repo_dir_name}" ];then
-                echo ".........mkdir -p $HOME/${repo_dir_name}";
-                mkdir -p "$HOME/${repo_dir_name}";
+                echo ".........mkdir -p ${HOME}/${repo_dir_name}";
+                mkdir -p "${HOME}/${repo_dir_name}";
                 status=$?;
                 if [ "${status}" -eq 0 ]; 
                 then
@@ -240,12 +243,12 @@ do
         ##########################################################
 	    #- Obtain log output and save with the directory.
         ##########################################################
-        if ! [ -d "${repo_name}" ]; 
+        if ! [ -d "${HOME}/${repo_dir_name}/${repo_name}" ]; 
         then 
-            echo "ERROR: ${repo_name}) is not a directory, perhaps the git clone failed, aborting executing...";
+            echo "ERROR: (${HOME}/${repo_dir_name}/${repo_name}) is not a directory, perhaps the git clone failed, aborting executing...";
         fi
-        echo "......obtained log output from the repository ${repo_dir_name}/${repo_name}";
-        cd "${HOME}/${repo_name}" > /dev/null 2>&1 || echo "WARNING: Failed to change directories, cannot git log, continuing..." || continue;
+        echo "......obtained log output from the repository ${HOME}/${repo_dir_name}/${repo_name}";
+        cd "${HOME}/${repo_dir_name}/${repo_name}" > /dev/null 2>&1 || echo "WARNING: Failed to change directories, cannot git log, continuing..." || continue;
 
         git --no-pager log --since="${DAYS_AGO}"  --pretty=format:'%H\|%an\|%ae\|%ad\|%s\|\$\{REMOTE_URL\}' --date=iso >> "${OUTPUT_FILE}";
         status=$?;
@@ -257,9 +260,9 @@ do
 		fi
 
         cp "${OUTPUT_FILE}" "./${repo_name}_git.log"
-        echo "......log output saved to:${repo_dir_name}/${repo_name}/${repo_name}_git.log";
+        echo "......log output saved to:${HOME}/${repo_dir_name}/${repo_name}/${repo_name}_git.log";
 
-        cd "${HOME}/${script_dir}" > /dev/null 2>&1 || echo "ERROR: Failed to change directories (${script_dir}), output will be mangled and project structure will be botched, aborting..." || exit 1;
+        cd "${script_dir}" > /dev/null 2>&1 || echo "ERROR: Failed to change directories (${script_dir}), output will be mangled and project structure will be botched, aborting..." || exit 1;
 		echo ""
 
         if [ "${counter}" -gt 9 ];
