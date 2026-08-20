@@ -164,7 +164,8 @@ if [[ $- == *i* ]]; then
     then
        #NRL specific for Podman/Kubernetes
        echo "NRL podman registry login.";
-       eval "$(ssh-agent -s)"
+       #eval "$(ssh-agent -s)"
+       eval "$(keychain --eval --quiet id_rsa)"
        ssh-add ~/.ssh/id_rsa
        source ~/.bashrc_keys
        podman login --username "${NRL_REPO_USERNAME}" --password "${NRL_REPO_PAT}" registry.nrlssc.org
