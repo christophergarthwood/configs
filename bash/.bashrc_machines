@@ -1,11 +1,9 @@
 #PROJECT ALIAS
-alias gopegasus='ssh -Y -t cwood@pegasus.nrlssc.navy.mil "cd ~; bash --login"'
-alias gogalactica='ssh -Y -t cwood@galactica.nrlssc.navy.mil "cd ~; bash --login"'
 alias gollm='ssh cwood@gcsn6'
 
 #PROJECT FOLDERS
-export WORK_DIR="/home/cwood/Documents/navo-se";
+export WORK_DIR="${HOME}/navo-se/a-squared";
 alias gowork='cd ${WORK_DIR}'
 
-export DATA_DIR="/mnt/vaultnfs/pfs/users/cwood";
+export DATA_DIR="/mnt/vaultnfs/pfs/backup/navo-llm/users/cwood";
 alias godata='cd ${DATA_DIR}'
