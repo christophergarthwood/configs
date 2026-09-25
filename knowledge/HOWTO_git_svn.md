@@ -1,4 +1,4 @@
-# GIT
+# **GIT Frequenty Asked Questions**
 
 Code management, commonly known as Source Code Management (SCM) or version control, is the practice of organizing, tracking, and controlling changes to software source code and project files.
 
