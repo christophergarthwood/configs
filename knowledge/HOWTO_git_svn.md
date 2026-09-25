@@ -1,21 +1,26 @@
 # GIT
 
+Code management, commonly known as Source Code Management (SCM) or version control, is the practice of organizing, tracking, and controlling changes to software source code and project files.
+
+Git is a free, open-source distributed version control system designed to track changes in source code and manage project files over time. Created by Linus Torvalds in 2005, it allows developers to look at previous versions of their work, undo mistakes, and collaborate smoothly without overwriting each other's code.Instead of saving a list of changes for each file, the [Git official website](https://git-scm.com/) explains that it records data as a series of snapshots of your entire project filesystem at specific moments
+
+
 [TOC]
 
 ## GIT GENERAL PROCESS
 
-1. `git add/commit/push/stash`  #whatever local changes you have in your branch
-2. `git checkout master/main`
-3. `git pull`
-4. `git checkout <your branch>`
-5. `git merge master/main`      #now you're 100% up to date
-6. TEST TEST TEST TEST TEST!!!!!
-7. `git push`                   #these changes from master inside your branch up
-8. `git checkout master`
-9. `git pull`                   #one more time on master to ensure you're up to date.
-10.`git merge <your branch>`    #now you have a local copy of master on your system
-11.TEST TEST TEST TEST TEST!!!!!
-12.`git push`                   #now the central repo's master is up to date and has been tested
+1.  `git add/commit/push/stash`  #whatever local changes you have in your branch
+2.  `git checkout master/main`
+3.  `git pull`
+4.  `git checkout <your branch>`
+5.  `git merge master/main`      #now you're 100% up to date
+6.  TEST TEST TEST TEST TEST!!!!!
+7.  `git push`                   #these changes from master inside your branch up
+8.  `git checkout master`
+9.  `git pull`                   #one more time on master to ensure you're up to date.
+10. `git merge <your branch>`    #now you have a local copy of master on your system
+11. TEST TEST TEST TEST TEST!!!!!
+12. `git push`                   #now the central repo's master is up to date and has been tested
 
 ## GIT alias
 

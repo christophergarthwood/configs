@@ -1,7 +1,5 @@
 # General Unix Knowledge
 
-[TOC]
-
 ## Programming
 
 ### PYTHON
@@ -538,68 +536,56 @@ pidof <yourprogram>
 lsof -p <yourprogram_pid> |grep mem
 ```
 
-### SHOPT | GLOBBING
 
-[Globbing](https://www.linuxjournal.com/content/bash-extended-globbing)
+SHOPT | GLOBBING
+https://www.linuxjournal.com/content/bash-extended-globbing
 
-### HARDWARE / CPUINFO
-
-```
+HARDWARE / CPUINFO
 cat /proc/cpuinfo
-cat /proc/cpuinfo | grep 'vendor' | uniq		#view vendor name
-cat /proc/cpuinfo | grep 'model name' | uniq		#display model name
-cat /proc/cpuinfo | grep processor | wc -l		#count the number of processing units
-cat /proc/cpuinfo | grep 'core id'			#show individual cores	
+$ cat /proc/cpuinfo | grep 'vendor' | uniq		#view vendor name
+$ cat /proc/cpuinfo | grep 'model name' | uniq		#display model name
+$ cat /proc/cpuinfo | grep processor | wc -l		#count the number of processing units
+$ cat /proc/cpuinfo | grep 'core id'			#show individual cores	
 nproc #number of cpus
 lscpu
-```
+Running 32 or 64 bit? getconf LONG_BIT
 
-Running 32 or 64 bit? `getconf LONG_BIT`
+FILE EXTENSIONS
+#single column list of files, reverse order of string, cut first element out (extension), sort uniquely and reverse string (which is now only the extension) again
+ls -1 | rev | cut -d'.' -f 1 | unique -u |  rev
 
-### FILE EXTENSIONS
+HPC MODULES
+#show all modules in a sorted single column
+module list 2>&1 |  cut -c-150 | cut -c5-150 | sort
 
-Single column list of files, reverse order of string, cut first element out (extension), sort uniquely and reverse string (which is now only the extension) again:
+STRACE | TRACK EXECUTABLE
+#example of watching a wget and seeing what the address is reaching out to.
+strace -f -e trace=network wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz > 2>&1 | grep sin_addr
 
-`ls -1 | rev | cut -d'.' -f 1 | unique -u |  rev`
-
-### HPC MODULES
-
-Show all modules in a sorted single column:
-
-`module list 2>&1 |  cut -c-150 | cut -c5-150 | sort`
-
-### STRACE | TRACK EXECUTABLE
-
-Example of watching a wget and seeing what the address is reaching out to:
-
-`strace -f -e trace=network wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz > 2>&1 | grep sin_addr`
-
-### JULIAN DATE 
+JULIAN DATE 
 date +%j -d 1/10/2016       #given the date
 date +%j                    #for today
 
-### VIM SEARCH AND REPLACE
+VIM SEARCH AND REPLACE
+#All spaces in a file replaced with a caret (delimiter)
+:%s![^ ]\zs \+!^!g
 
-All spaces in a file replaced with a caret (delimiter).
+SUM DATAFILE of NUMBERS
+awk '{s+=$1} END {print s}' mydatafile
 
-`:%s![^ ]\zs \+!^!g`
+CPU UTILIZATION / NUMBER OF CORES / CORE ASSIGNMENT
+lscpu
 
-### SUM DATAFILE of NUMBERS
+PROCESS CONTROL
+To start a new process which should execute only in one core, you can use taskset command.
 
-`awk '{s+=$1} END {print s}' mydatafile`
+taskset -c 0 executable
 
-### CPU UTILIZATION / NUMBER OF CORES / CORE ASSIGNMENT
+To monitor the existing process's CPU affinity, you can use this command:
 
-`lscpu`
+taskset -cp $(pgrep -f executable)
 
-### GPU UTILIZATION
+note that the executable identity you will pass to this command can be './executable' if you started it that way.
 
-`nvidia-smi`
-
-### PROCESS CONTROL
-
-See [Process Control](./HOWTO_unix_exeProcessControl.md)
-
-### CERTIFICATE CHECKING
-
-`openssl s_client --connect <your_server:443> -cert <path to pem> -key <path to key> -CAfile <path to bundle>`
+CERTIFICATE CHECKING
+openssl s_client --connect <your_server:443> -cert <path to pem> -key <path to key> -CAfile <path to bundle>
