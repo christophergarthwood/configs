@@ -32,19 +32,19 @@ The first option, if your remote SSH server supports it, uses a locally defined 
 
 2. Cmds below are for runtime, if permanent change is desired use "--permanent"
 
-  2.1. Remove port or service
+  1. Remove port or service
 
 	  Example: `firewall-cmd --zone=public --remove-port=80/tcp`
 
-  2.2. or if  you know the name of the service
+  2. or if  you know the name of the service
 
 	  Example: `firewall-cmd --zone=public --remove-service=http`
 
-  2.3. Then reload for the change to take place
+  3. Then reload for the change to take place
 
  	  Example: `firewall-cmd --reload`
 
-  2.4. To find out if you change "took"
+  4. To find out if you change "took"
 
 	Example: `firewall-cmd --zone=<zone> --query-port=80/tcp`
 
