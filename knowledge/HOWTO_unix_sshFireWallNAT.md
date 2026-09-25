@@ -1,93 +1,150 @@
-# NETWORKING
+# Network & Systems Administration FAQ
 
-[TOC]
+## SSH & Tunneling
 
-## SSH TUNNEL
+### How do I create an SSH tunnel to forward a local port?
 
-`ssh -L 8080:<remote-addr-of-server>:80 <username>@<remote-addr> -N`
+To forward a local port to a remote destination through a jump host (tunneling), use the `-L` flag.
+
+- **Syntax:** `ssh -L [LocalPort]:[TargetIP]:[TargetPort] [User]@[GatewayIP] -N`
+- **Example:** Forward local port 8080 to port 80 on a target machine (192.168.100.30) via a gateway (10.160.24.1):
 
 `ssh -L 8080:192.168.100.30:80 gdit@10.160.24.1 -N`
 
-`ssh -fY remotehost /usr/bin/wmaker`
+## Firewall Management (Firewalld)
 
-For spray directly:
+### How do I view the current firewall configuration?
 
-```
-xhost +remotehost
-ssh -f remotehost /usr/bin/wmaker
- ?-display localmachine:1
-```
+You can list all active rules, zones, and active configurations using the following commands:
 
-The first option, if your remote SSH server supports it, uses a locally defined DISPLAY that then gets tunneled to your local side over SSH. The second option allows remotehost to send X data directly to your local display, then runs Window Maker there but displays it locally. Now, all your desktop actions are done on the remote machine, not locally. 
+- **List everything open:** `firewall-cmd --list-all`
+- **Get active zones:** `firewall-cmd --get-active-zone`
+- **List all zones:** `firewall-cmd --list-all-zones | less`
+- **Check general status:** `firewall-cmd --state`
 
-## FIREWALLD
+### How do I remove a port or service?
 
-[Firewall Refernece](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7)
+*Note: The commands below affect the **runtime** configuration. To make changes persist after a reboot, append the `--permanent` flag to the command.*
 
-1. List everything that is open
+- **Remove a specific port:**
+`firewall-cmd --zone=public --remove-port=80/tcp`
 
-+ `firewall-cmd --list-all`
+- **Remove a specific service:**
+`firewall-cmd --zone=public --remove-service=http`
 
-+ `firewall-cmd --get-active-zone`
+### How do I apply and verify changes?
 
-+ `firewall-cmd --list-all-zones | less`
+After modifying rules, you must reload the firewall.
 
-2. Cmds below are for runtime, if permanent change is desired use "--permanent"
+1. **Reload:** `firewall-cmd --reload`
+2. **Verify Port Removal:** `firewall-cmd --zone=<zone> --query-port=80/tcp`
+3. **Verify Service Removal:** `firewall-cmd --zone=<zone> --query-service=http`
 
-  1. Remove port or service
+### How do I manage the Firewalld service itself?
 
-	  Example: `firewall-cmd --zone=public --remove-port=80/tcp`
+Use `systemctl` for service-level management:
 
-  2. or if  you know the name of the service
+`sudo systemctl start firewalld.service
 
-	  Example: `firewall-cmd --zone=public --remove-service=http`
+Options: start | stop | restart
 
-  3. Then reload for the change to take place
+### What are the standard zones available?
 
- 	  Example: `firewall-cmd --reload`
+Common zones include: `block`, `dmz`, `drop`, `external`, `home`, `internal`, `public`, `trusted`, `work`.
 
-  4. To find out if you change "took"
+## Network Routing (Legacy vs. Modern)
 
-	Example: `firewall-cmd --zone=<zone> --query-port=80/tcp`
+### How do I manage routing tables?
 
-    OR
+Modern Linux distributions have deprecated `net-tools` (including `route` and `ifconfig`) in favor of the `iproute2` suite. Below is a comparison of the legacy commands provided and their modern equivalents.
 
-	Example: `firewall-cmd --zone=<zone> --query-service=http`
+| Action | Legacy Command (`route`) | Modern Command (`ip route`) |
+|:-------|:-------------------------|:----------------------------|
+| **Delete Route** | `route del -net 10.0.0.0 netmask 255.0.0.0 dev eth0` | `ip route del 10.0.0.0/8 dev eth0` |
+| **Add Static Route** | `route add -net 10.160.24.0 netmask 255.255.254.0 eth0` | `ip route add 10.160.24.0/23 dev eth0` |
+| **Add Default GW** | `route add default gw 10.160.25.254` | `ip route add default via 10.160.25.254` |
+| **Route via GW** | `sudo route add -net 192.168.0.0 netmask 255.255.0.0 gw 10.160.24.187` | `sudo ip route add 192.168.0.0/16 via 10.160.24.187` |
 
-## SERVICE MANAGEMENT
+**Quick Reference for Subnet Masks (CIDR):**
 
-```
-sudo systemctl start firewalld.service
-firewall-cmd --state
-systemctl (start | stop | restart) firewalld.service
-```
+- `255.0.0.0` → `/8`
+- `255.255.0.0` → `/16`
+- `255.255.254.0` → `/23`
+- `255.255.255.0` → `/24`
 
-## ZONES
-
-`block dmz drop external home internal public trusted work`
-
-
-## FIREWALL TESTS
-
-You'll see a message notating success, if nothing comes back you're blocked:
-
-+ `nc -vz bitbucket.di2e.net <port>`
-+ `nc -vz bitbucket.di2e.net 443`
-+ `nc -vz bitbucket.di2e.net 7999`
-
-## TCPDUMP
-
-+ `sudo tcpdump -i eth14 host 10.160.24.134 and port 443 -n -vvv -A`
-+ `sudo tcpdump -i eth14 host 10.160.24.134 -n -vvv -A`
-+ `sudo tcpdump -i lo port 8010 -n -vvv -A`
-
-## NETWORK ROUTES
+## Network Diagnostics
 
 ```
-#!/bin/sh
 route del -net 10.0.0.0 netmask 255.0.0.0 dev eth0
 route add -net 10.160.24.0 netmask 255.255.254.0 eth0
 route add default gw 10.160.25.254
 sudo route add -net 192.168.0.0 netmask 255.255.0.0 gw 10.160.24.187
 ```
 
+### How do I check connectivity to a specific port?
+
+Use `nc` (Netcat) to scan a specific port. If the connection is successful, you will see a success message; otherwise, it will time out or be refused.
+
+- **Check SSL (443):** `nc -vz bitbucket.di2e.net 443`
+- **Check Custom Port:** `nc -vz bitbucket.di2e.net 7999`
+
+### How do I capture packet traffic (Tcpdump)?
+
+Use `tcpdump` with the `-A` flag to see ASCII output (useful for reading headers).
+
+- **Capture host traffic on specific port:**
+`sudo tcpdump -i eth14 host 10.160.24.134 and port 443 -n -vvv -A`
+
+
+- **Capture all traffic from host:**
+`sudo tcpdump -i eth14 host 10.160.24.134 -n -vvv -A`
+
+- **Capture loopback traffic:**
+`sudo tcpdump -i lo port 8010 -n -vvv -A`
+
+### How do I use Wget with authentication?
+
+`wget http://windev.anteon.com:8080/NMOSW/dod/isarch/database/list/listUserSQL/asXML --http-user=dvignes --http-passwd=test3`
+
+## X Window System
+
+### How do I run multiple X sessions simultaneously?
+
+You can run lightweight X sessions (without full window managers) on different display numbers (e.g., `:1`) to save RAM or run specific single-window applications like VMware or Stellarium. You can switch between them using `Ctrl-Alt-F7`, `Ctrl-Alt-F8`, etc.
+
+- **Start a specific X display:** `startx -- :1 -bpp 24 vt8`
+- **Test with xeyes:** `xeyes -display :1`
+- **Start a standalone app (Explicit xinit):**
+
+`xinit /opt/vmware/workstation/bin/vmware -- :1 &`
+
+Or a simple terminal
+
+`xinit /usr/bin/xterm -- :1 &`
+
+### How do I display a remote X application locally?
+
+There are two main methods: Tunneling (secure) or Direct Spraying (insecure/performant).
+
+- **Method 1: SSH Tunneling (Recommended)**
+
+Uses the local display configuration tunneled over SSH.
+
+`ssh -fY remotehost /usr/bin/wmaker`
+
+- **Method 2: Direct X11 Forwarding ("Spraying")**
+
+Requires allowing the remote host permission to write to your local display using `xhost`.
+
+#### Allow the remote host
+`xhost +remotehost`
+
+#### Run the command directed at local display
+
+`ssh -f remotehost /usr/bin/wmaker -display localmachine:1`
+
+### Certificates
+
+Certificate Checking
+
+`openssl s_client --connect <your_server:443> -cert <path to pem> -key <path to key> -CAfile <path to bundle>`

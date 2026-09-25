@@ -1,8 +1,10 @@
-# UNIX PROCESS CONTROL
+# **Process Control Frequently Asked Questions (FAQ)**
+
+## UNIX PROCESS CONTROL
 
 [TOC]
 
-## BASICS
+## Basics
 
 **`ps`** or **`ps -ef | grep <some term>`** For general inquries.
 
@@ -31,7 +33,20 @@ Show all processes you own by tree:
 
 `ps uxf`
 
-## JOB CONTROL (Foreground & Background)
+### Process Control
+
+To start a new process which should execute only in one core, you can use taskset command.
+
+`taskset -c 0 executable`
+
+To monitor the existing process's CPU affinity, you can use this command:
+
+`taskset -cp $(pgrep -f executable)`
+
+note that the executable identity you will pass to this command can be './executable' if you started it that way.
+
+
+## Job Control (Foreground & Background)
 
 Unix shells allow you to manage multiple processes (jobs) within a single terminal session.
 
@@ -55,7 +70,7 @@ Example: `fg %1`
 
 + **`disown`**: Removes a job from the shell’s job table so it won't close when the terminal closes.
 
-## TERMINATING PROCESSES (Sending Signals)
+## Terminating Processes (Sending Signals)
 
 When you need to stop an application or clear a frozen process, you send it an operating system signal:
 
@@ -73,7 +88,7 @@ Example: `killall firefox`
 
 + **`Ctrl + C`**: Sends a SIGINT interrupt signal to immediately kill the process running in your active foreground window.
 
-## MEMORY (RAPID ACCESS MEMORY - RAM)
+## Memory (RAPID ACCESS MEMORY - RAM)
 	
 Memory dump:
 
@@ -83,7 +98,20 @@ Available RAM:
 
 `free -h`
 
-GPU Memory:
+### Clearing Swap Memory
+2 well known ways to clear swap memory: 
+1) Turn off swap memory, wait 30sec and turn swap memory back on 
+2) Reboot entire machine
+
+1) Steps & Commands for Turning Memory On and Off
+`swapoff -a`
+After command complete's, wait about 30 seconds to allow swap to reset. then turn swap memory back on
+`swapon -a`
+### Compiler Insight In Executable / Binary / Library 
+`objdump --full-contents --section=.comment ldd ldd -v ldd -u #show unused libraries objdump -p readelf -d strace -e trace=open,openat $ pidof $ lsof -p <yourprogram_pid> |grep mem`
+
+
+### GPU Memory:
 
 `nvidia-smi`
 
