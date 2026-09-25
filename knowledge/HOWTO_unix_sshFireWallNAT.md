@@ -26,9 +26,11 @@ The first option, if your remote SSH server supports it, uses a locally defined 
 
 1. List everything that is open
 
-`firewall-cmd --list-all`
-`firewall-cmd --get-active-zone`
-`firewall-cmd --list-all-zones | less`
++ `firewall-cmd --list-all`
+
++ `firewall-cmd --get-active-zone`
+
++ `firewall-cmd --list-all-zones | less`
 
 2. Cmds below are for runtime, if permanent change is desired use "--permanent"
 
