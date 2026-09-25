@@ -1,4 +1,4 @@
-# **PYTHON Frequenty Asked Questions**
+# PYTHON
 
 Python is a high-level, general-purpose programming language known for its simplicity, readability, and massive popularity. Created by Guido van Rossum and first released in 1991, its design mimics spoken English, which reduces the complexity of writing code and makes it the world's most popular language for beginners and professionals alike.
 

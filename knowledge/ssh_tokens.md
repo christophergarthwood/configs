@@ -1,4 +1,6 @@
-# **SSH Tokens Frequently Asked Questions (FAQ)**
+# **Frequently Asked Questions (FAQ)**
+
+<div align="center" style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border: 2px solid #999;"> <strong style="font-size: 72px; color: #666;"> <H1>DRAFT</H1> </strong> </div>
 
 [TOC]
 
@@ -75,3 +77,4 @@ Enter Passphrase	(If you set one)	If you secured your private key with a passphr
  
 If the connection is successful, you will be logged into your RHEL 8 server's command line without needing to enter your user password.
 
+<div align="center" style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border: 2px solid #999;"> <strong style="font-size: 72px; color: #666;"> <H1>DRAFT</H1> </strong> </div>

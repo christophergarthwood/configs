@@ -1,4 +1,4 @@
-# **Certificate chains Frequenty Asked Questions**
+# Certificate chains
 
 ## CSRs (Certificate Signing Requests)
 

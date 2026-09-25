@@ -1,4 +1,4 @@
-# **Network & Systems Administration Frequentyly Asked Questions**
+# Network & Systems Administration FAQ
 
 ## SSH & Tunneling
 

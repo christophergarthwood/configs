@@ -1,5 +1,6 @@
-# **Unix Frequently Asked Questions (FAQ)**
+# **Frequently Asked Questions (FAQ)**
 
+<div align="center" style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border: 2px solid #999;"> <strong style="font-size: 72px; color: #666;"> <H1>DRAFT</H1> </strong> </div>
 
 [TOC]
 
@@ -435,3 +436,6 @@ All spaces in a file replaced with a caret (delimiter), while inside the VIM edi
 ## Summation of a Datafile with a bunch of numbers
 
 `awk '{s+=$1} END {print s}' mydatafile`
+
+
+<div align="center" style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border: 2px solid #999;"> <strong style="font-size: 72px; color: #666;"> <H1>DRAFT</H1> </strong> </div>

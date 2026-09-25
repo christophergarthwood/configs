@@ -1,4 +1,51 @@
-# **MicroK8s Frequently Asked Questions**
+# **Microk8s Frequently Asked Questions (FAQ)**
+
+[TOC]
+
+MicroK8s is a lightweight, pure-upstream, and CNCF-certified Kubernetes distribution packaged by Canonical.
+
+## What is MicroK8s?
+
++ Single-package design: It bundles the entire Kubernetes control plane and core services into a single, isolated package that installs in under 60 seconds.
+
++ Low-ops focus: It offers automated security updates, self-healing high availability, and over-the-air upgrades to eliminate routine cluster administration work.
+
++ Cross-platform: It runs natively on Linux (via Snap packages), Windows, and macOS workstations.
+
+## Core Use Cases
+
++ Local development: Developers use it on personal laptops or workstations to prototype and test container workloads before shipping them to production.
+
++ Edge and IoT: Its tiny resource footprint makes it ideal for deployment on resource-constrained hardware like Raspberry Pis and smart appliances.
+
++ Small-scale and production clusters: It can scale from a single standalone node to a fully resilient, multi-node high-availability cluster by joining multiple machines.
+
++ AI/ML workloads: It supports GPU acceleration through the NVIDIA operator, making it popular for local machine learning and high-performance computing tasks.
+
+## Key Features & Add-ons
+
++ Built-in kubectl: Ships with a namespaced microk8s kubectl command to prevent conflicts with existing tools.
+
++ Plug-and-play add-ons: Easily toggle services like DNS, storage, the Kubernetes dashboard, Istio, Prometheus, and Grafana using simple commands (e.g., microk8s enable dns dashboard)
+
+
+## Setup
+
+### Pods
+
+Kubernetes manages containers exclusively through Pods, which define a shared network, storage, and lifecycle context.
+
+Using a **YAML Configuration File**, write a manifest file (e.g., pod.yaml) that specifies the Pod metadata and one or more container definitions.  
+
+Applying the Manifest, run the command:
+
+`kubectl apply -f pod.yaml`
+
+in your terminal to deploy the Pod to your cluster.  
+
+Using **Command-Line Shortcuts**, run a single container wrapped in a Pod directly from the command line using:
+
+`kubectl run [pod-name] --image=[image-name]`
 
 ### ConfigMaps
 

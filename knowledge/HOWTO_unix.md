@@ -1,4 +1,4 @@
-# **General Unix Knowledge**
+# General Unix Knowledge
 
 [TOC]
 
