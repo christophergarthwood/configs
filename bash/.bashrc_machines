@@ -2,8 +2,9 @@
 alias gollm='ssh cwood@gcsn6'
 
 #PROJECT FOLDERS
-export WORK_DIR="${HOME}/navo-se/a-squared";
+export WORK_DIR="${HOME}/REPOS/navo-se/a-squared";
 alias gowork='cd ${WORK_DIR}'
 
-export DATA_DIR="/mnt/vaultnfs/pfs/backup/navo-llm/users/cwood";
+#export DATA_DIR="/mnt/vaultnfs/pfs/backup/navo-llm/users/cwood";
+export DATA_DIR="/home/cwood/data";
 alias godata='cd ${DATA_DIR}'

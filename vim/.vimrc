@@ -4,7 +4,7 @@
 set number
 
 " Show relative numbers (useful for quick movement like 5j or 3k)
-set relativenumber
+" set relativenumber
 
 set cursorline
 
@@ -120,8 +120,8 @@ set sidescrolloff=5
 " ================================
 
 " Show hidden whitespace (great for YAML, config files, scripts)
-set list
-set listchars=tab:▸\ ,trail:·,eol:¬
+"set list
+"set listchars=tab:▸\ ,trail:·,eol:¬
 
 " Set stored history amount
 set history=1000
